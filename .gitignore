@@ -17,6 +17,9 @@ Thumbs.db
 *.swo
 *~
 .cursor/
+.project
+.classpath
+.settings/
 
 # ========================
 # Environment & Secrets
@@ -34,6 +37,8 @@ frontend/dist/
 frontend/.cache/
 frontend/coverage/
 frontend/*.tsbuildinfo
+frontend/.vite/
+frontend/.eslintcache
 
 # ========================
 # Backend
@@ -42,6 +47,9 @@ backend/tmp/
 backend/vendor/
 backend/codemind
 backend/codemind.exe
+backend/*.log
+backend/coverage/
+backend/.coverage/
 
 # ========================
 # Docker
@@ -60,3 +68,32 @@ logs/
 coverage/
 *.cover
 *.out
+test-results/
+
+# ========================
+# Build artifacts
+# ========================
+*.so
+*.dylib
+*.dll
+*.exe
+*.test
+*.o
+a.out
+
+# ========================
+# Temporary files
+# ========================
+*.tmp
+*.temp
+.DS_Store?
+Thumbs.db
+*.swp
+*~.nib
+
+# ========================
+# Debug files
+# ========================
+debug
+*.debug
+

@@ -1,0 +1,279 @@
+# CodeMind Backend 单元测试指南
+
+## 测试原则
+
+1. **测试金字塔**: 单元测试 > 集成测试 > E2E 测试
+2. **测试覆盖率**: Service 层 > 80%, Repository 层 > 80%
+3. **测试命名**: 使用描述性的测试名称
+
+## 测试文件结构
+
+```
+backend/
+├── internal/
+│   ├── service/
+│   │   ├── user.go
+│   │   └── user_test.go
+│   └── repository/
+│       ├── user.go
+│       └── user_test.go
+└── tests/
+    ├── integration/
+    │   └── user_test.go
+    └── mocks/
+        └── repository_mock.go
+```
+
+## 测试模板
+
+### Service 层测试
+
+```go
+// service/user_test.go
+package service_test
+
+import (
+    "context"
+    "testing"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/mock"
+    "github.com/stretchr/testify/require"
+
+    "codemind/internal/model"
+    "codemind/internal/model/dto"
+    "codemind/internal/service"
+    "codemind/tests/mocks"
+)
+
+func TestUserService_CreateUser(t *testing.T) {
+    tests := []struct {
+        name    string
+        setup   func(*mocks.MockUserRepository)
+        req     *dto.CreateUserRequest
+        want    *model.User
+        wantErr bool
+        errMsg  string
+    }{
+        {
+            name: "成功创建用户",
+            setup: func(repo *mocks.MockUserRepository) {
+                repo.On("Create", mock.Anything, mock.AnythingOfType("*model.User")).
+                    Return(nil)
+                repo.On("FindByUsername", mock.Anything, "testuser").
+                    Return((*model.User)(nil), nil)
+            },
+            req: &dto.CreateUserRequest{
+                Username:    "testuser",
+                Password:    "Password123",
+                DisplayName: "测试用户",
+                Role:        "user",
+            },
+            want: &model.User{
+                ID:       1,
+                Username: "testuser",
+                Role:     "user",
+            },
+            wantErr: false,
+        },
+        {
+            name: "用户名已存在应报错",
+            setup: func(repo *mocks.MockUserRepository) {
+                existingUser := &model.User{ID: 1, Username: "testuser"}
+                repo.On("FindByUsername", mock.Anything, "testuser").
+                    Return(existingUser, nil)
+            },
+            req: &dto.CreateUserRequest{
+                Username: "testuser",
+            },
+            wantErr: true,
+            errMsg: "用户名已存在",
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Setup
+            mockRepo := new(mocks.MockUserRepository)
+            tt.setup(mockRepo)
+
+            svc := service.NewUserService(mockRepo, nil, nil)
+
+            // Execute
+            got, err := svc.CreateUser(context.Background(), tt.req)
+
+            // Assert
+            if tt.wantErr {
+                require.Error(t, err)
+                assert.Contains(t, err.Error(), tt.errMsg)
+            } else {
+                require.NoError(t, err)
+                assert.NotNil(t, got)
+                assert.Equal(t, tt.want.Username, got.Username)
+            }
+
+            mockRepo.AssertExpectations(t)
+        })
+    }
+}
+```
+
+### Repository 层测试
+
+```go
+// repository/user_test.go
+package repository_test
+
+import (
+    "context"
+    "testing"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
+
+    "codemind/internal/model"
+    "codemind/internal/repository"
+)
+
+func setupTestDB(t *testing.T) *gorm.DB {
+    db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+    require.NoError(t, err)
+
+    err = db.AutoMigrate(&model.User{})
+    require.NoError(t, err)
+
+    return db
+}
+
+func TestUserRepository_Create(t *testing.T) {
+    db := setupTestDB(t)
+    repo := repository.NewUserRepository(db)
+
+    t.Run("成功创建用户", func(t *testing.T) {
+        user := &model.User{
+            Username:     "testuser",
+            PasswordHash: "hash",
+            DisplayName:  "测试",
+            Role:         "user",
+        }
+
+        err := repo.Create(context.Background(), user)
+
+        require.NoError(t, err)
+        assert.Greater(t, user.ID, int64(0))
+    })
+}
+```
+
+### 集成测试
+
+```go
+// tests/integration/user_test.go
+package integration_test
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+    "net/http/httptest"
+    "testing"
+
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+
+    "codemind/internal/config"
+    "codemind/internal/router"
+)
+
+func TestUserAPI_CreateUser(t *testing.T) {
+    // Setup
+    cfg := config.LoadTestConfig()
+    r := router.Setup(cfg)
+
+    t.Run("成功创建用户", func(t *testing.T) {
+        reqBody := map[string]interface{}{
+            "username":     "testuser",
+            "password":     "Password123",
+            "display_name": "测试用户",
+        }
+        body, _ := json.Marshal(reqBody)
+
+        req := httptest.NewRequest("POST", "/api/v1/users", bytes.NewReader(body))
+        req.Header.Set("Content-Type", "application/json")
+        req.Header.Set("Authorization", "Bearer "+getTestAdminToken(t))
+
+        w := httptest.NewRecorder()
+        r.ServeHTTP(w, req)
+
+        assert.Equal(t, http.StatusCreated, w.Code)
+    })
+}
+```
+
+## Mock 生成
+
+使用 mockgen 生成 mock 对象：
+
+```bash
+# 安装 mockgen
+go install github.com/golang/mock/mockgen@latest
+
+# 生成 mock
+mockgen -source=internal/repository/user.go -destination=tests/mocks/repository_mock.go -package=mocks
+```
+
+## 测试运行
+
+```bash
+# 运行所有测试
+make test
+
+# 运行特定包的测试
+go test ./internal/service/...
+
+# 运行特定测试
+go test ./internal/service/... -run TestUserService_CreateUser
+
+# 查看覆盖率
+go test ./... -cover
+
+# 生成覆盖率报告
+make test-coverage
+```
+
+## 测试最佳实践
+
+1. **使用 testify/assert**: 提供更清晰的断言
+2. **表驱动测试**: 用一个测试函数覆盖多个场景
+3. **子测试**: 使用 t.Run 组织相关的测试用例
+4. **Setup/Teardown**: 使用 TestMain 进行全局初始化
+5. **Mock 外部依赖**: 测试 Service 时使用 Mock Repository
+6. **测试隔离**: 每个测试独立运行，不依赖其他测试
+
+## 常见断言
+
+```go
+// 相等性断言
+assert.Equal(t, expected, actual)
+assert.NotEqual(t, notExpected, actual)
+assert.True(t, condition)
+assert.False(t, condition)
+
+// 数值断言
+assert.Greater(t, got, want)
+assert.Less(t, got, want)
+assert.InDelta(t, expected, actual, 0.001)
+
+// 错误断言
+require.Error(t, err)
+require.NoError(t, err)
+assert.ErrorIs(t, err, expectedErr)
+assert.ErrorAs(t, err, &expectedErr)
+
+// 包含断言
+assert.Contains(t, str, substr)
+assert.ElementsMatch(t, list1, list2)
+assert.Len(t, slice, expectedLen)
+```
