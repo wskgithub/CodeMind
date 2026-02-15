@@ -1,0 +1,52 @@
+# ============================================================
+# CodeMind Application Configuration
+# ============================================================
+# Copy this file to app.yaml and fill in the actual values.
+# DO NOT commit app.yaml to version control.
+# ============================================================
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "release"                  # debug | release | test
+
+database:
+  host: "postgres"
+  port: 5432
+  name: "codemind"
+  user: "codemind"
+  password: "CHANGE_ME"
+  max_open_conns: 50               # Maximum open connections
+  max_idle_conns: 10               # Maximum idle connections
+  conn_max_lifetime_minutes: 60    # Connection max lifetime
+
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 20                    # Connection pool size
+
+jwt:
+  secret: "CHANGE_ME"             # JWT signing secret (min 32 chars)
+  expire_hours: 24                 # Token expiration in hours
+
+llm:
+  base_url: "http://llm-server:8080"  # LLM service base URL
+  api_key: ""                          # LLM service API key (if required)
+  timeout_seconds: 300                 # Non-stream request timeout
+  stream_timeout_seconds: 600          # Stream request timeout
+  max_retries: 0                       # Retry count (0 = no retry)
+
+system:
+  max_keys_per_user: 10            # Maximum API keys per user
+  default_concurrency: 5           # Default max concurrent requests
+  default_daily_tokens: 1000000    # Default daily token limit
+  default_monthly_tokens: 20000000 # Default monthly token limit
+  force_change_password: true      # Force password change on first login
+
+log:
+  level: "info"                    # debug | info | warn | error
+  format: "json"                   # json | console
+  output: "stdout"                 # stdout | file
+  file_path: "./logs/app.log"      # Log file path (when output=file)
