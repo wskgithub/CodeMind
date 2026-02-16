@@ -11,7 +11,7 @@
 INSERT INTO users (username, password_hash, display_name, email, role, status)
 VALUES (
     'admin',
-    '$2a$12$LJ3m4ys3Lk0TSwOjGF0MYePYQnDMKBGHJ1QJZQXZQXZQXZQXZQXW',
+    '$2a$12$AIv9JVUf369wHF5lIszVROJV/05hM6w4KQyha7fnFVEvB1NVcPb/W',
     'System Administrator',
     'admin@company.com',
     'super_admin',

@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ──────────────────────────────────
+   Glassmorphism 设计系统 — CSS 变量
+   ────────────────────────────────── */
+:root {
+  /* 玻璃效果 */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-blur: 16px;
+
+  /* 侧边栏 */
+  --sidebar-bg: rgba(255, 255, 255, 0.85);
+  --sidebar-border: rgba(255, 255, 255, 0.5);
+
+  /* 顶栏 */
+  --header-bg: rgba(255, 255, 255, 0.78);
+  --header-blur: 20px;
+
+  /* 渐变色 */
+  --gradient-primary: linear-gradient(135deg, #2B7CB3 0%, #4BA3D4 100%);
+  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #2B7CB3 70%, #4BA3D4 100%);
+  --gradient-card-hover: linear-gradient(135deg, rgba(43, 124, 179, 0.08) 0%, rgba(75, 163, 212, 0.04) 100%);
+
+  /* 装饰光圈 */
+  --orb-primary: radial-gradient(circle, rgba(43, 124, 179, 0.15) 0%, transparent 70%);
+  --orb-accent: radial-gradient(circle, rgba(107, 197, 232, 0.12) 0%, transparent 70%);
+  --orb-warm: radial-gradient(circle, rgba(250, 173, 20, 0.08) 0%, transparent 70%);
+}
+
+/* 暗色模式变量 */
+.dark {
+  --glass-bg: rgba(30, 30, 36, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+
+  --sidebar-bg: rgba(24, 24, 30, 0.88);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+
+  --header-bg: rgba(24, 24, 30, 0.82);
+
+  --gradient-card-hover: linear-gradient(135deg, rgba(43, 124, 179, 0.12) 0%, rgba(75, 163, 212, 0.06) 100%);
+
+  --orb-primary: radial-gradient(circle, rgba(43, 124, 179, 0.1) 0%, transparent 70%);
+  --orb-accent: radial-gradient(circle, rgba(107, 197, 232, 0.08) 0%, transparent 70%);
+}
+
+/* ──────────────────────────────────
+   全局基础样式
+   ────────────────────────────────── */
+body {
+  margin: 0;
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ──────────────────────────────────
+   Glassmorphism 工具类
+   ────────────────────────────────── */
+@layer components {
+  /* 玻璃卡片 */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  /* 玻璃侧边栏 */
+  .glass-sidebar {
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--sidebar-border);
+  }
+
+  /* 玻璃顶栏 */
+  .glass-header {
+    background: var(--header-bg);
+    backdrop-filter: blur(var(--header-blur));
+    -webkit-backdrop-filter: blur(var(--header-blur));
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  /* 玻璃输入框 */
+  .glass-input .ant-input,
+  .glass-input .ant-input-password .ant-input {
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s;
+  }
+
+  .glass-input .ant-input:focus,
+  .glass-input .ant-input-password .ant-input:focus {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(43, 124, 179, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(43, 124, 179, 0.1) !important;
+  }
+
+  /* 统计卡片 */
+  .stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: var(--glass-shadow);
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
+  }
+
+  .stat-card:hover::before {
+    opacity: 1;
+  }
+
+  /* 页面容器背景 */
+  .page-bg {
+    position: relative;
+    min-height: 100%;
+  }
+
+  .page-bg::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: var(--orb-primary);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-bg::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    left: -150px;
+    width: 500px;
+    height: 500px;
+    background: var(--orb-accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+/* ──────────────────────────────────
+   动画
+   ────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(3deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* ──────────────────────────────────
+   自定义滚动条
+   ────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ──────────────────────────────────
+   Ant Design 覆盖增强
+   ────────────────────────────────── */
+
+/* 表格行悬停效果 */
+.ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background: var(--gradient-card-hover) !important;
+}
+
+/* Modal 玻璃效果 */
+.ant-modal .ant-modal-content {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+/* 菜单项过渡 */
+.ant-menu-item {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 8px !important;
+  margin: 4px 8px !important;
+}

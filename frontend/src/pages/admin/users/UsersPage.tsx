@@ -1,0 +1,332 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Table, Button, Modal, Form, Input, Select, Space, Tag, message, theme,
+} from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
+import type { UserDetail, DeptTree } from '@/types';
+import userService, { type UserListParams, type CreateUserParams } from '@/services/userService';
+import departmentService from '@/services/departmentService';
+import useAuthStore from '@/store/authStore';
+
+/** 页面标题图标 — 渐变圆形背景 */
+const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
+  <span
+    className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+    style={{
+      background: 'linear-gradient(135deg, #2B7CB3 0%, #4BA3D4 100%)',
+      color: '#fff',
+    }}
+  >
+    {icon}
+  </span>
+);
+
+/** 用户管理页面 — Glassmorphism 风格 */
+const UsersPage: React.FC = () => {
+  const { token } = theme.useToken();
+  const currentUser = useAuthStore((s) => s.user);
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+  const isDeptManager = currentUser?.role === 'dept_manager';
+
+  const [users, setUsers] = useState<UserDetail[]>([]);
+  const [departments, setDepartments] = useState<DeptTree[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [params, setParams] = useState<UserListParams>(() => {
+    // 部门经理默认只查看自己部门的用户
+    const initialParams: UserListParams = { page: 1, page_size: 20 };
+    if (isDeptManager && currentUser?.department?.id) {
+      initialParams.department_id = currentUser.department.id;
+    }
+    return initialParams;
+  });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserDetail | null>(null);
+  const [form] = Form.useForm();
+
+  // 加载用户列表
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const resp = await userService.list(params);
+      const data = resp.data.data;
+      setUsers(data.list || []);
+      setTotal(data.pagination.total);
+    } catch {
+      // 错误已在拦截器中处理
+    } finally {
+      setLoading(false);
+    }
+  }, [params]);
+
+  // 加载部门列表（用于下拉选择）
+  const loadDepartments = useCallback(async () => {
+    try {
+      const resp = await departmentService.list();
+      setDepartments(resp.data.data || []);
+    } catch {
+      // 错误已在拦截器中处理
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+    loadDepartments();
+  }, [loadUsers, loadDepartments]);
+
+  // 创建用户
+  const handleCreate = () => {
+    setEditingUser(null);
+    form.resetFields();
+    // 部门经理创建用户时，默认设置为自己的部门
+    if (isDeptManager && currentUser?.department?.id) {
+      form.setFieldsValue({ department_id: currentUser.department.id });
+    }
+    setModalOpen(true);
+  };
+
+  // 编辑用户
+  const handleEdit = (record: UserDetail) => {
+    setEditingUser(record);
+    form.setFieldsValue({
+      display_name: record.display_name,
+      email: record.email || '',
+      phone: record.phone || '',
+      role: record.role,
+      department_id: record.department_id,
+    });
+    setModalOpen(true);
+  };
+
+  // 提交表单
+  const handleSubmit = async (values: CreateUserParams) => {
+    try {
+      if (editingUser) {
+        await userService.update(editingUser.id, values);
+        message.success('用户信息已更新');
+      } else {
+        await userService.create(values);
+        message.success('用户创建成功');
+      }
+      setModalOpen(false);
+      form.resetFields();
+      loadUsers();
+    } catch {
+      // 错误已在拦截器中处理
+    }
+  };
+
+  // 切换状态
+  const handleToggleStatus = async (record: UserDetail) => {
+    const newStatus = record.status === 1 ? 0 : 1;
+    await userService.updateStatus(record.id, newStatus);
+    message.success(newStatus === 1 ? '已启用' : '已禁用');
+    loadUsers();
+  };
+
+  // 删除用户
+  const handleDelete = (record: UserDetail) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除用户 "${record.display_name}" 吗？`,
+      okText: '删除',
+      okType: 'danger',
+      onOk: async () => {
+        await userService.delete(record.id);
+        message.success('删除成功');
+        loadUsers();
+      },
+    });
+  };
+
+  // 角色标签
+  const roleTag = (role: string) => {
+    const map: Record<string, { text: string; color: string }> = {
+      super_admin: { text: '超级管理员', color: 'red' },
+      dept_manager: { text: '部门经理', color: 'blue' },
+      user: { text: '普通用户', color: 'green' },
+    };
+    const r = map[role] || { text: role, color: 'default' };
+    return <Tag color={r.color}>{r.text}</Tag>;
+  };
+
+  // 扁平化部门树为选项列表
+  const flattenDepartments = (depts: DeptTree[], prefix = ''): { label: string; value: number }[] => {
+    const result: { label: string; value: number }[] = [];
+    depts.forEach((dept) => {
+      result.push({
+        label: prefix + dept.name,
+        value: dept.id,
+      });
+      if (dept.children && dept.children.length > 0) {
+        result.push(...flattenDepartments(dept.children, prefix + dept.name + ' / '));
+      }
+    });
+    return result;
+  };
+
+  // 表格列
+  const columns: ColumnsType<UserDetail> = [
+    { title: '用户名', dataIndex: 'username', key: 'username', width: 120 },
+    { title: '姓名', dataIndex: 'display_name', key: 'display_name', width: 120 },
+    { title: '邮箱', dataIndex: 'email', key: 'email', width: 180, render: (v) => v || '-' },
+    { title: '角色', dataIndex: 'role', key: 'role', width: 120, render: roleTag },
+    {
+      title: '部门', key: 'department', width: 120,
+      render: (_, r) => r.department?.name || '-',
+    },
+    {
+      title: '状态', dataIndex: 'status', key: 'status', width: 80,
+      render: (v: number) => v === 1 ? <Tag color="success">启用</Tag> : <Tag color="error">禁用</Tag>,
+    },
+    {
+      title: '最后登录', dataIndex: 'last_login_at', key: 'last_login_at', width: 160,
+      render: (v: string) => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-',
+    },
+    {
+      title: '操作', key: 'action', width: 200, fixed: 'right',
+      render: (_, record) => (
+        <Space>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Button
+            type="link" size="small"
+            icon={record.status === 1 ? <StopOutlined /> : <CheckCircleOutlined />}
+            onClick={() => handleToggleStatus(record)}
+          >
+            {record.status === 1 ? '禁用' : '启用'}
+          </Button>
+          {isSuperAdmin && (
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
+              删除
+            </Button>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div
+      className="animate-fade-in-up"
+      style={{
+        background: 'var(--glass-bg)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: 16,
+        boxShadow: 'var(--glass-shadow)',
+        padding: 24,
+      }}
+    >
+      {/* 页面头部 */}
+      <div style={{ marginBottom: 24 }}>
+        <div className="flex items-center gap-3 mb-2">
+          <PageIcon icon={<UserOutlined style={{ fontSize: 20 }} />} />
+          <h2 style={{ margin: 0, color: token.colorTextHeading }}>用户管理</h2>
+        </div>
+        <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 14 }}>
+          管理系统用户，支持创建、编辑、启用/禁用及角色分配。
+        </p>
+        <div style={{ marginTop: 16 }}>
+          <Space wrap>
+            <Input.Search
+              placeholder="搜索用户名/姓名/邮箱"
+              allowClear
+              onSearch={(v) => setParams((p) => ({ ...p, keyword: v, page: 1 }))}
+              style={{ width: 260 }}
+            />
+            <Button icon={<ReloadOutlined />} onClick={loadUsers}>刷新</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              创建用户
+            </Button>
+          </Space>
+        </div>
+      </div>
+
+      {/* 表格区域 — 交由全局 CSS 处理行悬停 */}
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={users}
+        loading={loading}
+        scroll={{ x: 1200 }}
+        pagination={{
+          current: params.page,
+          pageSize: params.page_size,
+          total,
+          showSizeChanger: true,
+          showTotal: (t) => `共 ${t} 条`,
+          onChange: (page, pageSize) => setParams((p) => ({ ...p, page, page_size: pageSize })),
+        }}
+      />
+
+      {/* 创建/编辑弹窗 */}
+      <Modal
+        title={editingUser ? '编辑用户' : '创建用户'}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        footer={null}
+        destroyOnClose
+        width={520}
+      >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          {!editingUser && (
+            <>
+              <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }]}>
+                <Input placeholder="2-50 位字母、数字、下划线" />
+              </Form.Item>
+              <Form.Item name="password" label="初始密码" rules={[{ required: true, message: '请设置初始密码' }, { min: 8, message: '不少于 8 位' }]}>
+                <Input.Password placeholder="至少 8 位，含大小写字母和数字" />
+              </Form.Item>
+            </>
+          )}
+          <Form.Item name="display_name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label="邮箱">
+            <Input type="email" />
+          </Form.Item>
+          <Form.Item name="phone" label="手机号">
+            <Input />
+          </Form.Item>
+          {!editingUser && (
+            <Form.Item name="role" label="角色" rules={[{ required: true, message: '请选择角色' }]}>
+              <Select>
+                {isSuperAdmin && <Select.Option value="super_admin">超级管理员</Select.Option>}
+                {isSuperAdmin && <Select.Option value="dept_manager">部门经理</Select.Option>}
+                <Select.Option value="user">普通用户</Select.Option>
+              </Select>
+            </Form.Item>
+          )}
+          <Form.Item
+            name="department_id"
+            label="所属部门"
+            rules={isDeptManager ? [{ required: true, message: '请选择所属部门' }] : undefined}
+          >
+            <Select
+              placeholder={isDeptManager ? '所属部门' : '选择所属部门（可选）'}
+              allowClear={!isDeptManager}
+              disabled={isDeptManager}
+              showSearch
+              filterOption={(input, option) =>
+                (option?.label?.toString() ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={flattenDepartments(departments)}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              {editingUser ? '保存' : '创建'}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
+
+export default UsersPage;

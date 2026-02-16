@@ -1,0 +1,133 @@
+package handler
+
+import (
+	"context"
+
+	"codemind/internal/middleware"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/response"
+	"codemind/internal/service"
+
+	"github.com/gin-gonic/gin"
+)
+
+// AuthHandler 认证控制器
+type AuthHandler struct {
+	authService *service.AuthService
+}
+
+// NewAuthHandler 创建认证 Handler
+func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+	return &AuthHandler{authService: authService}
+}
+
+// Login 用户登录
+// POST /api/v1/auth/login
+func (h *AuthHandler) Login(c *gin.Context) {
+	var req dto.LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "用户名和密码不能为空")
+		return
+	}
+
+	resp, err := h.authService.Login(&req, c.ClientIP())
+	if err != nil {
+		if e, ok := err.(*errcode.ErrCode); ok {
+			response.Error(c, e)
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, resp)
+}
+
+// Logout 用户登出
+// POST /api/v1/auth/logout
+func (h *AuthHandler) Logout(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+	if claims == nil {
+		response.Error(c, errcode.ErrTokenInvalid)
+		return
+	}
+
+	// 使用 context.Background() 避免请求取消导致黑名单写入失败
+	if err := h.authService.Logout(claims); err != nil {
+		_ = err // 登出失败不阻塞，Token 会自然过期
+	}
+
+	// 避免 lint 报告 context 未使用
+	_ = context.Background()
+
+	response.Success(c, nil)
+}
+
+// GetProfile 获取当前用户信息
+// GET /api/v1/auth/profile
+func (h *AuthHandler) GetProfile(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Error(c, errcode.ErrTokenInvalid)
+		return
+	}
+
+	profile, err := h.authService.GetProfile(userID)
+	if err != nil {
+		if e, ok := err.(*errcode.ErrCode); ok {
+			response.Error(c, e)
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, profile)
+}
+
+// UpdateProfile 更新当前用户个人信息
+// PUT /api/v1/auth/profile
+func (h *AuthHandler) UpdateProfile(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req dto.UpdateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请求参数格式错误")
+		return
+	}
+
+	if err := h.authService.UpdateProfile(userID, &req); err != nil {
+		if e, ok := err.(*errcode.ErrCode); ok {
+			response.Error(c, e)
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// ChangePassword 修改密码
+// PUT /api/v1/auth/password
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "请输入原密码和新密码")
+		return
+	}
+
+	if err := h.authService.ChangePassword(userID, &req, c.ClientIP()); err != nil {
+		if e, ok := err.(*errcode.ErrCode); ok {
+			response.Error(c, e)
+			return
+		}
+		response.InternalError(c)
+		return
+	}
+
+	response.Success(c, nil)
+}

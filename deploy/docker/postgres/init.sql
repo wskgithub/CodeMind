@@ -68,7 +68,7 @@ CREATE TABLE api_keys (
     id            BIGSERIAL       PRIMARY KEY,
     user_id       BIGINT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name          VARCHAR(100)    NOT NULL,
-    key_prefix    VARCHAR(10)     NOT NULL,
+    key_prefix    VARCHAR(20)     NOT NULL,
     key_hash      VARCHAR(255)    NOT NULL UNIQUE,
     status        SMALLINT        NOT NULL DEFAULT 1,
     last_used_at  TIMESTAMPTZ,
