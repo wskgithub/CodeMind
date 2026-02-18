@@ -148,9 +148,14 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
         <span style={{ fontSize: 20, fontWeight: 700, color }}>
           {formatTokens(item.used_tokens)}
         </span>
-        <span style={{ fontSize: 12, color: token.colorTextTertiary }}>
-          / {formatTokens(item.max_tokens)}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: item.exceeded ? '#ff4d4f' : percent >= 80 ? '#faad14' : '#2B7CB3' }}>
+            {item.usage_percent}%
+          </span>
+          <span style={{ fontSize: 12, color: token.colorTextTertiary }}>
+            / {formatTokens(item.max_tokens)}
+          </span>
+        </div>
       </div>
 
       {/* 重置时间 */}
