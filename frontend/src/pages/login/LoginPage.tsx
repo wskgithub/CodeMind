@@ -11,7 +11,7 @@ const loginInputStyles = `
     position: relative;
     transition: all 0.3s ease;
   }
-  
+
   /* 输入框容器 - 完全透明背景 */
   .login-input-wrapper .ant-input-affix-wrapper {
     background: transparent !important;
@@ -23,12 +23,12 @@ const loginInputStyles = `
     padding: 0 4px 0 0 !important;
     height: 48px !important;
   }
-  
+
   /* 输入框悬停状态 */
   .login-input-wrapper .ant-input-affix-wrapper:hover {
     border-bottom-color: rgba(255, 255, 255, 0.4) !important;
   }
-  
+
   /* 输入框聚焦状态 - 下划线发光 */
   .login-input-wrapper .ant-input-affix-wrapper:focus,
   .login-input-wrapper .ant-input-affix-wrapper-focused {
@@ -36,7 +36,7 @@ const loginInputStyles = `
     border-bottom-color: #4BA3D4 !important;
     box-shadow: 0 2px 0 0 rgba(75, 163, 212, 0.6) !important;
   }
-  
+
   /* 输入框内部 input 元素 - 完全透明 */
   .login-input-wrapper .ant-input {
     background: transparent !important;
@@ -47,7 +47,7 @@ const loginInputStyles = `
     font-weight: 400 !important;
     letter-spacing: 0.3px !important;
   }
-  
+
   /* 覆盖浏览器自动填充 - 使用透明色 */
   .login-input-wrapper .ant-input:-webkit-autofill,
   .login-input-wrapper .ant-input:-webkit-autofill:hover,
@@ -58,12 +58,12 @@ const loginInputStyles = `
     caret-color: #ffffff !important;
     transition: background-color 5000s ease-in-out 0s !important;
   }
-  
+
   .login-input-wrapper .ant-input::placeholder {
     color: rgba(255, 255, 255, 0.35) !important;
     font-weight: 400 !important;
   }
-  
+
   /* ===== 图标样式 ===== */
   .login-input-wrapper .login-input-icon {
     color: rgba(255, 255, 255, 0.5) !important;
@@ -71,34 +71,34 @@ const loginInputStyles = `
     margin-right: 12px !important;
     transition: all 0.3s ease !important;
   }
-  
+
   /* 聚焦时图标高亮 */
   .login-input-wrapper .ant-input-affix-wrapper-focused .login-input-icon {
     color: #4BA3D4 !important;
   }
-  
+
   /* 密码框眼睛图标 */
   .login-input-wrapper .ant-input-suffix .anticon {
     color: rgba(255, 255, 255, 0.4) !important;
     font-size: 16px !important;
     transition: all 0.3s ease !important;
   }
-  
+
   .login-input-wrapper .ant-input-suffix .anticon:hover {
     color: rgba(255, 255, 255, 0.7) !important;
   }
-  
+
   /* ===== 错误状态样式 ===== */
   .login-input-wrapper.ant-form-item-has-error .ant-input-affix-wrapper {
     background: transparent !important;
     border-bottom-color: rgba(255, 120, 117, 0.8) !important;
     box-shadow: 0 2px 0 0 rgba(255, 120, 117, 0.6) !important;
   }
-  
+
   .login-input-wrapper.ant-form-item-has-error .login-input-icon {
     color: rgba(255, 120, 117, 0.8) !important;
   }
-  
+
   /* ===== 登录按钮样式优化 ===== */
   .login-button {
     height: 48px !important;
@@ -108,27 +108,27 @@ const loginInputStyles = `
     letter-spacing: 4px !important;
     background: linear-gradient(135deg, #2B7CB3 0%, #4BA3D4 100%) !important;
     border: none !important;
-    box-shadow: 
+    box-shadow:
       0 4px 16px rgba(43, 124, 179, 0.35),
       inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
-  
+
   .login-button:hover {
     background: linear-gradient(135deg, #3287c2 0%, #56b0e0 100%) !important;
-    box-shadow: 
+    box-shadow:
       0 6px 20px rgba(43, 124, 179, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
     transform: translateY(-1px);
   }
-  
+
   .login-button:active {
     transform: translateY(0);
-    box-shadow: 
+    box-shadow:
       0 2px 8px rgba(43, 124, 179, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
   }
-  
+
   .login-button:disabled {
     background: linear-gradient(135deg, rgba(43, 124, 179, 0.5) 0%, rgba(75, 163, 212, 0.5) 100%) !important;
     box-shadow: none !important;
@@ -338,18 +338,20 @@ const LoginPage: React.FC = () => {
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
             <div
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                background: 'linear-gradient(135deg, #2B7CB3, #4BA3D4)',
+                width: 64,
+                height: 64,
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 16,
-                boxShadow: '0 8px 24px rgba(43, 124, 179, 0.35)',
+                filter: 'drop-shadow(0 8px 24px rgba(43, 124, 179, 0.4))',
               }}
             >
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 20 }}>CM</span>
+              <img
+                src="/logo-ring.svg"
+                alt="CodeMind Logo"
+                style={{ width: '100%', height: '100%' }}
+              />
             </div>
             <h1
               style={{

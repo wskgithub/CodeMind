@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <radialGradient id="ringBg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#0d2137"/>
+      <stop offset="100%" style="stop-color:#020508"/>
+    </radialGradient>
+    <radialGradient id="ringCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#6BC5E8"/>
+      <stop offset="100%" style="stop-color:#2B7CB3;stop-opacity:0"/>
+    </radialGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4BA3D4"/>
+      <stop offset="100%" style="stop-color:#1a4a6e"/>
+    </linearGradient>
+    <filter id="ringGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect x="8" y="8" width="104" height="104" rx="28" ry="28" fill="url(#ringBg)"/>
+  
+  <!-- 核心发光 -->
+  <circle cx="60" cy="60" r="40" fill="url(#ringCore)" opacity="0.6"/>
+  
+  <g transform="translate(60, 60)" filter="url(#ringGlow)">
+    <!-- 外环 - 粗线条 -->
+    <circle cx="0" cy="0" r="36" fill="none" stroke="url(#ringGrad)" stroke-width="6" opacity="0.9"/>
+    
+    <!-- 中环 - 虚线 -->
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#4BA3D4" stroke-width="2" 
+            stroke-dasharray="8,4" opacity="0.7">
+      <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" 
+                        dur="20s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- 内环 - 实心 -->
+    <circle cx="0" cy="0" r="20" fill="#0a1628" stroke="#6BC5E8" stroke-width="3"/>
+    
+    <!-- 核心圆 -->
+    <circle cx="0" cy="0" r="14" fill="url(#ringGrad)"/>
+    
+    <!-- 代码符号 -->
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round">
+      <path d="M-5,-6 L-8,0 L-5,6"/>
+      <path d="M5,-6 L8,0 L5,6"/>
+      <line x1="-2" y1="-7" x2="2" y2="7"/>
+    </g>
+    
+    <!-- 四个方向节点 -->
+    <circle cx="0" cy="-36" r="3" fill="#6BC5E8"/>
+    <circle cx="36" cy="0" r="3" fill="#6BC5E8"/>
+    <circle cx="0" cy="36" r="3" fill="#6BC5E8"/>
+    <circle cx="-36" cy="0" r="3" fill="#6BC5E8"/>
+  </g>
+</svg>

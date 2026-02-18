@@ -185,26 +185,19 @@ const DashboardLayout: React.FC = () => {
             borderBottom: '1px solid var(--glass-border)',
             transition: 'all 0.3s',
           }}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
+            <img
+              src="/logo-ring.svg"
+              alt="CodeMind"
               style={{
                 width: 32,
                 height: 32,
-                borderRadius: 10,
-                background: 'var(--gradient-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: 14,
+                borderRadius: 8,
                 boxShadow: '0 4px 12px rgba(43, 124, 179, 0.3)',
               }}
-            >
-              CM
-            </div>
+            />
             {!sidebarCollapsed && (
               <span
                 style={{
