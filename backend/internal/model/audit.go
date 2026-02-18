@@ -34,6 +34,7 @@ const (
 	AuditActionEnableUser     = "enable_user"
 	AuditActionResetPassword  = "reset_password"
 	AuditActionImportUsers    = "import_users"
+	AuditActionUnlockUser     = "unlock_user"
 	AuditActionCreateDept     = "create_department"
 	AuditActionUpdateDept     = "update_department"
 	AuditActionDeleteDept     = "delete_department"

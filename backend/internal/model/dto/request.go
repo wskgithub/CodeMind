@@ -60,6 +60,11 @@ type ResetPasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required,min=8,max=128"`
 }
 
+// UnlockUserRequest 解锁用户请求
+type UnlockUserRequest struct {
+	Reason string `json:"reason" binding:"omitempty,max=500"`
+}
+
 // UserListQuery 用户列表查询参数
 type UserListQuery struct {
 	Page         int    `form:"page" binding:"omitempty,min=1"`

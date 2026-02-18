@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Form, Input, Button, message, ConfigProvider, ThemeConfig } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert } from 'antd';
+import { UserOutlined, LockOutlined, LockFilled } from '@ant-design/icons';
 import useAuthStore from '@/store/authStore';
+import axios from 'axios';
 
 // 登录页输入框全局样式 - 极简玻璃态设计
 const loginInputStyles = `
@@ -134,6 +135,25 @@ const loginInputStyles = `
     box-shadow: none !important;
     transform: none !important;
   }
+
+  /* ===== 锁定提示样式 ===== */
+  .lock-alert {
+    background: rgba(255, 77, 79, 0.15) !important;
+    border: 1px solid rgba(255, 77, 79, 0.3) !important;
+    border-radius: 8px !important;
+    color: #ffccc7 !important;
+  }
+  
+  .lock-alert .ant-alert-icon {
+    color: #ff7875 !important;
+  }
+
+  .lock-countdown {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 8px;
+    text-align: center;
+  }
 `;
 
 // 登录页专用主题配置 - 极简下划线风格
@@ -168,15 +188,76 @@ const loginTheme: ThemeConfig = {
   },
 };
 
+/** 格式化剩余时间 */
+const formatRemainingTime = (seconds: number): string => {
+  if (seconds < 60) {
+    return `${seconds}秒`;
+  }
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes}分钟`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (remainingMinutes > 0) {
+    return `${hours}小时${remainingMinutes}分钟`;
+  }
+  return `${hours}小时`;
+};
+
 /** 登录页面 — Glassmorphism 风格 */
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((s) => s.login);
   const [loading, setLoading] = useState(false);
+  const [lockInfo, setLockInfo] = useState<{
+    locked: boolean;
+    remainingTime: number;
+    failCount: number;
+    maxFailCount: number;
+  } | null>(null);
+  const [countdown, setCountdown] = useState<number>(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+
+  // 清理倒计时定时器
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
+    };
+  }, []);
+
+  // 启动倒计时
+  useEffect(() => {
+    if (lockInfo?.locked && lockInfo.remainingTime > 0) {
+      setCountdown(lockInfo.remainingTime);
+      
+      countdownTimerRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            // 倒计时结束，清除锁定信息
+            setLockInfo(null);
+            if (countdownTimerRef.current) {
+              clearInterval(countdownTimerRef.current);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+        }
+      };
+    }
+  }, [lockInfo]);
 
   // 粒子背景动画
   useEffect(() => {
@@ -254,13 +335,46 @@ const LoginPage: React.FC = () => {
   }, []);
 
   const handleSubmit = async (values: { username: string; password: string }) => {
+    // 如果账号已被锁定，阻止提交
+    if (lockInfo?.locked && countdown > 0) {
+      message.error(`账号已被锁定，请${formatRemainingTime(countdown)}后再试`);
+      return;
+    }
+
     setLoading(true);
+    setLockInfo(null);
+    
     try {
       await login(values.username, values.password);
       message.success('登录成功');
       navigate(from, { replace: true });
-    } catch {
-      // 错误已在拦截器中处理
+    } catch (error) {
+      // 处理登录错误，检查是否是账号锁定
+      if (axios.isAxiosError(error) && error.response) {
+        const { data, status } = error.response;
+        
+        // 检查是否是账号锁定错误 (code: 40008)
+        if (data?.code === 40008 || (status === 403 && data?.data?.locked)) {
+          const lockData = data.data || {};
+          setLockInfo({
+            locked: true,
+            remainingTime: lockData.remaining_time || 300,
+            failCount: lockData.fail_count || 5,
+            maxFailCount: lockData.max_fail_count || 5,
+          });
+        } else if (status === 401) {
+          // 用户名或密码错误
+          // 显示当前失败次数提示
+          if (data?.data?.fail_count > 0) {
+            const remainingAttempts = (data.data.max_fail_count || 5) - data.data.fail_count;
+            message.error(`${data.message}，还剩 ${remainingAttempts} 次机会`);
+          } else {
+            message.error(data?.message || '用户名或密码错误');
+          }
+        } else {
+          message.error(data?.message || '登录失败');
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -376,6 +490,31 @@ const LoginPage: React.FC = () => {
             </p>
           </div>
 
+          {/* 锁定提示 */}
+          {lockInfo?.locked && (
+            <Alert
+              className="lock-alert"
+              icon={<LockFilled />}
+              message="账号已被锁定"
+              description={
+                <div>
+                  <div>登录失败次数过多，为了您的账号安全，系统已临时锁定。</div>
+                  {countdown > 0 && (
+                    <div className="lock-countdown">
+                      剩余锁定时间：<strong>{formatRemainingTime(countdown)}</strong>
+                    </div>
+                  )}
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                    如需立即解锁，请联系您的部门领导或系统管理员
+                  </div>
+                </div>
+              }
+              type="error"
+              showIcon
+              style={{ marginBottom: 24, background: 'transparent', border: 'none' }}
+            />
+          )}
+
           {/* 登录表单 */}
           <ConfigProvider theme={loginTheme}>
             <Form
@@ -397,6 +536,7 @@ const LoginPage: React.FC = () => {
                     </span>
                   }
                   placeholder="用户名"
+                  disabled={lockInfo?.locked && countdown > 0}
                 />
               </Form.Item>
 
@@ -413,6 +553,7 @@ const LoginPage: React.FC = () => {
                     </span>
                   }
                   placeholder="密码"
+                  disabled={lockInfo?.locked && countdown > 0}
                 />
               </Form.Item>
 
@@ -423,8 +564,9 @@ const LoginPage: React.FC = () => {
                   block
                   loading={loading}
                   className="login-button"
+                  disabled={lockInfo?.locked && countdown > 0}
                 >
-                  登 录
+                  {lockInfo?.locked && countdown > 0 ? '账号已锁定' : '登 录'}
                 </Button>
               </Form.Item>
             </Form>

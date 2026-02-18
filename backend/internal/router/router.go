@@ -114,6 +114,7 @@ func Setup(
 			users.PUT("/:id", handlers.User.Update)
 			users.PUT("/:id/status", handlers.User.UpdateStatus)
 			users.PUT("/:id/reset-password", handlers.User.ResetPassword)
+			users.PUT("/:id/unlock", handlers.User.UnlockUser)
 			users.DELETE("/:id", handlers.User.Delete)
 		}
 

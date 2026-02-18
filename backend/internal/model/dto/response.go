@@ -13,6 +13,16 @@ type LoginResponse struct {
 	User      UserBrief    `json:"user"`
 }
 
+// LoginErrorResponse 登录错误响应（包含锁定信息）
+type LoginErrorResponse struct {
+	Code            int    `json:"code"`
+	Message         string `json:"message"`
+	Locked          bool   `json:"locked"`            // 是否被锁定
+	RemainingTime   int64  `json:"remaining_time"`    // 剩余锁定时间（秒）
+	FailCount       int    `json:"fail_count"`        // 当前失败次数
+	MaxFailCount    int    `json:"max_fail_count"`    // 最大允许失败次数
+}
+
 // ──────────────────────────────────
 // 用户相关响应
 // ──────────────────────────────────
@@ -28,18 +38,28 @@ type UserBrief struct {
 
 // UserDetail 用户详细信息
 type UserDetail struct {
-	ID           int64      `json:"id"`
-	Username     string     `json:"username"`
-	DisplayName  string     `json:"display_name"`
-	Email        *string    `json:"email"`
-	Phone        *string    `json:"phone"`
-	AvatarURL    *string    `json:"avatar_url"`
-	Role         string     `json:"role"`
-	DepartmentID *int64     `json:"department_id"`
-	Department   *DeptBrief `json:"department,omitempty"`
-	Status       int16      `json:"status"`
-	LastLoginAt  *time.Time `json:"last_login_at"`
-	CreatedAt    time.Time  `json:"created_at"`
+	ID              int64      `json:"id"`
+	Username        string     `json:"username"`
+	DisplayName     string     `json:"display_name"`
+	Email           *string    `json:"email"`
+	Phone           *string    `json:"phone"`
+	AvatarURL       *string    `json:"avatar_url"`
+	Role            string     `json:"role"`
+	DepartmentID    *int64     `json:"department_id"`
+	Department      *DeptBrief `json:"department,omitempty"`
+	Status          int16      `json:"status"`
+	LastLoginAt     *time.Time `json:"last_login_at"`
+	LoginFailCount  int        `json:"login_fail_count"`
+	LockedUntil     *time.Time `json:"locked_until"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+// LoginLockStatusResponse 登录锁定状态响应
+type LoginLockStatusResponse struct {
+	LoginFailCount int        `json:"login_fail_count"`
+	Locked         bool       `json:"locked"`
+	LockedUntil    *time.Time `json:"locked_until"`
+	RemainingTime  int64      `json:"remaining_time"` // 剩余锁定时间（秒）
 }
 
 // ──────────────────────────────────

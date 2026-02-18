@@ -41,6 +41,7 @@ var (
 	ErrAPIKeyInvalid      = &ErrCode{Code: 40005, Message: "API Key 无效", HTTP: http.StatusUnauthorized}
 	ErrAPIKeyExpired      = &ErrCode{Code: 40006, Message: "API Key 已过期", HTTP: http.StatusUnauthorized}
 	ErrAPIKeyDisabled     = &ErrCode{Code: 40007, Message: "API Key 已被禁用", HTTP: http.StatusForbidden}
+	ErrAccountLocked      = &ErrCode{Code: 40008, Message: "账号已被锁定", HTTP: http.StatusForbidden}
 )
 
 // ──────────────────────────────────

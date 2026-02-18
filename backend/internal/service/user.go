@@ -297,6 +297,43 @@ func (s *UserService) ResetPassword(id int64, newPassword string, operatorID int
 	return nil
 }
 
+// UnlockUser 解锁用户账号
+func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string, operatorDeptID *int64, reason string, clientIP string) error {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return errcode.ErrUserNotFound
+	}
+
+	// 检查用户是否被锁定
+	if !user.IsLocked() && user.LoginFailCount == 0 {
+		return errcode.ErrInvalidParams.WithMessage("该用户未被锁定")
+	}
+
+	// 权限检查：
+	// 1. 超级管理员可以解锁任何用户
+	// 2. 部门经理只能解锁本部门用户
+	if operatorRole == model.RoleDeptManager {
+		if user.DepartmentID == nil || operatorDeptID == nil || *user.DepartmentID != *operatorDeptID {
+			return errcode.ErrForbiddenUser
+		}
+	}
+
+	// 清除登录失败记录和锁定状态
+	if err := s.userRepo.ClearLoginFailCount(id); err != nil {
+		s.logger.Error("解锁用户失败", zap.Error(err), zap.Int64("user_id", id))
+		return errcode.ErrDatabase
+	}
+
+	// 记录审计日志
+	s.recordAudit(operatorID, model.AuditActionUnlockUser, model.AuditTargetUser, &id,
+		map[string]interface{}{
+			"username": user.Username,
+			"reason":   reason,
+		}, clientIP)
+
+	return nil
+}
+
 // List 分页查询用户列表
 func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operatorDeptID *int64) ([]dto.UserDetail, int64, error) {
 	filters := map[string]interface{}{
@@ -320,17 +357,19 @@ func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operat
 	var details []dto.UserDetail
 	for _, u := range users {
 		d := dto.UserDetail{
-			ID:           u.ID,
-			Username:     u.Username,
-			DisplayName:  u.DisplayName,
-			Email:        u.Email,
-			Phone:        u.Phone,
-			AvatarURL:    u.AvatarURL,
-			Role:         u.Role,
-			DepartmentID: u.DepartmentID,
-			Status:       u.Status,
-			LastLoginAt:  u.LastLoginAt,
-			CreatedAt:    u.CreatedAt,
+			ID:              u.ID,
+			Username:        u.Username,
+			DisplayName:     u.DisplayName,
+			Email:           u.Email,
+			Phone:           u.Phone,
+			AvatarURL:       u.AvatarURL,
+			Role:            u.Role,
+			DepartmentID:    u.DepartmentID,
+			Status:          u.Status,
+			LastLoginAt:     u.LastLoginAt,
+			LoginFailCount:  u.LoginFailCount,
+			LockedUntil:     u.LockedUntil,
+			CreatedAt:       u.CreatedAt,
 		}
 		if u.Department != nil {
 			d.Department = &dto.DeptBrief{

@@ -52,7 +52,17 @@ export interface UserDetail {
   department?: DeptBrief;
   status: number;
   last_login_at?: string;
+  login_fail_count: number;
+  locked_until?: string;
   created_at: string;
+}
+
+/** 登录锁定状态 */
+export interface LoginLockStatus {
+  login_fail_count: number;
+  locked: boolean;
+  locked_until?: string;
+  remaining_time: number;
 }
 
 // ──────────────────────────────────

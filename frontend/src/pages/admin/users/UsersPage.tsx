@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, Space, Tag, message, theme,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons';
+import { 
+  PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, 
+  CheckCircleOutlined, ReloadOutlined, UserOutlined, UnlockOutlined, LockOutlined 
+} from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import type { UserDetail, DeptTree } from '@/types';
@@ -22,6 +25,31 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
     {icon}
   </span>
 );
+
+/** 判断用户是否被锁定 */
+const isUserLocked = (user: UserDetail): boolean => {
+  if (!user.locked_until) return false;
+  return dayjs(user.locked_until).isAfter(dayjs());
+};
+
+/** 格式化锁定时间 */
+const formatLockTime = (lockedUntil?: string): string => {
+  if (!lockedUntil) return '';
+  const lockTime = dayjs(lockedUntil);
+  if (lockTime.isBefore(dayjs())) return '';
+  
+  const diffMinutes = lockTime.diff(dayjs(), 'minute');
+  if (diffMinutes < 60) {
+    return `${diffMinutes}分钟`;
+  }
+  
+  const diffHours = lockTime.diff(dayjs(), 'hour');
+  const remainingMinutes = diffMinutes % 60;
+  if (remainingMinutes > 0) {
+    return `${diffHours}小时${remainingMinutes}分钟`;
+  }
+  return `${diffHours}小时`;
+};
 
 /** 用户管理页面 — Glassmorphism 风格 */
 const UsersPage: React.FC = () => {
@@ -141,6 +169,47 @@ const UsersPage: React.FC = () => {
     });
   };
 
+  // 解锁用户
+  const handleUnlock = (record: UserDetail) => {
+    const locked = isUserLocked(record);
+    const hasFailCount = record.login_fail_count > 0;
+    
+    if (!locked && !hasFailCount) {
+      message.info('该用户未被锁定');
+      return;
+    }
+
+    Modal.confirm({
+      title: '确认解锁',
+      content: (
+        <div>
+          <p>确定要解锁用户 "{record.display_name}" 吗？</p>
+          {locked && (
+            <p style={{ color: '#ff4d4f', fontSize: 13 }}>
+              当前账号被锁定，剩余锁定时间：{formatLockTime(record.locked_until)}
+            </p>
+          )}
+          {hasFailCount && !locked && (
+            <p style={{ color: '#faad14', fontSize: 13 }}>
+              该用户有 {record.login_fail_count} 次登录失败记录
+            </p>
+          )}
+        </div>
+      ),
+      okText: '解锁',
+      okButtonProps: { type: 'primary' },
+      onOk: async () => {
+        try {
+          await userService.unlockUser(record.id, '管理员手动解锁');
+          message.success('账号已解锁');
+          loadUsers();
+        } catch {
+          // 错误已在拦截器中处理
+        }
+      },
+    });
+  };
+
   // 角色标签
   const roleTag = (role: string) => {
     const map: Record<string, { text: string; color: string }> = {
@@ -150,6 +219,33 @@ const UsersPage: React.FC = () => {
     };
     const r = map[role] || { text: role, color: 'default' };
     return <Tag color={r.color}>{r.text}</Tag>;
+  };
+
+  // 状态标签（包含锁定状态）
+  const statusTag = (record: UserDetail) => {
+    const locked = isUserLocked(record);
+    
+    if (record.status !== 1) {
+      return <Tag color="error">禁用</Tag>;
+    }
+    
+    if (locked) {
+      return (
+        <Tag color="warning" icon={<LockOutlined />}>
+          锁定 {formatLockTime(record.locked_until)}
+        </Tag>
+      );
+    }
+    
+    if (record.login_fail_count > 0) {
+      return (
+        <Tag color="warning">
+          启用 ({record.login_fail_count}次失败)
+        </Tag>
+      );
+    }
+    
+    return <Tag color="success">启用</Tag>;
   };
 
   // 扁平化部门树为选项列表
@@ -178,34 +274,50 @@ const UsersPage: React.FC = () => {
       render: (_, r) => r.department?.name || '-',
     },
     {
-      title: '状态', dataIndex: 'status', key: 'status', width: 80,
-      render: (v: number) => v === 1 ? <Tag color="success">启用</Tag> : <Tag color="error">禁用</Tag>,
+      title: '状态', key: 'status', width: 140,
+      render: (_, record) => statusTag(record),
     },
     {
       title: '最后登录', dataIndex: 'last_login_at', key: 'last_login_at', width: 160,
       render: (v: string) => v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
-      title: '操作', key: 'action', width: 200, fixed: 'right',
-      render: (_, record) => (
-        <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Button
-            type="link" size="small"
-            icon={record.status === 1 ? <StopOutlined /> : <CheckCircleOutlined />}
-            onClick={() => handleToggleStatus(record)}
-          >
-            {record.status === 1 ? '禁用' : '启用'}
-          </Button>
-          {isSuperAdmin && (
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
-              删除
+      title: '操作', key: 'action', width: 280, fixed: 'right',
+      render: (_, record) => {
+        const locked = isUserLocked(record);
+        const hasFailCount = record.login_fail_count > 0;
+        
+        return (
+          <Space>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+              编辑
             </Button>
-          )}
-        </Space>
-      ),
+            <Button
+              type="link" size="small"
+              icon={record.status === 1 ? <StopOutlined /> : <CheckCircleOutlined />}
+              onClick={() => handleToggleStatus(record)}
+            >
+              {record.status === 1 ? '禁用' : '启用'}
+            </Button>
+            {(locked || hasFailCount) && (
+              <Button 
+                type="link" 
+                size="small" 
+                icon={<UnlockOutlined />}
+                onClick={() => handleUnlock(record)}
+                style={{ color: '#ff4d4f' }}
+              >
+                解锁
+              </Button>
+            )}
+            {isSuperAdmin && (
+              <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
+                删除
+              </Button>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
@@ -229,7 +341,7 @@ const UsersPage: React.FC = () => {
           <h2 style={{ margin: 0, color: token.colorTextHeading }}>用户管理</h2>
         </div>
         <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 14 }}>
-          管理系统用户，支持创建、编辑、启用/禁用及角色分配。
+          管理系统用户，支持创建、编辑、启用/禁用及角色分配。被锁定的账号可由部门领导或管理员解锁。
         </p>
         <div style={{ marginTop: 16 }}>
           <Space wrap>

@@ -58,6 +58,11 @@ const userService = {
   resetPassword(id: number, new_password: string) {
     return request.put<ApiResponse<null>>(`/users/${id}/reset-password`, { new_password });
   },
+
+  /** 解锁用户账号 */
+  unlockUser(id: number, reason?: string) {
+    return request.put<ApiResponse<null>>(`/users/${id}/unlock`, { reason });
+  },
 };
 
 export default userService;

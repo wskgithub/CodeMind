@@ -183,6 +183,31 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// UnlockUser 解锁用户账号
+// PUT /api/v1/users/:id/unlock
+func (h *UserHandler) UnlockUser(c *gin.Context) {
+	id, err := parseID(c)
+	if err != nil {
+		response.BadRequest(c, "无效的用户 ID")
+		return
+	}
+
+	var req dto.UnlockUserRequest
+	// 请求体是可选的
+	_ = c.ShouldBindJSON(&req)
+
+	operatorID := middleware.GetUserID(c)
+	operatorRole := middleware.GetUserRole(c)
+	operatorDeptID := middleware.GetDepartmentID(c)
+
+	if err := h.userService.UnlockUser(id, operatorID, operatorRole, operatorDeptID, req.Reason, c.ClientIP()); err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
 // ──────────────────────────────────
 // 辅助函数
 // ──────────────────────────────────

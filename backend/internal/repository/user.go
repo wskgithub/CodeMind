@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"codemind/internal/model"
 
 	"gorm.io/gorm"
@@ -152,4 +154,35 @@ func (r *UserRepository) ExistsEmail(email string, excludeUserID ...int64) (bool
 	}
 	err := query.Count(&count).Error
 	return count > 0, err
+}
+
+// IncrementLoginFailCount 增加登录失败次数并返回更新后的用户
+func (r *UserRepository) IncrementLoginFailCount(id int64) (*model.User, error) {
+	now := time.Now()
+	updates := map[string]interface{}{
+		"login_fail_count":    gorm.Expr("login_fail_count + 1"),
+		"last_login_fail_at":  now,
+	}
+	
+	if err := r.db.Model(&model.User{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+	
+	// 重新查询获取更新后的数据
+	return r.FindByID(id)
+}
+
+// ClearLoginFailCount 清除登录失败次数和锁定状态
+func (r *UserRepository) ClearLoginFailCount(id int64) error {
+	updates := map[string]interface{}{
+		"login_fail_count":   0,
+		"locked_until":       nil,
+		"last_login_fail_at": nil,
+	}
+	return r.db.Model(&model.User{}).Where("id = ?", id).Updates(updates).Error
+}
+
+// LockAccount 锁定账号
+func (r *UserRepository) LockAccount(id int64, lockedUntil time.Time) error {
+	return r.db.Model(&model.User{}).Where("id = ?", id).Update("locked_until", lockedUntil).Error
 }

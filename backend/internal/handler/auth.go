@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strconv"
 
 	"codemind/internal/middleware"
 	"codemind/internal/model/dto"
@@ -34,6 +35,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	resp, err := h.authService.Login(&req, c.ClientIP())
 	if err != nil {
 		if e, ok := err.(*errcode.ErrCode); ok {
+			// 如果是账号锁定错误，尝试获取更详细的锁定信息
+			if e.Code == errcode.ErrAccountLocked.Code {
+				h.handleLockError(c, req.Username)
+				return
+			}
 			response.Error(c, e)
 			return
 		}
@@ -42,6 +48,49 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	response.Success(c, resp)
+}
+
+// handleLockError 处理账号锁定错误，返回详细的锁定信息
+func (h *AuthHandler) handleLockError(c *gin.Context, username string) {
+	// 尝试获取用户锁定状态
+	lockStatus, err := h.authService.GetLoginLockStatusByUsername(username)
+	if err != nil {
+		// 如果获取失败，返回基础锁定信息
+		response.Error(c, errcode.ErrAccountLocked)
+		return
+	}
+
+	// 返回包含锁定详情的错误
+	c.JSON(errcode.ErrAccountLocked.HTTP, gin.H{
+		"code":    errcode.ErrAccountLocked.Code,
+		"message": h.formatLockMessage(lockStatus),
+		"data":    lockStatus,
+	})
+}
+
+// formatLockMessage 格式化锁定提示消息
+func (h *AuthHandler) formatLockMessage(status *dto.LoginLockStatusResponse) string {
+	if !status.Locked {
+		return "登录失败次数过多，请稍后再试"
+	}
+	
+	// 格式化剩余时间
+	remaining := status.RemainingTime
+	if remaining < 60 {
+		return "账号已被锁定，请稍后再试"
+	}
+	
+	minutes := remaining / 60
+	if minutes < 60 {
+		return "账号已被锁定，请 " + strconv.FormatInt(minutes, 10) + " 分钟后再试"
+	}
+	
+	hours := minutes / 60
+	remainingMinutes := minutes % 60
+	if remainingMinutes > 0 {
+		return "账号已被锁定，请 " + strconv.FormatInt(hours, 10) + " 小时 " + strconv.FormatInt(remainingMinutes, 10) + " 分钟后再试"
+	}
+	return "账号已被锁定，请 " + strconv.FormatInt(hours, 10) + " 小时后再试"
 }
 
 // Logout 用户登出
