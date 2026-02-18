@@ -87,6 +87,15 @@ const LimitsPage = () => {
     daily: '每日',
     weekly: '每周',
     monthly: '每月',
+    custom: '自定义',
+  };
+
+  const formatPeriodHours = (hours: number): string => {
+    if (hours < 24) return `${hours} 小时`;
+    if (hours === 24) return '24 小时 (每日)';
+    if (hours === 168) return '168 小时 (每周)';
+    if (hours === 720) return '720 小时 (每月)';
+    return `${hours} 小时`;
   };
 
   const columns: ColumnsType<RateLimit> = [
@@ -107,6 +116,13 @@ const LimitsPage = () => {
       key: 'period',
       width: 80,
       render: (val: string) => periodLabel[val] || val,
+    },
+    {
+      title: '周期时长',
+      dataIndex: 'period_hours',
+      key: 'period_hours',
+      width: 140,
+      render: (v: number) => formatPeriodHours(v),
     },
     {
       title: '最大 Token 数',
@@ -239,10 +255,28 @@ const LimitsPage = () => {
                   { label: '每日', value: 'daily' },
                   { label: '每周', value: 'weekly' },
                   { label: '每月', value: 'monthly' },
+                  { label: '自定义', value: 'custom' },
                 ]}
               />
             </Form.Item>
           </Space>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prev, cur) => prev.period !== cur.period}
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('period') === 'custom' ? (
+                <Form.Item
+                  name="period_hours"
+                  label="自定义周期（小时）"
+                  rules={[{ required: true, message: '请输入周期时长' }]}
+                >
+                  <InputNumber min={1} style={{ width: '100%' }} placeholder="如 5 表示每 5 小时" />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
 
           <Form.Item
             name="max_tokens"

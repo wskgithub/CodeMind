@@ -14,10 +14,12 @@ import {
   SunOutlined,
   MoonOutlined,
   ApiOutlined,
+  CloudServerOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import useAuthStore from '@/store/authStore';
 import useAppStore from '@/store/appStore';
+import UsageProgressCards from '@/components/common/UsageProgressCards';
 
 const { Header, Sider, Content } = Layout;
 
@@ -71,6 +73,11 @@ const DashboardLayout: React.FC = () => {
             key: '/admin/limits',
             icon: <SafetyOutlined />,
             label: '限额管理',
+          },
+          {
+            key: '/admin/backends',
+            icon: <CloudServerOutlined />,
+            label: 'LLM 节点',
           },
           {
             key: '/admin/mcp',
@@ -335,6 +342,7 @@ const DashboardLayout: React.FC = () => {
             zIndex: 1,
           }}
         >
+          <UsageProgressCards />
           <Outlet />
         </Content>
       </Layout>

@@ -65,13 +65,28 @@ func (h *LimitHandler) Upsert(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetMyLimits 获取当前用户的限额信息
+// GetMyLimits 获取当前用户的限额信息（兼容旧接口）
 // GET /api/v1/limits/my
 func (h *LimitHandler) GetMyLimits(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	deptID := middleware.GetDepartmentID(c)
 
 	data, err := h.limitService.GetMyLimits(userID, deptID)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	response.Success(c, data)
+}
+
+// GetMyProgress 获取当前用户的限额进度（新版，含重置时间）
+// GET /api/v1/limits/my/progress
+func (h *LimitHandler) GetMyProgress(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	deptID := middleware.GetDepartmentID(c)
+
+	data, err := h.limitService.GetLimitProgress(userID, deptID)
 	if err != nil {
 		handleServiceError(c, err)
 		return

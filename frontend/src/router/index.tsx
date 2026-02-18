@@ -13,6 +13,7 @@ import DepartmentsPage from '@/pages/admin/departments/DepartmentsPage';
 import LimitsPage from '@/pages/admin/limits/LimitsPage';
 import SystemPage from '@/pages/admin/system/SystemPage';
 import McpPage from '@/pages/admin/mcp/McpPage';
+import BackendsPage from '@/pages/admin/backends/BackendsPage';
 
 /** 应用路由配置 */
 const router = createBrowserRouter([
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
     children: [
       { path: 'departments', element: <DepartmentsPage /> },
       { path: 'limits', element: <LimitsPage /> },
+      { path: 'backends', element: <BackendsPage /> },
       { path: 'mcp', element: <McpPage /> },
       { path: 'system', element: <SystemPage /> },
     ],

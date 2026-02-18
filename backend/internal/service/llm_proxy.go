@@ -14,11 +14,14 @@ import (
 )
 
 // LLMProxyService LLM 代理业务逻辑
+// 集成负载均衡器和基于周期的限额系统
 type LLMProxyService struct {
 	providerManager *llm.ProviderManager
+	loadBalancer    *llm.LoadBalancer
 	usageRepo       *repository.UsageRepository
 	limitRepo       *repository.RateLimitRepository
 	keyRepo         *repository.APIKeyRepository
+	limitService    *LimitService
 	rdb             *redis.Client
 	logger          *zap.Logger
 }
@@ -26,17 +29,21 @@ type LLMProxyService struct {
 // NewLLMProxyService 创建 LLM 代理服务
 func NewLLMProxyService(
 	providerManager *llm.ProviderManager,
+	loadBalancer *llm.LoadBalancer,
 	usageRepo *repository.UsageRepository,
 	limitRepo *repository.RateLimitRepository,
 	keyRepo *repository.APIKeyRepository,
+	limitService *LimitService,
 	rdb *redis.Client,
 	logger *zap.Logger,
 ) *LLMProxyService {
 	return &LLMProxyService{
 		providerManager: providerManager,
+		loadBalancer:    loadBalancer,
 		usageRepo:       usageRepo,
 		limitRepo:       limitRepo,
 		keyRepo:         keyRepo,
+		limitService:    limitService,
 		rdb:             rdb,
 		logger:          logger,
 	}
@@ -48,34 +55,48 @@ func (s *LLMProxyService) GetProviderManager() *llm.ProviderManager {
 }
 
 // GetProviderForModel 根据模型名称获取合适的 Provider
-func (s *LLMProxyService) GetProviderForModel(modelName string) (llm.Provider, error) {
+// 优先使用负载均衡器选择；如果无可用节点，回退到 ProviderManager 静态路由
+func (s *LLMProxyService) GetProviderForModel(ctx context.Context, userID int64, modelName string) (llm.Provider, error) {
+	if s.loadBalancer != nil && s.loadBalancer.NodeCount() > 0 {
+		provider, err := s.loadBalancer.SelectProvider(ctx, userID, modelName)
+		if err == nil {
+			return provider, nil
+		}
+		s.logger.Warn("负载均衡选择失败，回退到静态路由",
+			zap.String("model", modelName), zap.Error(err))
+	}
 	return s.providerManager.RouteByModel(modelName)
 }
 
 // AcquireConcurrency 获取并发槽位
-// 返回 true 表示获取成功，false 表示已达并发上限
+// 从所有生效的限额规则中取最大并发值；长周期规则的并发值优先级更高
 func (s *LLMProxyService) AcquireConcurrency(ctx context.Context, userID int64, deptID *int64) (bool, error) {
-	// 获取用户的并发限制
-	maxConcurrency := 5 // 默认值
-	limit, err := s.limitRepo.GetEffectiveLimit(userID, deptID, model.PeriodDaily)
-	if err == nil && limit != nil {
-		maxConcurrency = limit.MaxConcurrency
+	maxConcurrency := 5
+
+	limits, err := s.limitRepo.GetAllEffectiveLimits(userID, deptID)
+	if err == nil && len(limits) > 0 {
+		// 取所有规则中最宽松的并发上限（任意一条允许即可）
+		best := 0
+		for _, l := range limits {
+			if l.MaxConcurrency > best {
+				best = l.MaxConcurrency
+			}
+		}
+		if best > 0 {
+			maxConcurrency = best
+		}
 	}
 
 	key := fmt.Sprintf("codemind:concurrency:%d", userID)
-
-	// 原子操作：INCR + 检查 + 条件 DECR
 	current, err := s.rdb.Incr(ctx, key).Result()
 	if err != nil {
 		s.logger.Error("Redis INCR 失败", zap.Error(err))
-		return true, nil // Redis 故障时降级放行
+		return true, nil
 	}
 
-	// 设置 TTL 防止计数泄漏
 	s.rdb.Expire(ctx, key, 5*time.Minute)
 
 	if current > int64(maxConcurrency) {
-		// 超出限制，回退计数
 		s.rdb.Decr(ctx, key)
 		return false, nil
 	}
@@ -91,56 +112,22 @@ func (s *LLMProxyService) ReleaseConcurrency(ctx context.Context, userID int64) 
 		s.logger.Error("Redis DECR 失败", zap.Error(err))
 		return
 	}
-	// 防止计数器变为负数
 	if result < 0 {
 		s.rdb.Set(ctx, key, 0, 5*time.Minute)
 	}
 }
 
 // CheckTokenQuota 检查 Token 用量配额
-// 返回 true 表示配额充足，false 表示已超限
+// 使用新版基于周期的限额系统
 func (s *LLMProxyService) CheckTokenQuota(ctx context.Context, userID int64, deptID *int64) (bool, error) {
-	// 检查每日配额
-	dailyLimit, err := s.limitRepo.GetEffectiveLimit(userID, deptID, model.PeriodDaily)
-	if err == nil && dailyLimit != nil && dailyLimit.MaxTokens > 0 {
-		today := time.Now().Format("2006-01-02")
-		usedKey := fmt.Sprintf("codemind:usage:%d:daily:%s", userID, today)
-
-		used, err := s.rdb.Get(ctx, usedKey).Int64()
-		if err != nil && err != redis.Nil {
-			s.logger.Warn("读取 Redis 用量失败，回退到数据库", zap.Error(err))
-			// 回退到数据库查询
-			used, _ = s.usageRepo.GetPeriodUsage(userID, "daily", today)
-		}
-
-		if used >= dailyLimit.MaxTokens {
-			return false, nil
-		}
-	}
-
-	// 检查每月配额
-	monthlyLimit, err := s.limitRepo.GetEffectiveLimit(userID, deptID, model.PeriodMonthly)
-	if err == nil && monthlyLimit != nil && monthlyLimit.MaxTokens > 0 {
-		month := time.Now().Format("2006-01")
-		usedKey := fmt.Sprintf("codemind:usage:%d:monthly:%s", userID, month)
-
-		used, err := s.rdb.Get(ctx, usedKey).Int64()
-		if err != nil && err != redis.Nil {
-			monthStart := time.Now().Format("2006-01") + "-01"
-			used, _ = s.usageRepo.GetPeriodUsage(userID, "monthly", monthStart)
-		}
-
-		if used >= monthlyLimit.MaxTokens {
-			return false, nil
-		}
-	}
-
-	return true, nil
+	return s.limitService.CheckAllQuotas(ctx, userID, deptID)
 }
 
 // RecordUsage 记录请求用量（异步调用）
+// 同时更新：用量明细表、每日汇总表、周期限额计数器
 func (s *LLMProxyService) RecordUsage(
 	userID, keyID int64,
+	deptID *int64,
 	modelName, requestType string,
 	usage *llm.Usage,
 	durationMs int,
@@ -166,24 +153,15 @@ func (s *LLMProxyService) RecordUsage(
 		s.logger.Error("写入用量明细失败", zap.Error(err), zap.Int64("user_id", userID))
 	}
 
-	// 2. 更新每日汇总（UPSERT）
-	today := time.Now().Truncate(24 * time.Hour)
+	// 2. 更新每日汇总
+	now := time.Now().In(time.FixedZone("CST", 8*3600))
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	if err := s.usageRepo.UpsertDaily(userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens); err != nil {
 		s.logger.Error("更新每日汇总失败", zap.Error(err), zap.Int64("user_id", userID))
 	}
 
-	// 3. 更新 Redis 计数器
-	todayStr := time.Now().Format("2006-01-02")
-	monthStr := time.Now().Format("2006-01")
-
-	dailyKey := fmt.Sprintf("codemind:usage:%d:daily:%s", userID, todayStr)
-	monthlyKey := fmt.Sprintf("codemind:usage:%d:monthly:%s", userID, monthStr)
-
-	s.rdb.IncrBy(ctx, dailyKey, int64(usage.TotalTokens))
-	s.rdb.Expire(ctx, dailyKey, 48*time.Hour)
-
-	s.rdb.IncrBy(ctx, monthlyKey, int64(usage.TotalTokens))
-	s.rdb.Expire(ctx, monthlyKey, 35*24*time.Hour)
+	// 3. 更新周期限额计数器
+	s.limitService.RecordCycleUsage(ctx, userID, deptID, usage.TotalTokens)
 
 	// 4. 更新 Key 最后使用时间
 	_ = s.keyRepo.UpdateLastUsed(keyID)

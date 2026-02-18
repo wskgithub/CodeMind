@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -37,11 +38,53 @@ const (
 // 支持两种认证方式：
 //   - Authorization: Bearer cm-xxx （OpenAI 兼容格式）
 //   - x-api-key: cm-xxx （Anthropic 原生格式）
-func APIKeyAuth(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
+func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// 自环检测：若请求来自 CodeMind 自身的 LLM Client 转发，立即拒绝
+		if c.GetHeader("X-CodeMind-Proxy") == "1" {
+			logger.Error("检测到请求自环：LLM 后端 base_url 可能指向了 CodeMind 自身，请检查 LLM 节点配置",
+				zap.String("path", c.Request.URL.Path),
+				zap.String("client_ip", c.ClientIP()),
+			)
+			c.JSON(502, gin.H{
+				"error": gin.H{
+					"message": "LLM 后端配置错误：base_url 不能指向 CodeMind 自身（检测到请求自环）",
+					"type":    "configuration_error",
+					"code":    "502",
+				},
+			})
+			c.Abort()
+			return
+		}
+
 		// 从 Header 提取 API Key（兼容 OpenAI 和 Anthropic 两种认证方式）
 		apiKey := extractAPIKey(c)
+		
+		// 调试日志：记录收到的请求头（生产环境应移除）
+		if logger != nil {
+			authHeader := c.GetHeader("Authorization")
+			xApiKey := c.GetHeader("x-api-key")
+			logger.Debug("API Key 认证请求",
+				zap.String("path", c.Request.URL.Path),
+				zap.String("authorization_header", authHeader),
+				zap.String("x_api_key_header", xApiKey),
+				zap.String("extracted_key_prefix", func() string {
+					if len(apiKey) > 10 {
+						return apiKey[:10] + "..."
+					}
+					return apiKey
+				}()),
+			)
+		}
+		
 		if apiKey == "" || !strings.HasPrefix(apiKey, "cm-") {
+			if logger != nil {
+				logger.Warn("API Key 格式无效",
+					zap.String("path", c.Request.URL.Path),
+					zap.Bool("is_empty", apiKey == ""),
+					zap.Bool("has_cm_prefix", strings.HasPrefix(apiKey, "cm-")),
+				)
+			}
 			response.Error(c, errcode.ErrAPIKeyInvalid)
 			c.Abort()
 			return
@@ -49,10 +92,22 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client) gin.HandlerFunc {
 
 		// 计算 Key 的 SHA-256 哈希
 		keyHash := crypto.HashAPIKey(apiKey)
+		
+		if logger != nil {
+			logger.Debug("API Key 哈希计算",
+				zap.String("key_hash_prefix", keyHash[:16]+"..."),
+			)
+		}
 
 		// 查询 Key 信息（优先从 Redis 缓存获取）
 		info, err := getAPIKeyInfo(c.Request.Context(), db, rdb, keyHash)
 		if err != nil {
+			if logger != nil {
+				logger.Warn("API Key 查询失败",
+					zap.String("key_hash_prefix", keyHash[:16]+"..."),
+					zap.Error(err),
+				)
+			}
 			response.Error(c, errcode.ErrAPIKeyInvalid)
 			c.Abort()
 			return
@@ -120,23 +175,35 @@ func getAPIKeyInfo(ctx context.Context, db *gorm.DB, rdb *redis.Client, keyHash 
 	}
 
 	// 2. 从数据库查询
+	// 使用原生 SQL 查询以避免 GORM 自动推断排序字段
 	var result struct {
-		KeyID        int64  `gorm:"column:key_id"`
-		KeyStatus    int16  `gorm:"column:key_status"`
-		UserID       int64  `gorm:"column:user_id"`
-		Username     string `gorm:"column:username"`
-		Role         string `gorm:"column:role"`
-		DepartmentID *int64 `gorm:"column:department_id"`
-		UserStatus   int16  `gorm:"column:user_status"`
-		ExpiresAt    *time.Time `gorm:"column:expires_at"`
+		KeyID        int64
+		KeyStatus    int16
+		UserID       int64
+		Username     string
+		Role         string
+		DepartmentID *int64
+		UserStatus   int16
+		ExpiresAt    *time.Time
 	}
 
-	err = db.Table("api_keys").
-		Select("api_keys.id as key_id, api_keys.status as key_status, api_keys.expires_at, "+
-			"users.id as user_id, users.username, users.role, users.department_id, users.status as user_status").
-		Joins("JOIN users ON users.id = api_keys.user_id AND users.deleted_at IS NULL").
-		Where("api_keys.key_hash = ?", keyHash).
-		First(&result).Error
+	query := `
+		SELECT
+			api_keys.id as key_id,
+			api_keys.status as key_status,
+			api_keys.expires_at,
+			users.id as user_id,
+			users.username,
+			users.role,
+			users.department_id,
+			users.status as user_status
+		FROM api_keys
+		JOIN users ON users.id = api_keys.user_id AND users.deleted_at IS NULL
+		WHERE api_keys.key_hash = $1
+		LIMIT 1
+	`
+
+	err = db.Raw(query, keyHash).Scan(&result).Error
 
 	if err != nil {
 		return nil, fmt.Errorf("API Key 查询失败: %w", err)

@@ -159,10 +159,12 @@ type KeyUsageQuery struct {
 // ──────────────────────────────────
 
 // UpsertRateLimitRequest 创建/更新限额配置请求
+// Period 为显示标签，PeriodHours 为实际周期时长
 type UpsertRateLimitRequest struct {
 	TargetType     string `json:"target_type" binding:"required,oneof=global department user"`
 	TargetID       int64  `json:"target_id"`
-	Period         string `json:"period" binding:"required,oneof=daily weekly monthly"`
+	Period         string `json:"period" binding:"required,oneof=daily weekly monthly custom"`
+	PeriodHours    int    `json:"period_hours" binding:"omitempty,min=1"`
 	MaxTokens      int64  `json:"max_tokens" binding:"required,min=0"`
 	MaxRequests    int    `json:"max_requests" binding:"omitempty,min=0"`
 	MaxConcurrency int    `json:"max_concurrency" binding:"omitempty,min=1"`
@@ -173,6 +175,40 @@ type UpsertRateLimitRequest struct {
 type LimitListQuery struct {
 	TargetType string `form:"target_type" binding:"omitempty,oneof=global department user"`
 	TargetID   *int64 `form:"target_id"`
+}
+
+// ──────────────────────────────────
+// LLM 后端管理请求
+// ──────────────────────────────────
+
+// CreateLLMBackendRequest 创建 LLM 后端请求
+type CreateLLMBackendRequest struct {
+	Name                 string `json:"name" binding:"required,min=2,max=100"`
+	DisplayName          string `json:"display_name" binding:"omitempty,max=200"`
+	BaseURL              string `json:"base_url" binding:"required,url,max=500"`
+	APIKey               string `json:"api_key"`
+	Format               string `json:"format" binding:"required,oneof=openai anthropic"`
+	Weight               int    `json:"weight" binding:"omitempty,min=1,max=10000"`
+	MaxConcurrency       int    `json:"max_concurrency" binding:"omitempty,min=1"`
+	HealthCheckURL       string `json:"health_check_url" binding:"omitempty,max=500"`
+	TimeoutSeconds       int    `json:"timeout_seconds" binding:"omitempty,min=1"`
+	StreamTimeoutSeconds int    `json:"stream_timeout_seconds" binding:"omitempty,min=1"`
+	ModelPatterns        string `json:"model_patterns" binding:"omitempty"`
+}
+
+// UpdateLLMBackendRequest 更新 LLM 后端请求
+type UpdateLLMBackendRequest struct {
+	DisplayName          *string `json:"display_name" binding:"omitempty,max=200"`
+	BaseURL              *string `json:"base_url" binding:"omitempty,url,max=500"`
+	APIKey               *string `json:"api_key"`
+	Format               *string `json:"format" binding:"omitempty,oneof=openai anthropic"`
+	Weight               *int    `json:"weight" binding:"omitempty,min=1,max=10000"`
+	MaxConcurrency       *int    `json:"max_concurrency" binding:"omitempty,min=1"`
+	Status               *int16  `json:"status" binding:"omitempty,oneof=0 1 2"`
+	HealthCheckURL       *string `json:"health_check_url" binding:"omitempty,max=500"`
+	TimeoutSeconds       *int    `json:"timeout_seconds" binding:"omitempty,min=1"`
+	StreamTimeoutSeconds *int    `json:"stream_timeout_seconds" binding:"omitempty,min=1"`
+	ModelPatterns        *string `json:"model_patterns"`
 }
 
 // ──────────────────────────────────

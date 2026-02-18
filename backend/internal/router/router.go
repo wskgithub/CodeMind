@@ -24,6 +24,7 @@ type Handlers struct {
 	System     *handler.SystemHandler
 	MCPAdmin   *handler.MCPAdminHandler
 	MCPGateway *handler.MCPGatewayHandler
+	LLMBackend *handler.LLMBackendHandler
 }
 
 // Setup 初始化路由
@@ -94,6 +95,7 @@ func Setup(
 		limits := authenticated.Group("/limits")
 		{
 			limits.GET("/my", handlers.Limit.GetMyLimits)
+			limits.GET("/my/progress", handlers.Limit.GetMyProgress)
 		}
 
 		// 公告查询（所有用户可查看已发布公告）
@@ -150,6 +152,12 @@ func Setup(
 
 			// 审计日志
 			system.GET("/audit-logs", handlers.System.ListAuditLogs)
+
+			// LLM 后端节点管理
+			system.GET("/llm-backends", handlers.LLMBackend.List)
+			system.POST("/llm-backends", handlers.LLMBackend.Create)
+			system.PUT("/llm-backends/:id", handlers.LLMBackend.Update)
+			system.DELETE("/llm-backends/:id", handlers.LLMBackend.Delete)
 		}
 
 		// MCP 服务管理（仅超级管理员）
@@ -173,7 +181,7 @@ func Setup(
 	// 使用 API Key 认证
 	// ──────────────────────────────────
 	mcpGateway := engine.Group("/mcp")
-	mcpGateway.Use(middleware.APIKeyAuth(db, rdb))
+	mcpGateway.Use(middleware.APIKeyAuth(db, rdb, logger))
 	{
 		mcpGateway.GET("/sse", handlers.MCPGateway.SSEConnect)
 		mcpGateway.POST("/message", handlers.MCPGateway.HandleMessage)
@@ -185,7 +193,7 @@ func Setup(
 	// 使用 API Key 认证
 	// ──────────────────────────────────
 	llmV1 := engine.Group("/v1")
-	llmV1.Use(middleware.APIKeyAuth(db, rdb))
+	llmV1.Use(middleware.APIKeyAuth(db, rdb, logger))
 	{
 		// OpenAI 兼容接口
 		llmV1.POST("/chat/completions", handlers.LLMProxy.ChatCompletions)

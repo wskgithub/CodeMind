@@ -137,7 +137,7 @@ type RankingItem struct {
 // 限额相关响应
 // ──────────────────────────────────
 
-// MyLimitResponse 当前用户限额信息
+// MyLimitResponse 当前用户限额信息（兼容旧接口）
 type MyLimitResponse struct {
 	Limits      map[string]LimitDetail `json:"limits"`
 	Concurrency ConcurrencyInfo        `json:"concurrency"`
@@ -155,6 +155,53 @@ type LimitDetail struct {
 type ConcurrencyInfo struct {
 	Max     int `json:"max"`
 	Current int `json:"current"`
+}
+
+// LimitProgressResponse 限额进度响应（新版，支持多规则 + 重置时间）
+type LimitProgressResponse struct {
+	Limits      []LimitProgressItem `json:"limits"`
+	Concurrency ConcurrencyInfo     `json:"concurrency"`
+	AnyExceeded bool                `json:"any_exceeded"`
+}
+
+// LimitProgressItem 单条限额规则的进度信息
+type LimitProgressItem struct {
+	RuleID          int64    `json:"rule_id"`
+	Period          string   `json:"period"`
+	PeriodHours     int      `json:"period_hours"`
+	MaxTokens       int64    `json:"max_tokens"`
+	UsedTokens      int64    `json:"used_tokens"`
+	RemainingTokens int64    `json:"remaining_tokens"`
+	UsagePercent    int      `json:"usage_percent"`
+	CycleStartAt    *int64   `json:"cycle_start_at"`
+	ResetAt         *int64   `json:"reset_at"`
+	ResetInHours    *float64 `json:"reset_in_hours"`
+	Exceeded        bool     `json:"exceeded"`
+}
+
+// ──────────────────────────────────
+// LLM 后端管理响应
+// ──────────────────────────────────
+
+// LLMBackendResponse LLM 后端信息
+type LLMBackendResponse struct {
+	ID                   int64  `json:"id"`
+	Name                 string `json:"name"`
+	DisplayName          string `json:"display_name"`
+	BaseURL              string `json:"base_url"`
+	HasAPIKey            bool   `json:"has_api_key"`
+	Format               string `json:"format"`
+	Weight               int    `json:"weight"`
+	MaxConcurrency       int    `json:"max_concurrency"`
+	ActiveConnections    int    `json:"active_connections"`
+	Status               int16  `json:"status"`
+	Healthy              bool   `json:"healthy"`
+	HealthCheckURL       string `json:"health_check_url"`
+	TimeoutSeconds       int    `json:"timeout_seconds"`
+	StreamTimeoutSeconds int    `json:"stream_timeout_seconds"`
+	ModelPatterns        string `json:"model_patterns"`
+	CreatedAt            string `json:"created_at"`
+	UpdatedAt            string `json:"updated_at"`
 }
 
 // ──────────────────────────────────

@@ -173,6 +173,7 @@ export interface RateLimit {
   target_type: 'global' | 'department' | 'user';
   target_id: number;
   period: string;
+  period_hours: number;
   max_tokens: number;
   max_requests: number;
   max_concurrency: number;
@@ -196,10 +197,53 @@ export interface ConcurrencyInfo {
   current: number;
 }
 
-/** 个人限额响应 */
+/** 个人限额响应（旧版兼容） */
 export interface MyLimitResponse {
   limits: Record<string, LimitDetail>;
   concurrency: ConcurrencyInfo;
+}
+
+/** 限额进度项（新版，含重置时间） */
+export interface LimitProgressItem {
+  rule_id: number;
+  period: string;
+  period_hours: number;
+  max_tokens: number;
+  used_tokens: number;
+  remaining_tokens: number;
+  usage_percent: number;
+  cycle_start_at: number | null;
+  reset_at: number | null;
+  reset_in_hours: number | null;
+  exceeded: boolean;
+}
+
+/** 限额进度响应 */
+export interface LimitProgressResponse {
+  limits: LimitProgressItem[];
+  concurrency: ConcurrencyInfo;
+  any_exceeded: boolean;
+}
+
+/** LLM 后端节点 */
+export interface LLMBackend {
+  id: number;
+  name: string;
+  display_name: string;
+  base_url: string;
+  has_api_key: boolean;
+  format: string;
+  weight: number;
+  max_concurrency: number;
+  active_connections: number;
+  status: number;
+  healthy: boolean;
+  health_check_url: string;
+  timeout_seconds: number;
+  stream_timeout_seconds: number;
+  model_patterns: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // ──────────────────────────────────

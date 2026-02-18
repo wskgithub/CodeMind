@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -18,7 +19,10 @@ type Client struct {
 }
 
 // NewClient 创建 LLM 客户端
+// baseURL 支持带或不带 /v1 后缀，内部统一去掉尾部的 /v1 及多余的斜杠，
+// 后续调用时会再拼接 /v1/chat/completions 等路径，避免重复。
 func NewClient(baseURL, apiKey string, timeoutSec, streamTimeoutSec int) *Client {
+	baseURL = normalizeBaseURL(baseURL)
 	return &Client{
 		baseURL: baseURL,
 		apiKey:  apiKey,
@@ -29,6 +33,41 @@ func NewClient(baseURL, apiKey string, timeoutSec, streamTimeoutSec int) *Client
 			Timeout: time.Duration(streamTimeoutSec) * time.Second,
 		},
 	}
+}
+
+// normalizeBaseURL 去掉 baseURL 末尾的 /v1（及任意 /vN）和多余的斜杠，
+// 使得拼接 /v1/chat/completions 等路径时不会出现双重 /v1。
+// 示例：
+//
+//	"http://host:8000/v1"  → "http://host:8000"
+//	"http://host:8000/v1/" → "http://host:8000"
+//	"http://host:8000"     → "http://host:8000"
+func normalizeBaseURL(u string) string {
+	u = strings.TrimRight(u, "/")
+	// 去掉末尾形如 /v1、/v2 … /v999 的版本段
+	for {
+		idx := strings.LastIndex(u, "/")
+		if idx < 0 {
+			break
+		}
+		seg := u[idx+1:]
+		// 匹配 vN 格式（v1、v2 等）
+		if len(seg) >= 2 && seg[0] == 'v' {
+			isVer := true
+			for _, c := range seg[1:] {
+				if c < '0' || c > '9' {
+					isVer = false
+					break
+				}
+			}
+			if isVer {
+				u = u[:idx]
+				continue
+			}
+		}
+		break
+	}
+	return strings.TrimRight(u, "/")
 }
 
 // ChatCompletion 非流式对话补全
@@ -95,15 +134,61 @@ func (c *Client) ListModels() (*ModelListResponse, error) {
 	return &resp, nil
 }
 
-// doRequest 发送 HTTP 请求到 LLM 服务
+// ──────────────────────────────────
+// 原始请求体透传方法
+// 直接转发客户端的完整 JSON，不做结构体序列化/反序列化，
+// 确保 tools、stream_options 等所有字段完整保留
+// ──────────────────────────────────
+
+// ChatCompletionRawAll 非流式对话补全（原始请求体透传）
+// 返回原始响应体和解析的 Usage，保留响应中的所有字段（包括 tool_calls 等）
+func (c *Client) ChatCompletionRawAll(rawBody []byte) (rawResp []byte, usage *Usage, err error) {
+	body, err := c.doRequestRaw("POST", "/v1/chat/completions", rawBody, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer body.Close()
+
+	rawResp, err = io.ReadAll(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取 LLM 响应失败: %w", err)
+	}
+
+	// 仅提取 usage 字段用于用量统计，不做完整反序列化
+	usage = ExtractUsageFromResponse(rawResp)
+	return rawResp, usage, nil
+}
+
+// ChatCompletionStreamRaw 流式对话补全（原始请求体透传）
+// 自动注入 stream_options.include_usage 以确保 LLM 返回用量信息
+func (c *Client) ChatCompletionStreamRaw(rawBody []byte) (io.ReadCloser, error) {
+	rawBody = EnsureStreamOptions(rawBody)
+	return c.doRequestRaw("POST", "/v1/chat/completions", rawBody, true)
+}
+
+// ──────────────────────────────────
+// HTTP 传输层
+// ──────────────────────────────────
+
+// doRequest 发送结构体请求到 LLM 服务（序列化后转发）
 func (c *Client) doRequest(method, path string, payload interface{}, isStream bool) (io.ReadCloser, error) {
-	var bodyReader io.Reader
+	var rawBody []byte
 	if payload != nil {
 		data, err := json.Marshal(payload)
 		if err != nil {
 			return nil, fmt.Errorf("序列化请求体失败: %w", err)
 		}
-		bodyReader = bytes.NewReader(data)
+		rawBody = data
+	}
+	return c.doRequestRaw(method, path, rawBody, isStream)
+}
+
+// doRequestRaw 发送原始字节请求到 LLM 服务
+// 这是所有 HTTP 请求的底层方法，doRequest 也基于此方法实现
+func (c *Client) doRequestRaw(method, path string, rawBody []byte, isStream bool) (io.ReadCloser, error) {
+	var bodyReader io.Reader
+	if rawBody != nil {
+		bodyReader = bytes.NewReader(rawBody)
 	}
 
 	url := c.baseURL + path
@@ -113,6 +198,8 @@ func (c *Client) doRequest(method, path string, payload interface{}, isStream bo
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	// 标记此请求由 CodeMind 转发，用于下游检测自环
+	req.Header.Set("X-CodeMind-Proxy", "1")
 	if c.apiKey != "" {
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}

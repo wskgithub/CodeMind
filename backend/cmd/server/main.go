@@ -11,6 +11,7 @@ import (
 
 	"codemind/internal/config"
 	"codemind/internal/handler"
+	"codemind/internal/model"
 	jwtPkg "codemind/internal/pkg/jwt"
 	"codemind/internal/repository"
 	"codemind/internal/router"
@@ -68,6 +69,13 @@ func main() {
 	}
 	logger.Info("数据库连接成功")
 
+	// 自动迁移：确保新增字段和表结构存在，对已有表只做增量变更不删除数据
+	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}); err != nil {
+		logger.Warn("AutoMigrate 失败", zap.Error(err))
+	}
+	// 修复旧数据：为 period_hours=0 的限额记录补充正确的周期小时数
+	fixPeriodHours(db, logger)
+
 	// ──────────────────────────────────
 	// 4. 连接 Redis
 	// ──────────────────────────────────
@@ -97,23 +105,33 @@ func main() {
 	sysConfigRepo := repository.NewSystemRepository(db)
 	annRepo := repository.NewAnnouncementRepository(db)
 	mcpRepo := repository.NewMCPRepository(db)
+	backendRepo := repository.NewLLMBackendRepository(db)
 
 	// ──────────────────────────────────
-	// 7. 初始化 Service 层
+	// 7. 初始化负载均衡器
+	// ──────────────────────────────────
+	loadBalancer := llm.NewLoadBalancer(rdb, logger)
+
+	// ──────────────────────────────────
+	// 8. 初始化 Service 层
 	// ──────────────────────────────────
 	authService := service.NewAuthService(userRepo, auditRepo, jwtManager, logger)
 	userService := service.NewUserService(userRepo, deptRepo, auditRepo, logger)
 	deptService := service.NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, logger)
-	llmProxyService := service.NewLLMProxyService(providerManager, usageRepo, limitRepo, apiKeyRepo, rdb, logger)
-	statsService := service.NewStatsService(usageRepo, userRepo, deptRepo, apiKeyRepo, logger)
 	limitService := service.NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
+	llmProxyService := service.NewLLMProxyService(providerManager, loadBalancer, usageRepo, limitRepo, apiKeyRepo, limitService, rdb, logger)
+	statsService := service.NewStatsService(usageRepo, userRepo, deptRepo, apiKeyRepo, logger)
 	systemService := service.NewSystemService(sysConfigRepo, auditRepo, annRepo, logger)
 	mcpProxy := mcpPkg.NewProxy(logger)
 	mcpService := service.NewMCPService(mcpRepo, mcpProxy, logger)
+	llmBackendService := service.NewLLMBackendService(backendRepo, auditRepo, loadBalancer, logger)
+
+	// 从数据库加载 LLM 后端节点到负载均衡器
+	llmBackendService.RefreshLoadBalancer()
 
 	// ──────────────────────────────────
-	// 8. 初始化 Handler 层
+	// 9. 初始化 Handler 层
 	// ──────────────────────────────────
 	handlers := &router.Handlers{
 		Auth:       handler.NewAuthHandler(authService),
@@ -126,10 +144,11 @@ func main() {
 		System:     handler.NewSystemHandler(systemService),
 		MCPAdmin:   handler.NewMCPAdminHandler(mcpService, logger),
 		MCPGateway: handler.NewMCPGatewayHandler(mcpService, logger),
+		LLMBackend: handler.NewLLMBackendHandler(llmBackendService),
 	}
 
 	// ──────────────────────────────────
-	// 9. 初始化 HTTP 引擎
+	// 10. 初始化 HTTP 引擎
 	// ──────────────────────────────────
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
@@ -139,7 +158,7 @@ func main() {
 	router.Setup(engine, handlers, jwtManager, db, rdb, logger)
 
 	// ──────────────────────────────────
-	// 10. 启动 HTTP 服务（优雅关停）
+	// 11. 启动 HTTP 服务（优雅关停）
 	// ──────────────────────────────────
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
@@ -244,6 +263,53 @@ func initProviderManager(cfg *config.Config, logger *zap.Logger) *llm.ProviderMa
 
 	logger.Info(manager.DebugRoutes())
 	return manager
+}
+
+// fixPeriodHours 修复 rate_limits 表的 period_hours 字段及唯一索引
+// 步骤：
+//  1. 为 period_hours=0 的旧记录从 period 标签填充正确的小时数
+//  2. 若旧的 (target_type, target_id, period) 唯一索引存在则删除
+//  3. 确保新的 (target_type, target_id, period_hours) 唯一索引存在
+func fixPeriodHours(db *gorm.DB, logger *zap.Logger) {
+	// 1. 补充旧数据的 period_hours
+	periodMap := map[string]int{
+		"daily": 24, "weekly": 168, "monthly": 720,
+	}
+	for period, hours := range periodMap {
+		result := db.Exec(
+			"UPDATE rate_limits SET period_hours = ? WHERE period = ? AND (period_hours = 0 OR period_hours IS NULL)",
+			hours, period,
+		)
+		if result.RowsAffected > 0 {
+			logger.Info("修复 period_hours 旧数据",
+				zap.String("period", period),
+				zap.Int("hours", hours),
+				zap.Int64("rows", result.RowsAffected),
+			)
+		}
+	}
+
+	// 2. 删除以 period 列结尾的旧唯一索引（判断 indexdef 包含 "period)" 而非 "period_hours)"）
+	db.Exec(`
+		DO $$ BEGIN
+			IF EXISTS (
+				SELECT 1 FROM pg_indexes
+				WHERE tablename  = 'rate_limits'
+				  AND indexname  = 'idx_rate_limits_target'
+				  AND indexdef   NOT LIKE '%period_hours%'
+			) THEN
+				DROP INDEX idx_rate_limits_target;
+			END IF;
+		END $$;
+	`)
+
+	// 3. 创建新的唯一索引（幂等，已存在则跳过）
+	if err := db.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_rate_limits_target
+		ON rate_limits(target_type, target_id, period_hours);
+	`).Error; err != nil {
+		logger.Warn("创建 idx_rate_limits_target 索引失败", zap.Error(err))
+	}
 }
 
 // initRedis 初始化 Redis 连接

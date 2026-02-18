@@ -105,12 +105,12 @@ func (r *UsageRepository) GetMonthlyStats(userID *int64, deptID *int64, startDat
 	return rows, err
 }
 
-// GetTodayTotalTokens 获取今日总用量
+// GetTodayTotalTokens 获取今日总用量（Asia/Shanghai 时区）
 func (r *UsageRepository) GetTodayTotalTokens(userID *int64) (int64, error) {
 	var total int64
 	query := r.db.Table("token_usage_daily").
 		Select("COALESCE(SUM(total_tokens), 0)").
-		Where("usage_date = CURRENT_DATE")
+		Where("usage_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai')::date")
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
 	}
@@ -118,12 +118,12 @@ func (r *UsageRepository) GetTodayTotalTokens(userID *int64) (int64, error) {
 	return total, err
 }
 
-// GetTodayRequestCount 获取今日请求总数
+// GetTodayRequestCount 获取今日请求总数（Asia/Shanghai 时区）
 func (r *UsageRepository) GetTodayRequestCount(userID *int64) (int64, error) {
 	var count int64
 	query := r.db.Table("token_usage_daily").
 		Select("COALESCE(SUM(request_count), 0)").
-		Where("usage_date = CURRENT_DATE")
+		Where("usage_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai')::date")
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
 	}
@@ -131,22 +131,22 @@ func (r *UsageRepository) GetTodayRequestCount(userID *int64) (int64, error) {
 	return count, err
 }
 
-// GetTodayActiveUsers 获取今日活跃用户数
+// GetTodayActiveUsers 获取今日活跃用户数（Asia/Shanghai 时区）
 func (r *UsageRepository) GetTodayActiveUsers() (int64, error) {
 	var count int64
 	err := r.db.Table("token_usage_daily").
-		Where("usage_date = CURRENT_DATE").
+		Where("usage_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai')::date").
 		Distinct("user_id").
 		Count(&count).Error
 	return count, err
 }
 
-// GetMonthTotalTokens 获取本月总用量
+// GetMonthTotalTokens 获取本月总用量（Asia/Shanghai 时区）
 func (r *UsageRepository) GetMonthTotalTokens(userID *int64) (int64, error) {
 	var total int64
 	query := r.db.Table("token_usage_daily").
 		Select("COALESCE(SUM(total_tokens), 0)").
-		Where("usage_date >= DATE_TRUNC('month', CURRENT_DATE)")
+		Where("usage_date >= DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai')")
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
 	}
@@ -154,12 +154,12 @@ func (r *UsageRepository) GetMonthTotalTokens(userID *int64) (int64, error) {
 	return total, err
 }
 
-// GetMonthRequestCount 获取本月请求总数
+// GetMonthRequestCount 获取本月请求总数（Asia/Shanghai 时区）
 func (r *UsageRepository) GetMonthRequestCount(userID *int64) (int64, error) {
 	var count int64
 	query := r.db.Table("token_usage_daily").
 		Select("COALESCE(SUM(request_count), 0)").
-		Where("usage_date >= DATE_TRUNC('month', CURRENT_DATE)")
+		Where("usage_date >= DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai')")
 	if userID != nil {
 		query = query.Where("user_id = ?", *userID)
 	}
@@ -167,11 +167,11 @@ func (r *UsageRepository) GetMonthRequestCount(userID *int64) (int64, error) {
 	return count, err
 }
 
-// GetMonthActiveUsers 获取本月活跃用户数
+// GetMonthActiveUsers 获取本月活跃用户数（Asia/Shanghai 时区）
 func (r *UsageRepository) GetMonthActiveUsers() (int64, error) {
 	var count int64
 	err := r.db.Table("token_usage_daily").
-		Where("usage_date >= DATE_TRUNC('month', CURRENT_DATE)").
+		Where("usage_date >= DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai')").
 		Distinct("user_id").
 		Count(&count).Error
 	return count, err
@@ -237,13 +237,14 @@ func (r *UsageRepository) GetPeriodUsage(userID int64, period string, periodKey 
 }
 
 // GetKeyUsageStats 获取指定 Key 的用量统计
+// 使用 Asia/Shanghai 时区提取日期，确保与每日汇总表一致
 func (r *UsageRepository) GetKeyUsageStats(keyID int64, startDate, endDate time.Time) ([]DailyStatRow, error) {
 	var rows []DailyStatRow
 
 	err := r.db.Table("token_usage").
-		Select("DATE(created_at) as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, COUNT(*) as request_count").
+		Select("(created_at AT TIME ZONE 'Asia/Shanghai')::date as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, COUNT(*) as request_count").
 		Where("api_key_id = ? AND created_at BETWEEN ? AND ?", keyID, startDate, endDate).
-		Group("DATE(created_at)").
+		Group("(created_at AT TIME ZONE 'Asia/Shanghai')::date").
 		Order("usage_date ASC").
 		Scan(&rows).Error
 	return rows, err

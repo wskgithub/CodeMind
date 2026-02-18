@@ -5,6 +5,7 @@ import (
 
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/timezone"
 	"codemind/internal/repository"
 
 	"go.uber.org/zap"
@@ -143,7 +144,7 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 
 // GetRanking 获取用量排行榜
 func (s *StatsService) GetRanking(query *dto.RankingQuery, operatorDeptID *int64) ([]dto.RankingItem, error) {
-	now := time.Now()
+	now := timezone.Now()
 	startDate, endDate := s.getPeriodRange(now, query.Period)
 	limit := query.GetLimit()
 
@@ -178,8 +179,10 @@ func (s *StatsService) GetRanking(query *dto.RankingQuery, operatorDeptID *int64
 }
 
 // parseDateRange 解析日期范围，无参数时使用默认值
+// 注意：time.Parse 返回 UTC 时间，这对 DATE 类型比较无影响；
+// 未指定日期时使用 Asia/Shanghai 时区的当前时间作为默认范围
 func (s *StatsService) parseDateRange(startStr, endStr, period string) (time.Time, time.Time) {
-	now := time.Now()
+	now := timezone.Now()
 	var startDate, endDate time.Time
 
 	if endStr != "" {

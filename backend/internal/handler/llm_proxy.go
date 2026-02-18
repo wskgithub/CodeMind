@@ -37,6 +37,11 @@ func NewLLMProxyHandler(proxyService *service.LLMProxyService, logger *zap.Logge
 
 // ChatCompletions 对话补全代理（OpenAI 格式）
 // POST /v1/chat/completions
+//
+// 采用「原始请求体透传」模式：
+//   - 只解析路由所需的最小字段（model、stream）
+//   - 将完整的原始 JSON 转发给 LLM，确保 tools、stream_options 等所有字段保留
+//   - 流式请求自动注入 stream_options.include_usage 以获取用量信息
 func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -44,14 +49,26 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	apiKeyID := keyID.(int64)
 	deptID := middleware.GetDepartmentID(c)
 
-	// 1. 解析请求体
-	var req llm.ChatCompletionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// 1. 读取原始请求体（保留所有字段，用于透传给 LLM）
+	rawBody, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体读取失败")
+		return
+	}
+
+	// 2. 清理对话历史中的 thinking 内容
+	// Thinking 模型（如 Qwen3-*-Thinking）会在 assistant 消息中留下大量 <think> 内容，
+	// 这些内容在多轮对话中会填满上下文窗口，导致实际对话被截断、上下文丢失
+	rawBody = llm.CleanThinkingFromHistory(rawBody)
+
+	// 3. 仅提取路由所需的最小元数据（model、stream）
+	meta, err := llm.ExtractRequestMeta(rawBody)
+	if err != nil {
 		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
 		return
 	}
 
-	// 2. 检查 Token 配额
+	// 4. 检查 Token 配额
 	allowed, err := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("配额检查失败", zap.Error(err))
@@ -61,7 +78,7 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
-	// 3. 获取并发槽位
+	// 5. 获取并发槽位
 	acquired, err := h.proxyService.AcquireConcurrency(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("并发控制失败", zap.Error(err))
@@ -72,9 +89,10 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	}
 	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
 
-	// 4. 根据模型名路由到合适的 Provider
-	modelName := req.Model
-	provider, err := h.proxyService.GetProviderForModel(modelName)
+	// 6. 根据模型名路由到合适的 Provider（集成负载均衡）
+	modelName := meta.Model
+	ctx := c.Request.Context()
+	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
 		h.logger.Error("获取 Provider 失败", zap.Error(err), zap.String("model", modelName))
 		h.sendOpenAIError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
@@ -87,22 +105,21 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 		zap.String("format", string(provider.Format())),
 	)
 
-	// 5. 根据 Provider 格式和流式模式分别处理
-	ctx := c.Request.Context()
-	if req.Stream {
-		h.handleStreamChatWithProvider(c, ctx, provider, &req, userID, apiKeyID, modelName, startTime)
+	// 7. 根据流式模式分别处理（透传原始请求体）
+	if meta.Stream {
+		h.handleStreamChatRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleNonStreamChatWithProvider(c, ctx, provider, &req, userID, apiKeyID, modelName, startTime)
+		h.handleNonStreamChatRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
-// handleNonStreamChatWithProvider 使用 Provider 处理非流式对话
-func (h *LLMProxyHandler) handleNonStreamChatWithProvider(
+// handleNonStreamChatRaw 非流式对话 — 原始请求体透传
+func (h *LLMProxyHandler) handleNonStreamChatRaw(
 	c *gin.Context, ctx context.Context, provider llm.Provider,
-	req *llm.ChatCompletionRequest,
-	userID, apiKeyID int64, modelName string, startTime time.Time,
+	rawBody []byte,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
-	resp, err := provider.ChatCompletion(ctx, req)
+	rawResp, usage, err := provider.ChatCompletionRaw(ctx, rawBody)
 	durationMs := int(time.Since(startTime).Milliseconds())
 
 	if err != nil {
@@ -110,19 +127,19 @@ func (h *LLMProxyHandler) handleNonStreamChatWithProvider(
 		return
 	}
 
-	go h.proxyService.RecordUsage(userID, apiKeyID, modelName, "chat_completion", resp.Usage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 
-	c.JSON(http.StatusOK, resp)
+	c.Data(http.StatusOK, "application/json", rawResp)
 }
 
-// handleStreamChatWithProvider 使用 Provider 处理流式对话（SSE）
-func (h *LLMProxyHandler) handleStreamChatWithProvider(
+// handleStreamChatRaw 流式对话（SSE）— 原始请求体透传
+func (h *LLMProxyHandler) handleStreamChatRaw(
 	c *gin.Context, ctx context.Context, provider llm.Provider,
-	req *llm.ChatCompletionRequest,
-	userID, apiKeyID int64, modelName string, startTime time.Time,
+	rawBody []byte,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
-	body, err := provider.ChatCompletionStream(ctx, req)
+	body, err := provider.ChatCompletionStreamRaw(ctx, rawBody)
 	if err != nil {
 		durationMs := int(time.Since(startTime).Milliseconds())
 		h.handleLLMError(c, err, userID, apiKeyID, modelName, "chat_completion", durationMs)
@@ -143,12 +160,12 @@ func (h *LLMProxyHandler) handleStreamChatWithProvider(
 		// 上游返回 Anthropic 格式流 → 转换为 OpenAI 格式再返回
 		totalUsage = h.pipeAnthropicStreamToOpenAI(c, body, modelName)
 	} else {
-		// 上游返回 OpenAI 格式流 → 直接转发
+		// 上游返回 OpenAI 格式流 → 直接转发（SSE 行本身就是原始数据，tool_calls 等自然保留）
 		totalUsage = h.pipeOpenAIStream(c, body)
 	}
 
 	durationMs := int(time.Since(startTime).Milliseconds())
-	go h.proxyService.RecordUsage(userID, apiKeyID, modelName, "chat_completion", totalUsage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", totalUsage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 }
 
@@ -181,13 +198,12 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
 
 	modelName := req.Model
-	provider, err := h.proxyService.GetProviderForModel(modelName)
+	ctx := c.Request.Context()
+	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
 		h.sendOpenAIError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
 		return
 	}
-
-	ctx := c.Request.Context()
 
 	if req.Stream {
 		body, err := provider.CompletionStream(ctx, &req)
@@ -224,7 +240,7 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 			h.handleLLMError(c, err, userID, apiKeyID, modelName, "completion", durationMs)
 			return
 		}
-		go h.proxyService.RecordUsage(userID, apiKeyID, modelName, "completion", resp.Usage, durationMs)
+		go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", resp.Usage, durationMs)
 		go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 		c.JSON(http.StatusOK, resp)
 	}
@@ -287,9 +303,10 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	}
 	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
 
-	// 4. 路由到 Provider
+	// 4. 路由到 Provider（集成负载均衡）
 	modelName := req.Model
-	provider, err := h.proxyService.GetProviderForModel(modelName)
+	ctx := c.Request.Context()
+	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
 		h.sendAnthropicError(c, http.StatusServiceUnavailable, "api_error", "没有可用的 LLM Provider")
 		return
@@ -301,13 +318,11 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 		zap.String("format", string(provider.Format())),
 	)
 
-	ctx := c.Request.Context()
-
 	// 5. 流式/非流式处理
 	if req.Stream {
-		h.handleAnthropicStream(c, ctx, provider, &req, userID, apiKeyID, modelName, startTime)
+		h.handleAnthropicStream(c, ctx, provider, &req, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleAnthropicNonStream(c, ctx, provider, &req, userID, apiKeyID, modelName, startTime)
+		h.handleAnthropicNonStream(c, ctx, provider, &req, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
@@ -315,7 +330,7 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 func (h *LLMProxyHandler) handleAnthropicNonStream(
 	c *gin.Context, ctx context.Context, provider llm.Provider,
 	req *llm.AnthropicMessagesRequest,
-	userID, apiKeyID int64, modelName string, startTime time.Time,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
 	resp, err := provider.AnthropicMessages(ctx, req)
 	durationMs := int(time.Since(startTime).Milliseconds())
@@ -325,13 +340,12 @@ func (h *LLMProxyHandler) handleAnthropicNonStream(
 		return
 	}
 
-	// 转换用量
 	var usage *llm.Usage
 	if resp.Usage != nil {
 		usage = resp.Usage.ToUsage()
 	}
 
-	go h.proxyService.RecordUsage(userID, apiKeyID, modelName, "anthropic_messages", usage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 
 	c.JSON(http.StatusOK, resp)
@@ -341,7 +355,7 @@ func (h *LLMProxyHandler) handleAnthropicNonStream(
 func (h *LLMProxyHandler) handleAnthropicStream(
 	c *gin.Context, ctx context.Context, provider llm.Provider,
 	req *llm.AnthropicMessagesRequest,
-	userID, apiKeyID int64, modelName string, startTime time.Time,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
 	body, err := provider.AnthropicMessagesStream(ctx, req)
 	if err != nil {
@@ -368,7 +382,7 @@ func (h *LLMProxyHandler) handleAnthropicStream(
 	}
 
 	durationMs := int(time.Since(startTime).Milliseconds())
-	go h.proxyService.RecordUsage(userID, apiKeyID, modelName, "anthropic_messages", totalUsage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", totalUsage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 }
 

@@ -108,12 +108,8 @@ const ConfigsTab = () => {
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
 
-  // 配置项中文标题映射
+  // 配置项中文标题映射（仅展示系统级配置，LLM 相关已由节点管理页独立维护）
   const configLabels: Record<string, { label: string; description?: string }> = {
-    'llm.api_key': { label: 'LLM API 密钥', description: '用于访问 LLM 服务的 API 密钥' },
-    'llm.base_url': { label: 'LLM 服务地址', description: 'LLM 服务的基础 URL' },
-    'llm.default_model': { label: '默认模型', description: '系统默认使用的 LLM 模型名称' },
-    'llm.models': { label: '可用模型列表', description: '支持的模型列表（JSON 数组格式）' },
     'system.default_concurrency': { label: '默认并发数', description: '用户默认的最大并发请求数' },
     'system.force_change_password': { label: '强制修改密码', description: '用户首次登录是否强制修改密码（true/false）' },
     'system.max_keys_per_user': { label: '每用户最大密钥数', description: '每个用户可创建的最大 API Key 数量' },
@@ -130,9 +126,10 @@ const ConfigsTab = () => {
     setLoading(true);
     try {
       const res = await getConfigs();
-      const data = res.data.data || [];
+      const data = (res.data.data || []).filter(
+        (c) => !c.config_key.startsWith('llm.')
+      );
       setConfigs(data);
-      // 将配置项设置到表单
       const values: Record<string, string> = {};
       data.forEach((c) => {
         values[c.config_key] = c.config_value;
