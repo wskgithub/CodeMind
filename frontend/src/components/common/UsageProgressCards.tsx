@@ -212,8 +212,11 @@ const UsageProgressCards: React.FC = () => {
     return null;
   }
 
+  // 按周期小时数排序，保证卡片顺序稳定（短周期在前，长周期在后）
+  const sortedLimits = [...data.limits].sort((a, b) => a.period_hours - b.period_hours);
+
   // 根据卡片数量自适应 grid 列数
-  const count = data.limits.length;
+  const count = sortedLimits.length;
   const getGridCols = () => {
     if (count === 1) return 'repeat(1, 1fr)';
     if (count === 2) return 'repeat(2, 1fr)';
@@ -230,7 +233,7 @@ const UsageProgressCards: React.FC = () => {
           gap: 12,
         }}
       >
-        {data.limits.map((item, index) => (
+        {sortedLimits.map((item, index) => (
           <div key={item.rule_id} style={{ animationDelay: `${index * 0.05}s` }}>
             <LimitCard item={item} />
           </div>
