@@ -14,6 +14,7 @@ import LimitsPage from '@/pages/admin/limits/LimitsPage';
 import SystemPage from '@/pages/admin/system/SystemPage';
 import McpPage from '@/pages/admin/mcp/McpPage';
 import BackendsPage from '@/pages/admin/backends/BackendsPage';
+import MonitorPage from '@/pages/admin/monitor/MonitorPage';
 
 /** 应用路由配置 */
 const router = createBrowserRouter([
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
       { path: 'backends', element: <BackendsPage /> },
       { path: 'mcp', element: <McpPage /> },
       { path: 'system', element: <SystemPage /> },
+      { path: 'monitor', element: <MonitorPage /> },
     ],
   },
   // 未匹配路由重定向到首页

@@ -25,6 +25,7 @@ type Handlers struct {
 	MCPAdmin   *handler.MCPAdminHandler
 	MCPGateway *handler.MCPGatewayHandler
 	LLMBackend *handler.LLMBackendHandler
+	Monitor    *handler.MonitorHandler
 }
 
 // Setup 初始化路由
@@ -42,6 +43,11 @@ func Setup(
 	engine.Use(middleware.Recovery(logger))
 	engine.Use(middleware.CORS())
 	engine.Use(middleware.Logger(logger))
+	
+	// 请求性能监控中间件（如果提供了 Monitor Handler）
+	if handlers.Monitor != nil {
+		engine.Use(middleware.RequestMonitor(handlers.Monitor))
+	}
 
 	// ──────────────────────────────────
 	// 健康检查（无需认证）
@@ -174,6 +180,17 @@ func Setup(
 			mcpAdmin.GET("/access-rules", handlers.MCPAdmin.ListAccessRules)
 			mcpAdmin.POST("/access-rules", handlers.MCPAdmin.SetAccessRule)
 			mcpAdmin.DELETE("/access-rules/:id", handlers.MCPAdmin.DeleteAccessRule)
+		}
+
+		// 系统监控（仅超级管理员）
+		monitorGroup := authenticated.Group("/monitor")
+		monitorGroup.Use(middleware.RequireAdmin())
+		{
+			monitorGroup.GET("/dashboard", handlers.Monitor.DashboardSummary)
+			monitorGroup.GET("/system", handlers.Monitor.SystemMetrics)
+			monitorGroup.GET("/requests", handlers.Monitor.RequestMetrics)
+			monitorGroup.GET("/llm-nodes", handlers.Monitor.LLMNodeMetrics)
+			monitorGroup.GET("/health", handlers.Monitor.HealthCheck)
 		}
 	}
 

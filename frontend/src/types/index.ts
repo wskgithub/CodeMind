@@ -355,3 +355,102 @@ export interface UpdateMCPServiceRequest {
   auth_type?: string;
   auth_config?: Record<string, unknown>;
 }
+
+// ──────────────────────────────────
+// 系统监控类型
+// ──────────────────────────────────
+
+/** CPU 指标 */
+export interface CPUMetrics {
+  usage_percent: number;
+  core_count: number;
+  model_name: string;
+}
+
+/** 内存指标 */
+export interface MemoryMetrics {
+  total_gb: number;
+  used_gb: number;
+  free_gb: number;
+  usage_percent: number;
+}
+
+/** 磁盘指标 */
+export interface DiskMetrics {
+  mount_point: string;
+  device: string;
+  total_gb: number;
+  used_gb: number;
+  free_gb: number;
+  usage_percent: number;
+}
+
+/** 网络指标 */
+export interface NetworkMetrics {
+  interface_name: string;
+  bytes_sent_mb: number;
+  bytes_recv_mb: number;
+  packets_sent: number;
+  packets_recv: number;
+}
+
+/** 系统负载指标 */
+export interface LoadMetrics {
+  load_1: number;
+  load_5: number;
+  load_15: number;
+}
+
+/** 系统指标汇总 */
+export interface SystemMetricsSummary {
+  cpu_usage?: CPUMetrics;
+  memory_usage?: MemoryMetrics;
+  disk_usage: DiskMetrics[];
+  network_io?: NetworkMetrics;
+  load_average?: LoadMetrics;
+  recorded_at: string;
+}
+
+/** 请求性能指标汇总 */
+export interface RequestMetricsSummary {
+  qps: number;
+  avg_response_time: number;
+  p95_response_time: number;
+  p99_response_time: number;
+  total_requests: number;
+  error_rate: number;
+  status_codes: Record<number, number>;
+  time_range: {
+    start: string;
+    end: string;
+  };
+}
+
+/** LLM 节点汇总 */
+export interface LLMNodeSummary {
+  node_id: string;
+  node_name: string;
+  status: 'online' | 'offline' | 'busy' | 'error' | 'idle';
+  gpu_utilization: number;
+  gpu_total_memory_gb: number;
+  gpu_used_memory_gb: number;
+  cpu_usage_percent: number;
+  memory_usage_percent: number;
+  requests_per_min: number;
+  avg_response_time_ms: number;
+  active_requests: number;
+  model_count: number;
+  loaded_models: string[];
+  version: string;
+  last_seen_at: string;
+}
+
+/** 监控仪表盘汇总数据 */
+export interface DashboardSummary {
+  system_status: SystemMetricsSummary;
+  request_metrics: RequestMetricsSummary;
+  llm_nodes: LLMNodeSummary[];
+  active_nodes: number;
+  total_nodes: number;
+  updated_at: string;
+}

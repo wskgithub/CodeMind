@@ -12,6 +12,7 @@ import (
 	"codemind/internal/config"
 	"codemind/internal/handler"
 	"codemind/internal/model"
+	"codemind/internal/model/monitor"
 	jwtPkg "codemind/internal/pkg/jwt"
 	"codemind/internal/repository"
 	"codemind/internal/router"
@@ -70,7 +71,7 @@ func main() {
 	logger.Info("数据库连接成功")
 
 	// 自动迁移：确保新增字段和表结构存在，对已有表只做增量变更不删除数据
-	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}); err != nil {
+	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}, &monitor.SystemMetric{}, &monitor.LLMNodeMetric{}); err != nil {
 		logger.Warn("AutoMigrate 失败", zap.Error(err))
 	}
 	// 修复旧数据：为 period_hours=0 的限额记录补充正确的周期小时数
@@ -106,6 +107,7 @@ func main() {
 	annRepo := repository.NewAnnouncementRepository(db)
 	mcpRepo := repository.NewMCPRepository(db)
 	backendRepo := repository.NewLLMBackendRepository(db)
+	monitorRepo := repository.NewMonitorRepository(db)
 
 	// ──────────────────────────────────
 	// 7. 初始化负载均衡器
@@ -126,6 +128,7 @@ func main() {
 	mcpProxy := mcpPkg.NewProxy(logger)
 	mcpService := service.NewMCPService(mcpRepo, mcpProxy, logger)
 	llmBackendService := service.NewLLMBackendService(backendRepo, auditRepo, loadBalancer, logger)
+	monitorService := service.NewMonitorService(monitorRepo, usageRepo, rdb, logger)
 
 	// 从数据库加载 LLM 后端节点到负载均衡器
 	llmBackendService.RefreshLoadBalancer()
@@ -145,6 +148,7 @@ func main() {
 		MCPAdmin:   handler.NewMCPAdminHandler(mcpService, logger),
 		MCPGateway: handler.NewMCPGatewayHandler(mcpService, logger),
 		LLMBackend: handler.NewLLMBackendHandler(llmBackendService),
+		Monitor:    handler.NewMonitorHandler(monitorService, logger),
 	}
 
 	// ──────────────────────────────────

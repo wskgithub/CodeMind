@@ -15,6 +15,7 @@ import {
   MoonOutlined,
   ApiOutlined,
   CloudServerOutlined,
+  MonitorOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import useAuthStore from '@/store/authStore';
@@ -88,6 +89,11 @@ const DashboardLayout: React.FC = () => {
             key: '/admin/system',
             icon: <SettingOutlined />,
             label: '系统管理',
+          },
+          {
+            key: '/admin/monitor',
+            icon: <MonitorOutlined />,
+            label: '系统监控',
           },
         ]
       : []),
