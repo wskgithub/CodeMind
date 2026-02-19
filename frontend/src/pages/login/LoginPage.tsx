@@ -613,41 +613,40 @@ const LoginPage: React.FC = () => {
           transform: translateY(0) !important;
         }
         
-        /* 玻璃拟态输入框样式 */
+        /* 纯色输入框样式 - 避免自动填充颜色不一致问题 */
         .login-form-item {
           margin-bottom: 24px !important;
         }
         
         .login-form-item .ant-input-affix-wrapper {
-          background: rgba(255, 255, 255, 0.03) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          background: #0d1d2d !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
           border-radius: 12px !important;
           padding: 12px 16px !important;
           box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.03),
-            0 4px 20px rgba(0, 0, 0, 0.2) !important;
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 4px 20px rgba(0, 0, 0, 0.3) !important;
           transition: all 0.3s ease !important;
-          backdrop-filter: blur(10px) !important;
         }
         
         .login-form-item .ant-input-affix-wrapper:hover {
-          border-color: rgba(0, 217, 255, 0.4) !important;
+          border-color: rgba(0, 217, 255, 0.5) !important;
           box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 4px 24px rgba(0, 217, 255, 0.1) !important;
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 4px 24px rgba(0, 217, 255, 0.15) !important;
         }
         
         .login-form-item .ant-input-affix-wrapper:focus,
         .login-form-item .ant-input-affix-wrapper-focused {
           border-color: #00D9FF !important;
           box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 0 0 3px rgba(0, 217, 255, 0.15),
-            0 4px 24px rgba(0, 217, 255, 0.2) !important;
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            0 0 0 3px rgba(0, 217, 255, 0.2),
+            0 4px 24px rgba(0, 217, 255, 0.25) !important;
         }
         
         .login-input-icon {
-          color: rgba(255, 255, 255, 0.4) !important;
+          color: rgba(255, 255, 255, 0.45) !important;
           font-size: 18px !important;
           margin-right: 12px !important;
           transition: all 0.3s ease !important;
@@ -658,19 +657,22 @@ const LoginPage: React.FC = () => {
         }
         
         .login-form-item .ant-input {
-          background: transparent !important;
+          background: #0d1d2d !important;
+          background-color: #0d1d2d !important;
           color: #ffffff !important;
           font-size: 16px !important;
           font-weight: 400 !important;
+          border: none !important;
+          box-shadow: none !important;
         }
         
         .login-form-item .ant-input::placeholder {
-          color: rgba(255, 255, 255, 0.3) !important;
+          color: rgba(255, 255, 255, 0.35) !important;
         }
         
         /* 密码框眼睛图标 */
         .login-form-item .ant-input-suffix .anticon {
-          color: rgba(255, 255, 255, 0.35) !important;
+          color: rgba(255, 255, 255, 0.4) !important;
           font-size: 16px !important;
           transition: all 0.3s ease !important;
         }
@@ -679,15 +681,20 @@ const LoginPage: React.FC = () => {
           color: rgba(255, 255, 255, 0.8) !important;
         }
         
-        /* 覆盖浏览器自动填充 - 与输入框背景一致 */
-        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill,
-        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill:hover,
-        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill:focus,
-        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.03) inset !important;
+        /* 覆盖浏览器自动填充 - 最强覆盖 */
+        .login-form-item .ant-input-affix-wrapper input.ant-input,
+        input.ant-input:-webkit-autofill,
+        input.ant-input:-webkit-autofill:hover,
+        input.ant-input:-webkit-autofill:focus,
+        input.ant-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 100px #0d1d2d inset !important;
+          box-shadow: 0 0 0 100px #0d1d2d inset !important;
+          background: #0d1d2d !important;
+          background-color: #0d1d2d !important;
+          background-image: none !important;
           -webkit-text-fill-color: #ffffff !important;
           caret-color: #ffffff !important;
-          transition: background-color 5000s ease-in-out 0s !important;
+          color: #ffffff !important;
         }
       `}</style>
     </div>
