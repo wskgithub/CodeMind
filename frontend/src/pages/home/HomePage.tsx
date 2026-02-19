@@ -13,9 +13,6 @@ import {
   TeamOutlined,
   ArrowDownOutlined,
   PlayCircleOutlined,
-  KeyOutlined,
-  GlobalOutlined,
-  DatabaseOutlined,
 } from '@ant-design/icons';
 import useAuthStore from '@/store/authStore';
 
@@ -586,39 +583,7 @@ const HomePage: React.FC = () => {
             </Button>
           </div>
 
-          {/* 快速链接 */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 32,
-              justifyContent: 'center',
-              marginTop: 48,
-              animation: 'fadeInUp 1s ease-out 1s both',
-            }}
-          >
-            {[
-              { icon: <KeyOutlined />, text: 'API Keys' },
-              { icon: <GlobalOutlined />, text: '接入文档' },
-              { icon: <DatabaseOutlined />, text: 'LLM 节点' },
-            ].map((item) => (
-              <div
-                key={item.text}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  color: 'rgba(255, 255, 255, 0.4)',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-                className="quick-link"
-              >
-                {item.icon}
-                {item.text}
-              </div>
-            ))}
-          </div>
+
         </div>
 
         {/* 滚动提示 */}
@@ -1090,10 +1055,6 @@ const HomePage: React.FC = () => {
         .cta-secondary:hover {
           background: rgba(255, 255, 255, 0.08) !important;
           border-color: 'rgba(255, 255, 255, 0.4)' !important;
-        }
-        
-        .quick-link:hover {
-          color: rgba(0, 217, 255, 0.8) !important;
         }
       `}</style>
     </div>
