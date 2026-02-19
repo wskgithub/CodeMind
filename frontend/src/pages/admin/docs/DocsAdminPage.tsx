@@ -57,7 +57,7 @@ const DocsAdminPage: React.FC = () => {
   };
 
   const handleView = (slug: string) => {
-    window.open(`/docs/${slug}`, '_blank');
+    navigate(`/docs/${slug}`);
   };
 
   const handleDelete = async (id: number) => {

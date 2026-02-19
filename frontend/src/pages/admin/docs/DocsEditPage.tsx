@@ -264,6 +264,7 @@ const DocsEditPage: React.FC = () => {
                     <TextArea
                       rows={25}
                       placeholder="使用 Markdown 格式编写文档内容..."
+                      value={content}
                       onChange={handleContentChange}
                       style={{ fontFamily: 'monospace' }}
                     />
