@@ -309,3 +309,28 @@ type SetMCPAccessRuleRequest struct {
 	TargetID   int64  `json:"target_id"`
 	Allowed    bool   `json:"allowed"`
 }
+
+// ──────────────────────────────────
+// 文档管理请求
+// ──────────────────────────────────
+
+// CreateDocumentRequest 创建文档请求
+type CreateDocumentRequest struct {
+	Slug        string `json:"slug" binding:"required,max=50"`
+	Title       string `json:"title" binding:"required,max=200"`
+	Subtitle    string `json:"subtitle" binding:"max=500"`
+	Icon        string `json:"icon" binding:"max=100"`
+	Content     string `json:"content" binding:"required"`
+	SortOrder   int    `json:"sort_order"`
+	IsPublished bool   `json:"is_published"`
+}
+
+// UpdateDocumentRequest 更新文档请求
+type UpdateDocumentRequest struct {
+	Title       string `json:"title" binding:"required,max=200"`
+	Subtitle    string `json:"subtitle" binding:"max=500"`
+	Icon        string `json:"icon" binding:"max=100"`
+	Content     string `json:"content" binding:"required"`
+	SortOrder   int    `json:"sort_order"`
+	IsPublished bool   `json:"is_published"`
+}

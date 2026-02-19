@@ -114,9 +114,10 @@ backend/
 │   ├── router/          # Route definitions (Gin)
 │   └── pkg/             # Internal utilities (JWT, crypto, response, etc.)
 ├── pkg/                 # External shared packages (LLM client, token counter)
-├── migrations/          # SQL migration files
-└── tests/               # Tests (handler, service, repository, integration)
+└── migrations/          # SQL migration files
 ```
+
+> Tests are co-located with source files following Go conventions (e.g. `service/user.go` + `service/service_test.go`).
 
 **Request Flow**:
 1. Router → Middleware Chain → Handler → Service → Repository → PostgreSQL
@@ -133,17 +134,17 @@ frontend/src/
 │   ├── keys/            # API Key management
 │   ├── usage/           # Usage statistics
 │   ├── profile/         # User profile
+│   ├── docs/            # Documentation viewer
 │   └── admin/           # Admin pages (users, departments, limits, etc.)
 ├── components/
-│   ├── common/          # Reusable components
-│   ├── layout/          # Layout components (Header, Sidebar, etc.)
-│   └── charts/          # ECharts components for statistics
+│   ├── common/          # Reusable components (UsageProgressCards, etc.)
+│   └── layout/          # Layout components (DashboardLayout)
+├── assets/styles/       # Global and module CSS
 ├── services/            # API client layer (Axios)
 ├── store/               # Zustand state management
 ├── hooks/               # Custom React hooks
 ├── types/               # TypeScript type definitions
-├── router/              # React Router configuration
-└── utils/               # Utility functions
+└── router/              # React Router configuration
 ```
 
 ### Key Design Patterns

@@ -31,7 +31,6 @@ request.interceptors.response.use(
       return response;
     }
     const data = response.data as ApiResponse;
-    console.log('API Response:', response.config.url, data);
     // 业务错误码非零表示业务异常
     if (data.code !== 0) {
       message.error(data.message || '请求失败');

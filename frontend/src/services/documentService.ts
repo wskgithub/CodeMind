@@ -49,7 +49,6 @@ class DocumentService {
    */
   async list(): Promise<DocumentListItem[]> {
     const response = await request.get('/docs');
-    console.log('Docs API response:', response.data);
     return response.data?.data || [];
   }
 

@@ -92,8 +92,13 @@ docker compose up -d --build
 
 ## Documentation
 
+- [Development Setup](docs/dev-setup.md) — 开发环境搭建与启动指南
 - [Development Plan](docs/development-plan.md) — Detailed development plan and system design
-- [API Documentation](docs/api/) — OpenAPI specification
+- [Development Standards](docs/development-standards.md) — 开发规范
+- [Backend Standards](docs/backend-standards.md) — 后端编码规范
+- [Frontend Standards](docs/frontend-standards.md) — 前端编码规范
+- [Testing Guide](docs/testing-guide.md) — 测试指南
+- [Monitoring](docs/monitoring.md) — 监控说明
 
 ## Version
 

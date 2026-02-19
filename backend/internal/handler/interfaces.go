@@ -6,6 +6,18 @@ import (
 	jwtPkg "codemind/internal/pkg/jwt"
 )
 
+// DocumentService 文档服务接口
+type DocumentService interface {
+	List() ([]model.DocumentListItem, error)
+	GetBySlug(slug string) (*model.Document, error)
+	ListAll() ([]model.Document, error)
+	GetByID(id int64) (*model.Document, error)
+	Create(req *dto.CreateDocumentRequest) (*model.Document, error)
+	Update(id int64, req *dto.UpdateDocumentRequest) (*model.Document, error)
+	Delete(id int64) error
+	Initialize() (int, error)
+}
+
 // AuthService 认证服务接口
 type AuthService interface {
 	Login(req *dto.LoginRequest, clientIP string) (*dto.LoginResponse, error)

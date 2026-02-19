@@ -130,6 +130,7 @@ func main() {
 	mcpService := service.NewMCPService(mcpRepo, mcpProxy, logger)
 	llmBackendService := service.NewLLMBackendService(backendRepo, auditRepo, loadBalancer, logger)
 	monitorService := service.NewMonitorService(monitorRepo, usageRepo, rdb, logger)
+	docService := service.NewDocumentService(docRepo, logger)
 
 	// 从数据库加载 LLM 后端节点到负载均衡器
 	llmBackendService.RefreshLoadBalancer()
@@ -150,7 +151,7 @@ func main() {
 		MCPGateway: handler.NewMCPGatewayHandler(mcpService, logger),
 		LLMBackend: handler.NewLLMBackendHandler(llmBackendService),
 		Monitor:    handler.NewMonitorHandler(monitorService, logger),
-		Document:   handler.NewDocumentHandler(docRepo),
+		Document:   handler.NewDocumentHandler(docService),
 	}
 
 	// ──────────────────────────────────

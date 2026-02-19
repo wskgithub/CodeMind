@@ -9,7 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 import useAppStore from '@/store/appStore';
 import { documentService, Document, DocumentListItem } from '@/services/documentService';
-import './docs.css';
+import '@/assets/styles/docs.css';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
@@ -78,7 +78,6 @@ const DocsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const list = await documentService.list();
-      console.log('Loaded documents:', list);
       setDocuments(list);
       
       // 如果没有指定 slug，默认选中第一篇
@@ -99,7 +98,6 @@ const DocsPage: React.FC = () => {
       setContentLoading(true);
       setError(null);
       const doc = await documentService.getBySlug(docSlug);
-      console.log('Loaded document:', doc);
       if (doc) {
         setCurrentDoc(doc);
         // 更新 URL 但不触发重新加载
