@@ -587,7 +587,7 @@ const HomePage: React.FC = () => {
           borderTop: '1px solid rgba(255, 255, 255, 0.06)',
         }}
       >
-        <p style={{ fontSize: 14, margin: 0 }}>度影智能编码服务 CodeMind v0.1.0</p>
+        <p style={{ fontSize: 14, margin: 0 }}>度影智能编码服务 CodeMind v0.2.0</p>
         <p style={{ fontSize: 12, marginTop: 8 }}>
           © {new Date().getFullYear()} RayShape. All Rights Reserved.
         </p>
