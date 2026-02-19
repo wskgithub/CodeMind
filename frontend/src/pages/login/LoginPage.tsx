@@ -504,38 +504,30 @@ const LoginPage: React.FC = () => {
             <Form.Item
               name="username"
               rules={[{ required: true, message: '请输入用户名' }]}
-              style={{ marginBottom: 20 }}
+              style={{ marginBottom: 24 }}
+              className="login-form-item"
             >
               <Input
-                prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16 }} />}
+                prefix={<UserOutlined className="login-input-icon" />}
                 placeholder="用户名"
                 size="large"
                 disabled={lockInfo?.locked && countdown > 0}
-                style={{
-                  height: 52,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                }}
+                className="login-input"
               />
             </Form.Item>
 
             <Form.Item
               name="password"
               rules={[{ required: true, message: '请输入密码' }]}
-              style={{ marginBottom: 28 }}
+              style={{ marginBottom: 40 }}
+              className="login-form-item"
             >
               <Input.Password
-                prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.4)', fontSize: 16 }} />}
+                prefix={<LockOutlined className="login-input-icon" />}
                 placeholder="密码"
                 size="large"
                 disabled={lockInfo?.locked && countdown > 0}
-                style={{
-                  height: 52,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12,
-                }}
+                className="login-input"
               />
             </Form.Item>
 
@@ -621,28 +613,71 @@ const LoginPage: React.FC = () => {
           transform: translateY(0) !important;
         }
         
-        /* 输入框聚焦效果 */
-        .ant-input-affix-wrapper:focus,
-        .ant-input-affix-wrapper-focused {
-          border-color: #00D9FF !important;
-          box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1) !important;
+        /* 下划线输入框样式 */
+        .login-form-item {
+          margin-bottom: 24px !important;
         }
         
-        .ant-input-affix-wrapper:hover {
-          border-color: rgba(0, 217, 255, 0.5) !important;
-        }
-        
-        /* 确保输入框内部背景透明，使用外层容器背景 */
-        .ant-input-affix-wrapper .ant-input {
+        .login-form-item .ant-input-affix-wrapper {
           background: transparent !important;
+          border: none !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+          border-radius: 0 !important;
+          padding: 8px 4px 8px 0 !important;
+          box-shadow: none !important;
+          transition: all 0.3s ease !important;
         }
         
-        /* 覆盖浏览器自动填充背景色 - 与输入框背景完全一致 */
-        .ant-input-affix-wrapper .ant-input:-webkit-autofill,
-        .ant-input-affix-wrapper .ant-input:-webkit-autofill:hover,
-        .ant-input-affix-wrapper .ant-input:-webkit-autofill:focus,
-        .ant-input-affix-wrapper .ant-input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.03) inset !important;
+        .login-form-item .ant-input-affix-wrapper:hover {
+          border-bottom-color: rgba(255, 255, 255, 0.4) !important;
+        }
+        
+        .login-form-item .ant-input-affix-wrapper:focus,
+        .login-form-item .ant-input-affix-wrapper-focused {
+          border-bottom-color: #00D9FF !important;
+          box-shadow: 0 2px 0 0 rgba(0, 217, 255, 0.6) !important;
+        }
+        
+        .login-input-icon {
+          color: rgba(255, 255, 255, 0.4) !important;
+          font-size: 18px !important;
+          margin-right: 12px !important;
+          transition: all 0.3s ease !important;
+        }
+        
+        .login-form-item .ant-input-affix-wrapper-focused .login-input-icon {
+          color: #00D9FF !important;
+        }
+        
+        .login-form-item .ant-input {
+          background: transparent !important;
+          color: #ffffff !important;
+          font-size: 16px !important;
+          font-weight: 400 !important;
+          letter-spacing: 0.3px !important;
+        }
+        
+        .login-form-item .ant-input::placeholder {
+          color: rgba(255, 255, 255, 0.35) !important;
+        }
+        
+        /* 密码框眼睛图标 */
+        .login-form-item .ant-input-suffix .anticon {
+          color: rgba(255, 255, 255, 0.4) !important;
+          font-size: 16px !important;
+          transition: all 0.3s ease !important;
+        }
+        
+        .login-form-item .ant-input-suffix .anticon:hover {
+          color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        /* 覆盖浏览器自动填充 */
+        .login-form-item .ant-input:-webkit-autofill,
+        .login-form-item .ant-input:-webkit-autofill:hover,
+        .login-form-item .ant-input:-webkit-autofill:focus,
+        .login-form-item .ant-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
           -webkit-text-fill-color: #ffffff !important;
           caret-color: #ffffff !important;
           transition: background-color 5000s ease-in-out 0s !important;
