@@ -15,6 +15,9 @@ import SystemPage from '@/pages/admin/system/SystemPage';
 import McpPage from '@/pages/admin/mcp/McpPage';
 import BackendsPage from '@/pages/admin/backends/BackendsPage';
 import MonitorPage from '@/pages/admin/monitor/MonitorPage';
+import DocsPage from '@/pages/docs/DocsPage';
+import DocsAdminPage from '@/pages/admin/docs/DocsAdminPage';
+import DocsEditPage from '@/pages/admin/docs/DocsEditPage';
 
 /** 应用路由配置 */
 const router = createBrowserRouter([
@@ -72,6 +75,22 @@ const router = createBrowserRouter([
       { path: 'mcp', element: <McpPage /> },
       { path: 'system', element: <SystemPage /> },
       { path: 'monitor', element: <MonitorPage /> },
+      { path: 'docs', element: <DocsAdminPage /> },
+      { path: 'docs/create', element: <DocsEditPage /> },
+      { path: 'docs/edit/:id', element: <DocsEditPage /> },
+    ],
+  },
+  // 文档页面（需要登录）
+  {
+    path: '/docs',
+    element: (
+      <AuthGuard>
+        <DashboardLayout />
+      </AuthGuard>
+    ),
+    children: [
+      { index: true, element: <DocsPage /> },
+      { path: ':slug', element: <DocsPage /> },
     ],
   },
   // 未匹配路由重定向到首页

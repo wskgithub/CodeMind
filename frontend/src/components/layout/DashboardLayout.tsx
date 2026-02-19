@@ -16,11 +16,12 @@ import {
   ApiOutlined,
   CloudServerOutlined,
   MonitorOutlined,
+  BookOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import useAuthStore from '@/store/authStore';
 import useAppStore from '@/store/appStore';
-import UsageProgressCards from '@/components/common/UsageProgressCards';
 
 const { Header, Sider, Content } = Layout;
 
@@ -52,6 +53,11 @@ const DashboardLayout: React.FC = () => {
       key: '/dashboard/usage',
       icon: <BarChartOutlined />,
       label: '用量统计',
+    },
+    {
+      key: '/docs',
+      icon: <BookOutlined />,
+      label: '接入文档',
     },
     ...(isAdmin
       ? [
@@ -94,6 +100,11 @@ const DashboardLayout: React.FC = () => {
             key: '/admin/monitor',
             icon: <MonitorOutlined />,
             label: '系统监控',
+          },
+          {
+            key: '/admin/docs',
+            icon: <FileTextOutlined />,
+            label: '文档管理',
           },
         ]
       : []),
@@ -341,7 +352,6 @@ const DashboardLayout: React.FC = () => {
             zIndex: 1,
           }}
         >
-          <UsageProgressCards />
           <Outlet />
         </Content>
       </Layout>

@@ -13,6 +13,7 @@ import { getUsageStats } from '@/services/statsService';
 import { listAnnouncements } from '@/services/systemService';
 import useAuthStore from '@/store/authStore';
 import type { StatsOverview, UsageItem, Announcement } from '@/types';
+import UsageProgressCards from '@/components/common/UsageProgressCards';
 
 /** 图标包裹层 — 渐变圆形背景 */
 const StatIcon = ({
@@ -177,6 +178,7 @@ const DashboardPage = () => {
 
   return (
     <div className="animate-fade-in-up">
+      <UsageProgressCards />
       <h2 style={{ marginBottom: 24, color: token.colorTextHeading }}>
         欢迎回来，{user?.display_name || user?.username}
       </h2>

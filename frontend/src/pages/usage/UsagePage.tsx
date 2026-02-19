@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { getUsageStats, getRanking, exportUsageCSV } from '@/services/statsService';
 import useAuthStore from '@/store/authStore';
 import type { UsageItem, RankingItem } from '@/types';
+import UsageProgressCards from '@/components/common/UsageProgressCards';
 
 const { RangePicker } = DatePicker;
 
@@ -250,6 +251,7 @@ const UsagePage = () => {
   return (
     <div className="page-bg">
       <div className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1 }}>
+        <UsageProgressCards />
         {/* 页面标题 — 带渐变图标 */}
         <h2
           style={{

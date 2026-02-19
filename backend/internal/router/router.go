@@ -26,6 +26,7 @@ type Handlers struct {
 	MCPGateway *handler.MCPGatewayHandler
 	LLMBackend *handler.LLMBackendHandler
 	Monitor    *handler.MonitorHandler
+	Document   *handler.DocumentHandler
 }
 
 // Setup 初始化路由
@@ -112,6 +113,13 @@ func Setup(
 			announcements.GET("", handlers.System.ListAnnouncements)
 		}
 
+		// 文档查询（所有用户可查看已发布文档）
+		docs := authenticated.Group("/docs")
+		{
+			docs.GET("", handlers.Document.ListDocuments)
+			docs.GET("/:slug", handlers.Document.GetDocument)
+		}
+
 		// 用户管理（管理员 + 部门经理）
 		users := authenticated.Group("/users")
 		users.Use(middleware.RequireRole(model.RoleSuperAdmin, model.RoleDeptManager))
@@ -193,6 +201,18 @@ func Setup(
 			monitorGroup.GET("/requests", handlers.Monitor.RequestMetrics)
 			monitorGroup.GET("/llm-nodes", handlers.Monitor.LLMNodeMetrics)
 			monitorGroup.GET("/health", handlers.Monitor.HealthCheck)
+		}
+
+		// 文档管理（仅超级管理员）
+		docsAdmin := authenticated.Group("/docs/admin")
+		docsAdmin.Use(middleware.RequireAdmin())
+		{
+			docsAdmin.GET("", handlers.Document.ListAllDocuments)
+			docsAdmin.GET("/:id", handlers.Document.GetDocumentByID)
+			docsAdmin.POST("", handlers.Document.CreateDocument)
+			docsAdmin.PUT("/:id", handlers.Document.UpdateDocument)
+			docsAdmin.DELETE("/:id", handlers.Document.DeleteDocument)
+			docsAdmin.POST("/initialize", handlers.Document.InitializeDocuments)
 		}
 	}
 
