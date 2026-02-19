@@ -267,7 +267,17 @@ const AnimatedCounter: React.FC<{ value: number; suffix: string; duration?: numb
   }, [value, duration]);
 
   return (
-    <div ref={ref} style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 800 }}>
+    <div 
+      ref={ref} 
+      style={{ 
+        fontSize: 'clamp(2.5rem, 5vw, 4rem)', 
+        fontWeight: 800,
+        background: 'linear-gradient(135deg, #fff 0%, #00D9FF 50%, #9D4EDD 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}
+    >
       {count}{suffix}
     </div>
   );
