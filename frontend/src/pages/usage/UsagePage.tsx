@@ -1,14 +1,15 @@
 import { useEffect, useState, useRef } from 'react';
-import { Select, DatePicker, Space, Table, Spin, Row, Col, Segmented, theme } from 'antd';
+import { Select, DatePicker, Space, Table, Spin, Row, Col, Segmented, theme, Button } from 'antd';
 import {
   BarChartOutlined,
   ThunderboltOutlined,
   MessageOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
-import { getUsageStats, getRanking } from '@/services/statsService';
+import { getUsageStats, getRanking, exportUsageCSV } from '@/services/statsService';
 import useAuthStore from '@/store/authStore';
 import type { UsageItem, RankingItem } from '@/types';
 
@@ -208,6 +209,44 @@ const UsagePage = () => {
     return n.toString();
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const params: {
+        period: string;
+        start_date?: string;
+        end_date?: string;
+      } = { period };
+      if (dateRange) {
+        params.start_date = dateRange[0].format('YYYY-MM-DD');
+        params.end_date = dateRange[1].format('YYYY-MM-DD');
+      }
+      const response = await exportUsageCSV(params);
+      
+      // 创建下载链接
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // 从响应头获取文件名，或使用默认文件名
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'usage_report.csv';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename=([^;]+)/);
+        if (match) {
+          filename = decodeURIComponent(match[1].trim());
+        }
+      }
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // 拦截器处理错误
+    }
+  };
+
   return (
     <div className="page-bg">
       <div className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1 }}>
@@ -292,23 +331,35 @@ const UsagePage = () => {
 
         {/* 筛选栏 — 玻璃态卡片 */}
         <div className="glass-card p-4 animate-fade-in-up" style={{ marginBottom: 16, animationDelay: '0.08s' }}>
-          <Space wrap>
-            <span style={{ color: token.colorTextSecondary }}>统计周期：</span>
-            <Select
-              value={period}
-              onChange={setPeriod}
-              options={[
-                { label: '每日', value: 'daily' },
-                { label: '每周', value: 'weekly' },
-                { label: '每月', value: 'monthly' },
-              ]}
-              style={{ width: 120 }}
-            />
-            <span style={{ color: token.colorTextSecondary }}>日期范围：</span>
-            <RangePicker
-              value={dateRange}
-              onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
-            />
+          <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space wrap>
+              <span style={{ color: token.colorTextSecondary }}>统计周期：</span>
+              <Select
+                value={period}
+                onChange={setPeriod}
+                options={[
+                  { label: '每日', value: 'daily' },
+                  { label: '每周', value: 'weekly' },
+                  { label: '每月', value: 'monthly' },
+                ]}
+                style={{ width: 120 }}
+              />
+              <span style={{ color: token.colorTextSecondary }}>日期范围：</span>
+              <RangePicker
+                value={dateRange}
+                onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
+              />
+            </Space>
+            {isAdmin && (
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleExportCSV}
+                style={{ background: 'var(--gradient-primary)' }}
+              >
+                导出 CSV
+              </Button>
+            )}
           </Space>
         </div>
 

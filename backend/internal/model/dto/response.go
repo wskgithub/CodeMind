@@ -144,6 +144,17 @@ type UsageResponse struct {
 	Items  []UsageItem `json:"items"`
 }
 
+// UsageExportItem 用量导出数据项
+type UsageExportItem struct {
+	Date             string `json:"date"`
+	Username         string `json:"username"`
+	Department       string `json:"department"`
+	PromptTokens     int64  `json:"prompt_tokens"`
+	CompletionTokens int64  `json:"completion_tokens"`
+	TotalTokens      int64  `json:"total_tokens"`
+	RequestCount     int64  `json:"request_count"`
+}
+
 // RankingItem 排行榜项
 type RankingItem struct {
 	Rank        int    `json:"rank"`

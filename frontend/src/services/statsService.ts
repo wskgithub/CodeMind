@@ -25,3 +25,17 @@ export function getRanking(params: {
 }) {
   return request.get<ApiResponse<RankingItem[]>>('/stats/ranking', { params });
 }
+
+/** 导出租用量报表为 CSV */
+export function exportUsageCSV(params: {
+  period: string;
+  start_date?: string;
+  end_date?: string;
+  user_id?: number;
+  department_id?: number;
+}) {
+  return request.get('/stats/export/csv', {
+    params,
+    responseType: 'blob',
+  });
+}

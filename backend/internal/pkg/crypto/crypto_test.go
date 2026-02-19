@@ -41,20 +41,23 @@ func TestCheckPassword(t *testing.T) {
 
 // TestGenerateAPIKey 测试 API Key 生成
 func TestGenerateAPIKey(t *testing.T) {
-	fullKey, prefix, hash := GenerateAPIKey()
+	fullKey, prefix, hash, err := GenerateAPIKey()
+	if err != nil {
+		t.Fatalf("生成 API Key 失败: %v", err)
+	}
 
 	// 检查完整 Key 的前缀格式
 	if !strings.HasPrefix(fullKey, "cm-") {
 		t.Errorf("Key 应以 'cm-' 开头，实际: %s", fullKey)
 	}
 
-	// 检查 Key 长度：cm- + 32 hex = 35 字符
-	if len(fullKey) != 35 {
-		t.Errorf("Key 长度应为 35，实际: %d", len(fullKey))
+	// 检查 Key 长度：cm- + 64 hex = 67 字符
+	if len(fullKey) != 67 {
+		t.Errorf("Key 长度应为 67，实际: %d", len(fullKey))
 	}
 
-	// 检查前缀格式：cm-前8位...
-	if !strings.HasPrefix(prefix, "cm-") || !strings.HasSuffix(prefix, "...") {
+	// 检查前缀格式：cm-前8位
+	if !strings.HasPrefix(prefix, "cm-") {
 		t.Errorf("前缀格式不正确: %s", prefix)
 	}
 
@@ -93,7 +96,10 @@ func TestHashAPIKey(t *testing.T) {
 func TestGenerateAPIKeyUniqueness(t *testing.T) {
 	keys := make(map[string]bool)
 	for i := 0; i < 100; i++ {
-		key, _, _ := GenerateAPIKey()
+		key, _, _, err := GenerateAPIKey()
+		if err != nil {
+			t.Fatalf("生成 API Key 失败: %v", err)
+		}
 		if keys[key] {
 			t.Fatalf("生成了重复的 Key: %s", key)
 		}

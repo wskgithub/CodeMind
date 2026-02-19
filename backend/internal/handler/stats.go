@@ -1,6 +1,12 @@
 package handler
 
 import (
+	"encoding/csv"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"codemind/internal/middleware"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/response"
@@ -82,4 +88,62 @@ func (h *StatsHandler) Ranking(c *gin.Context) {
 	}
 
 	response.Success(c, items)
+}
+
+// ExportCSV 导出租用量报表为 CSV
+// GET /api/v1/stats/export/csv
+func (h *StatsHandler) ExportCSV(c *gin.Context) {
+	var query dto.StatsQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.BadRequest(c, "查询参数格式错误: "+err.Error())
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+	role := middleware.GetUserRole(c)
+	deptID := middleware.GetDepartmentID(c)
+
+	// 获取导出数据
+	data, err := h.statsService.ExportUsageStats(&query, role, userID, deptID)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	// 设置响应头
+	filename := fmt.Sprintf("usage_report_%s.csv", time.Now().Format("20060102_150405"))
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Header("X-Content-Type-Options", "nosniff")
+
+	// 写入 UTF-8 BOM (让 Excel 正确识别中文)
+	c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
+
+	// 创建 CSV writer
+	writer := csv.NewWriter(c.Writer)
+	defer writer.Flush()
+
+	// 写入表头
+	headers := []string{"日期", "用户名", "部门", "Prompt Tokens", "Completion Tokens", "总 Tokens", "请求次数"}
+	if err := writer.Write(headers); err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// 写入数据行
+	for _, item := range data {
+		record := []string{
+			item.Date,
+			item.Username,
+			item.Department,
+			strconv.FormatInt(item.PromptTokens, 10),
+			strconv.FormatInt(item.CompletionTokens, 10),
+			strconv.FormatInt(item.TotalTokens, 10),
+			strconv.FormatInt(item.RequestCount, 10),
+		}
+		if err := writer.Write(record); err != nil {
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	}
 }

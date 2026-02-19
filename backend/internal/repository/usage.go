@@ -250,6 +250,39 @@ func (r *UsageRepository) GetKeyUsageStats(keyID int64, startDate, endDate time.
 	return rows, err
 }
 
+// GetDetailedUsageStats 获取详细用量数据（用于导出）
+// 返回每个用户每天的用量明细
+func (r *UsageRepository) GetDetailedUsageStats(userID *int64, deptID *int64, startDate, endDate time.Time) ([]UsageExportRow, error) {
+	var rows []UsageExportRow
+
+	query := r.db.Table("token_usage_daily d").
+		Select("d.usage_date, u.username as user_name, COALESCE(dep.name, '-') as dept_name, d.prompt_tokens, d.completion_tokens, d.total_tokens, d.request_count").
+		Joins("JOIN users u ON u.id = d.user_id AND u.deleted_at IS NULL").
+		Joins("LEFT JOIN departments dep ON dep.id = u.department_id").
+		Where("d.usage_date BETWEEN ? AND ?", startDate, endDate)
+
+	if userID != nil {
+		query = query.Where("d.user_id = ?", *userID)
+	}
+	if deptID != nil {
+		query = query.Where("u.department_id = ?", *deptID)
+	}
+
+	err := query.Order("d.usage_date DESC, u.username ASC").Scan(&rows).Error
+	return rows, err
+}
+
+// UsageExportRow 导出数据查询结果行
+type UsageExportRow struct {
+	UsageDate        time.Time `gorm:"column:usage_date"`
+	UserName         string    `gorm:"column:user_name"`
+	DeptName         string    `gorm:"column:dept_name"`
+	PromptTokens     int64     `gorm:"column:prompt_tokens"`
+	CompletionTokens int64     `gorm:"column:completion_tokens"`
+	TotalTokens      int64     `gorm:"column:total_tokens"`
+	RequestCount     int64     `gorm:"column:request_count"`
+}
+
 // DailyStatRow 统计查询结果行
 type DailyStatRow struct {
 	UsageDate        time.Time `gorm:"column:usage_date"`

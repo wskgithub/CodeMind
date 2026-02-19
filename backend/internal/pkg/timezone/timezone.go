@@ -5,13 +5,19 @@ import "time"
 // Shanghai 东八区时区
 var Shanghai *time.Location
 
-func init() {
-	var err error
-	Shanghai, err = time.LoadLocation("Asia/Shanghai")
+// loadShanghaiLocation 加载上海时区，若失败则使用手动创建的 CST 时区
+// 提取为函数以便测试
+func loadShanghaiLocation(tzName string) *time.Location {
+	loc, err := time.LoadLocation(tzName)
 	if err != nil {
 		// 若时区数据不可用，手动创建 UTC+8
-		Shanghai = time.FixedZone("CST", 8*60*60)
+		return time.FixedZone("CST", 8*60*60)
 	}
+	return loc
+}
+
+func init() {
+	Shanghai = loadShanghaiLocation("Asia/Shanghai")
 }
 
 // Now 获取 Asia/Shanghai 时区的当前时间

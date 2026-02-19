@@ -95,6 +95,8 @@ func Setup(
 			stats.GET("/overview", handlers.Stats.Overview)
 			stats.GET("/usage", handlers.Stats.Usage)
 			stats.GET("/ranking", handlers.Stats.Ranking)
+			// 用量报表导出（仅管理员）
+			stats.GET("/export/csv", handlers.Stats.ExportCSV).Use(middleware.RequireRole(model.RoleSuperAdmin, model.RoleDeptManager))
 		}
 
 		// 限额查询（所有用户可查看自己的限额）

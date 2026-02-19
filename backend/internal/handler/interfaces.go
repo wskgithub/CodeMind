@@ -1,0 +1,66 @@
+package handler
+
+import (
+	"codemind/internal/model"
+	"codemind/internal/model/dto"
+	jwtPkg "codemind/internal/pkg/jwt"
+)
+
+// AuthService 认证服务接口
+type AuthService interface {
+	Login(req *dto.LoginRequest, clientIP string) (*dto.LoginResponse, error)
+	Logout(claims *jwtPkg.Claims) error
+	GetProfile(userID int64) (*dto.UserDetail, error)
+	UpdateProfile(userID int64, req *dto.UpdateProfileRequest) error
+	ChangePassword(userID int64, req *dto.ChangePasswordRequest, clientIP string) error
+	GetLoginLockStatusByUsername(username string) (*dto.LoginLockStatusResponse, error)
+}
+
+// APIKeyService API Key 服务接口
+type APIKeyService interface {
+	List(userID int64) ([]dto.APIKeyResponse, error)
+	Create(req *dto.CreateAPIKeyRequest, userID int64, clientIP string) (*dto.APIKeyCreateResponse, error)
+	UpdateStatus(keyID int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error
+	Delete(keyID int64, operatorID int64, operatorRole string, clientIP string) error
+}
+
+// UserService 用户服务接口
+type UserService interface {
+	List(query *dto.UserListQuery, role string, deptID *int64) ([]dto.UserDetail, int64, error)
+	Create(req *dto.CreateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) (*dto.UserDetail, error)
+	GetDetail(id int64) (*dto.UserDetail, error)
+	Update(id int64, req *dto.UpdateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error
+	Delete(id int64, operatorID int64, clientIP string) error
+	UpdateStatus(id int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error
+	ResetPassword(id int64, newPassword string, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error
+	UnlockUser(id int64, operatorID int64, operatorRole string, operatorDeptID *int64, reason string, clientIP string) error
+}
+
+// DepartmentService 部门服务接口
+type DepartmentService interface {
+	ListTree() ([]dto.DeptTree, error)
+	Create(req *dto.CreateDepartmentRequest, operatorID int64, clientIP string) (*model.Department, error)
+	GetByID(id int64) (*model.Department, error)
+	Update(id int64, req *dto.UpdateDepartmentRequest, operatorID int64, clientIP string) error
+	Delete(id int64, operatorID int64, clientIP string) error
+}
+
+// LimitService 限额服务接口
+type LimitService interface {
+	List(query *dto.LimitListQuery) ([]model.RateLimit, error)
+	Upsert(req *dto.UpsertRateLimitRequest, operatorID int64, clientIP string) error
+	Delete(id int64, operatorID int64, clientIP string) error
+	GetMyLimits(userID int64, deptID *int64) (*dto.MyLimitResponse, error)
+	GetLimitProgress(userID int64, deptID *int64) (*dto.LimitProgressResponse, error)
+}
+
+// SystemService 系统服务接口
+type SystemService interface {
+	GetConfigs() ([]model.SystemConfig, error)
+	UpdateConfigs(req *dto.UpdateConfigsRequest, operatorID int64, clientIP string) error
+	ListAnnouncements(isAdmin bool) ([]model.Announcement, error)
+	CreateAnnouncement(req *dto.CreateAnnouncementRequest, authorID int64, clientIP string) (*model.Announcement, error)
+	UpdateAnnouncement(id int64, req *dto.UpdateAnnouncementRequest, operatorID int64, clientIP string) error
+	DeleteAnnouncement(id int64, operatorID int64, clientIP string) error
+	ListAuditLogs(query *dto.AuditLogQuery) ([]model.AuditLog, int64, error)
+}

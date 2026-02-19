@@ -5,18 +5,17 @@ import (
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // SystemHandler 系统管理控制器
 type SystemHandler struct {
-	systemService *service.SystemService
+	systemService SystemService
 }
 
 // NewSystemHandler 创建系统管理 Handler
-func NewSystemHandler(systemService *service.SystemService) *SystemHandler {
+func NewSystemHandler(systemService SystemService) *SystemHandler {
 	return &SystemHandler{systemService: systemService}
 }
 

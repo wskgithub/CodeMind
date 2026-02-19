@@ -7,18 +7,17 @@ import (
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // UserHandler 用户管理控制器
 type UserHandler struct {
-	userService *service.UserService
+	userService UserService
 }
 
 // NewUserHandler 创建用户 Handler
-func NewUserHandler(userService *service.UserService) *UserHandler {
+func NewUserHandler(userService UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 

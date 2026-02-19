@@ -8,18 +8,17 @@ import (
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // AuthHandler 认证控制器
 type AuthHandler struct {
-	authService *service.AuthService
+	authService AuthService
 }
 
 // NewAuthHandler 创建认证 Handler
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+func NewAuthHandler(authService AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 

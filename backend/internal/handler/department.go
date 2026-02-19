@@ -4,18 +4,17 @@ import (
 	"codemind/internal/middleware"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // DepartmentHandler 部门管理控制器
 type DepartmentHandler struct {
-	deptService *service.DepartmentService
+	deptService DepartmentService
 }
 
 // NewDepartmentHandler 创建部门 Handler
-func NewDepartmentHandler(deptService *service.DepartmentService) *DepartmentHandler {
+func NewDepartmentHandler(deptService DepartmentService) *DepartmentHandler {
 	return &DepartmentHandler{deptService: deptService}
 }
 

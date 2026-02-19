@@ -4,18 +4,17 @@ import (
 	"codemind/internal/middleware"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // APIKeyHandler API Key 管理控制器
 type APIKeyHandler struct {
-	keyService *service.APIKeyService
+	keyService APIKeyService
 }
 
 // NewAPIKeyHandler 创建 API Key Handler
-func NewAPIKeyHandler(keyService *service.APIKeyService) *APIKeyHandler {
+func NewAPIKeyHandler(keyService APIKeyService) *APIKeyHandler {
 	return &APIKeyHandler{keyService: keyService}
 }
 

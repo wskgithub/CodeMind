@@ -6,18 +6,17 @@ import (
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // LimitHandler 限额管理控制器
 type LimitHandler struct {
-	limitService *service.LimitService
+	limitService LimitService
 }
 
 // NewLimitHandler 创建限额 Handler
-func NewLimitHandler(limitService *service.LimitService) *LimitHandler {
+func NewLimitHandler(limitService LimitService) *LimitHandler {
 	return &LimitHandler{limitService: limitService}
 }
 

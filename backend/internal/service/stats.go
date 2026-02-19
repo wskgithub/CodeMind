@@ -232,3 +232,51 @@ func (s *StatsService) getPeriodRange(now time.Time, period string) (time.Time, 
 		return now.AddDate(0, 0, -30), now
 	}
 }
+
+// ExportUsageStats 导出租用量统计数据
+// 返回详细的每日用户用量数据，用于 CSV 导出
+func (s *StatsService) ExportUsageStats(query *dto.StatsQuery, operatorRole string, operatorID int64, operatorDeptID *int64) ([]dto.UsageExportItem, error) {
+	// 确定查询范围
+	var userID *int64
+	var deptID *int64
+
+	switch operatorRole {
+	case "super_admin":
+		userID = query.UserID
+		deptID = query.DepartmentID
+	case "dept_manager":
+		if query.UserID != nil {
+			userID = query.UserID
+		}
+		deptID = operatorDeptID
+	default:
+		// 普通用户只能导出自己的数据
+		userID = &operatorID
+	}
+
+	// 解析日期范围
+	startDate, endDate := s.parseDateRange(query.StartDate, query.EndDate, query.Period)
+
+	// 查询详细数据
+	rows, err := s.usageRepo.GetDetailedUsageStats(userID, deptID, startDate, endDate)
+	if err != nil {
+		s.logger.Error("查询导出数据失败", zap.Error(err))
+		return nil, errcode.ErrDatabase
+	}
+
+	// 转换为响应格式
+	items := make([]dto.UsageExportItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, dto.UsageExportItem{
+			Date:             row.UsageDate.Format("2006-01-02"),
+			Username:         row.UserName,
+			Department:       row.DeptName,
+			PromptTokens:     row.PromptTokens,
+			CompletionTokens: row.CompletionTokens,
+			TotalTokens:      row.TotalTokens,
+			RequestCount:     row.RequestCount,
+		})
+	}
+
+	return items, nil
+}
