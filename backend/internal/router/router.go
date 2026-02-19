@@ -217,6 +217,9 @@ func Setup(
 		llmV1.POST("/chat/completions", handlers.LLMProxy.ChatCompletions)
 		llmV1.POST("/completions", handlers.LLMProxy.Completions)
 		llmV1.GET("/models", handlers.LLMProxy.ListModels)
+		llmV1.GET("/models/:model", handlers.LLMProxy.RetrieveModel)
+		llmV1.POST("/embeddings", handlers.LLMProxy.Embeddings)
+		llmV1.POST("/responses", handlers.LLMProxy.Responses)
 
 		// Anthropic 原生接口
 		llmV1.POST("/messages", handlers.LLMProxy.AnthropicMessages)

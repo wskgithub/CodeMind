@@ -12,23 +12,6 @@ import (
 // 将完整的原始请求体转发给 LLM，避免丢失任何字段。
 // ──────────────────────────────────
 
-// RequestMeta 请求路由元数据
-// 从原始请求体中提取代理路由所需的最小字段
-type RequestMeta struct {
-	Model  string `json:"model"`
-	Stream bool   `json:"stream"`
-}
-
-// ExtractRequestMeta 从原始请求体中提取路由所需的元数据
-// 不会修改原始请求体，也不会丢失任何字段
-func ExtractRequestMeta(rawBody []byte) (*RequestMeta, error) {
-	var meta RequestMeta
-	if err := json.Unmarshal(rawBody, &meta); err != nil {
-		return nil, err
-	}
-	return &meta, nil
-}
-
 // EnsureStreamOptions 确保流式请求包含 stream_options.include_usage
 // 这是让 LLM 在流式响应的最后一个 chunk 中返回 token 用量信息的必要条件
 //
@@ -43,21 +26,17 @@ func EnsureStreamOptions(rawBody []byte) []byte {
 	}
 
 	if existing, ok := body["stream_options"]; ok {
-		// 已存在 stream_options，检查 include_usage
 		var opts map[string]interface{}
 		if err := json.Unmarshal(existing, &opts); err == nil {
 			if v, ok := opts["include_usage"].(bool); ok && v {
-				// 已正确设置，无需修改
 				return rawBody
 			}
-			// 补充 include_usage
 			opts["include_usage"] = true
 			if data, err := json.Marshal(opts); err == nil {
 				body["stream_options"] = json.RawMessage(data)
 			}
 		}
 	} else {
-		// 不存在 stream_options，新增
 		body["stream_options"] = json.RawMessage(`{"include_usage":true}`)
 	}
 
@@ -106,7 +85,6 @@ var thinkTagRegex = regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
 //
 // 只修改 messages 数组中的 assistant 消息，其他所有字段（tools 等）完整保留
 func CleanThinkingFromHistory(rawBody []byte) []byte {
-	// 第一层：解析为 map，保留所有顶层字段的原始 JSON
 	var body map[string]json.RawMessage
 	if err := json.Unmarshal(rawBody, &body); err != nil {
 		return rawBody
@@ -117,7 +95,6 @@ func CleanThinkingFromHistory(rawBody []byte) []byte {
 		return rawBody
 	}
 
-	// 第二层：解析 messages 数组（每个消息也用 map 保留未知字段）
 	var messages []map[string]json.RawMessage
 	if err := json.Unmarshal(messagesRaw, &messages); err != nil {
 		return rawBody
@@ -125,7 +102,6 @@ func CleanThinkingFromHistory(rawBody []byte) []byte {
 
 	modified := false
 	for i, msg := range messages {
-		// 只处理 assistant 消息
 		var role string
 		if roleRaw, ok := msg["role"]; ok {
 			json.Unmarshal(roleRaw, &role)
@@ -161,7 +137,6 @@ func CleanThinkingFromHistory(rawBody []byte) []byte {
 		return rawBody
 	}
 
-	// 仅替换 messages 字段，保留其他所有字段不变
 	newMessagesJSON, err := json.Marshal(messages)
 	if err != nil {
 		return rawBody

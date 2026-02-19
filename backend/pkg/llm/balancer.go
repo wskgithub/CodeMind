@@ -315,18 +315,56 @@ func (w *lbProviderWrapper) CompletionStream(ctx context.Context, req *Completio
 	return &releaseOnCloseReader{ReadCloser: body, release: w.release}, nil
 }
 
+func (w *lbProviderWrapper) CompletionRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	defer w.release()
+	return w.provider.CompletionRaw(ctx, rawBody)
+}
+
+func (w *lbProviderWrapper) CompletionStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error) {
+	body, err := w.provider.CompletionStreamRaw(ctx, rawBody)
+	if err != nil {
+		w.release()
+		return nil, err
+	}
+	return &releaseOnCloseReader{ReadCloser: body, release: w.release}, nil
+}
+
 func (w *lbProviderWrapper) ListModels(ctx context.Context) (*ModelListResponse, error) {
 	defer w.release()
 	return w.provider.ListModels(ctx)
 }
 
-func (w *lbProviderWrapper) AnthropicMessages(ctx context.Context, req *AnthropicMessagesRequest) (*AnthropicMessagesResponse, error) {
+func (w *lbProviderWrapper) RetrieveModel(ctx context.Context, modelID string) (*ModelInfo, error) {
 	defer w.release()
-	return w.provider.AnthropicMessages(ctx, req)
+	return w.provider.RetrieveModel(ctx, modelID)
 }
 
-func (w *lbProviderWrapper) AnthropicMessagesStream(ctx context.Context, req *AnthropicMessagesRequest) (io.ReadCloser, error) {
-	body, err := w.provider.AnthropicMessagesStream(ctx, req)
+func (w *lbProviderWrapper) EmbeddingRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	defer w.release()
+	return w.provider.EmbeddingRaw(ctx, rawBody)
+}
+
+func (w *lbProviderWrapper) ResponsesRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	defer w.release()
+	return w.provider.ResponsesRaw(ctx, rawBody)
+}
+
+func (w *lbProviderWrapper) ResponsesStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error) {
+	body, err := w.provider.ResponsesStreamRaw(ctx, rawBody)
+	if err != nil {
+		w.release()
+		return nil, err
+	}
+	return &releaseOnCloseReader{ReadCloser: body, release: w.release}, nil
+}
+
+func (w *lbProviderWrapper) AnthropicMessagesRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	defer w.release()
+	return w.provider.AnthropicMessagesRaw(ctx, rawBody)
+}
+
+func (w *lbProviderWrapper) AnthropicMessagesStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error) {
+	body, err := w.provider.AnthropicMessagesStreamRaw(ctx, rawBody)
 	if err != nil {
 		w.release()
 		return nil, err

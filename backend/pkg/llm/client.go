@@ -134,6 +134,22 @@ func (c *Client) ListModels() (*ModelListResponse, error) {
 	return &resp, nil
 }
 
+// RetrieveModel 获取单个模型信息
+func (c *Client) RetrieveModel(modelID string) (*ModelInfo, error) {
+	body, err := c.doRequest("GET", "/v1/models/"+modelID, nil, false)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+
+	var resp ModelInfo
+	if err := json.NewDecoder(body).Decode(&resp); err != nil {
+		return nil, fmt.Errorf("解析模型信息失败: %w", err)
+	}
+
+	return &resp, nil
+}
+
 // ──────────────────────────────────
 // 原始请求体透传方法
 // 直接转发客户端的完整 JSON，不做结构体序列化/反序列化，
@@ -154,7 +170,6 @@ func (c *Client) ChatCompletionRawAll(rawBody []byte) (rawResp []byte, usage *Us
 		return nil, nil, fmt.Errorf("读取 LLM 响应失败: %w", err)
 	}
 
-	// 仅提取 usage 字段用于用量统计，不做完整反序列化
 	usage = ExtractUsageFromResponse(rawResp)
 	return rawResp, usage, nil
 }
@@ -164,6 +179,68 @@ func (c *Client) ChatCompletionRawAll(rawBody []byte) (rawResp []byte, usage *Us
 func (c *Client) ChatCompletionStreamRaw(rawBody []byte) (io.ReadCloser, error) {
 	rawBody = EnsureStreamOptions(rawBody)
 	return c.doRequestRaw("POST", "/v1/chat/completions", rawBody, true)
+}
+
+// CompletionRawAll 非流式文本补全（原始请求体透传）
+func (c *Client) CompletionRawAll(rawBody []byte) (rawResp []byte, usage *Usage, err error) {
+	body, err := c.doRequestRaw("POST", "/v1/completions", rawBody, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer body.Close()
+
+	rawResp, err = io.ReadAll(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取 LLM 响应失败: %w", err)
+	}
+
+	usage = ExtractUsageFromResponse(rawResp)
+	return rawResp, usage, nil
+}
+
+// CompletionStreamRaw 流式文本补全（原始请求体透传）
+func (c *Client) CompletionStreamRaw(rawBody []byte) (io.ReadCloser, error) {
+	rawBody = EnsureStreamOptions(rawBody)
+	return c.doRequestRaw("POST", "/v1/completions", rawBody, true)
+}
+
+// ResponsesRaw 非流式 Responses API（原始请求体透传）
+func (c *Client) ResponsesRaw(rawBody []byte) (rawResp []byte, usage *Usage, err error) {
+	body, err := c.doRequestRaw("POST", "/v1/responses", rawBody, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer body.Close()
+
+	rawResp, err = io.ReadAll(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取 LLM 响应失败: %w", err)
+	}
+
+	usage = ExtractUsageFromResponsesBody(rawResp)
+	return rawResp, usage, nil
+}
+
+// ResponsesStreamRaw 流式 Responses API（原始请求体透传）
+func (c *Client) ResponsesStreamRaw(rawBody []byte) (io.ReadCloser, error) {
+	return c.doRequestRaw("POST", "/v1/responses", rawBody, true)
+}
+
+// EmbeddingRaw 向量嵌入（原始请求体透传）
+func (c *Client) EmbeddingRaw(rawBody []byte) (rawResp []byte, usage *Usage, err error) {
+	body, err := c.doRequestRaw("POST", "/v1/embeddings", rawBody, false)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer body.Close()
+
+	rawResp, err = io.ReadAll(body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("读取 LLM 响应失败: %w", err)
+	}
+
+	usage = ExtractUsageFromResponse(rawResp)
+	return rawResp, usage, nil
 }
 
 // ──────────────────────────────────

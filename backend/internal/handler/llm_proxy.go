@@ -32,7 +32,7 @@ func NewLLMProxyHandler(proxyService *service.LLMProxyService, logger *zap.Logge
 }
 
 // ──────────────────────────────────
-// OpenAI 格式端点
+// OpenAI Chat Completions
 // ──────────────────────────────────
 
 // ChatCompletions 对话补全代理（OpenAI 格式）
@@ -49,26 +49,21 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	apiKeyID := keyID.(int64)
 	deptID := middleware.GetDepartmentID(c)
 
-	// 1. 读取原始请求体（保留所有字段，用于透传给 LLM）
 	rawBody, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体读取失败")
 		return
 	}
 
-	// 2. 清理对话历史中的 thinking 内容
-	// Thinking 模型（如 Qwen3-*-Thinking）会在 assistant 消息中留下大量 <think> 内容，
-	// 这些内容在多轮对话中会填满上下文窗口，导致实际对话被截断、上下文丢失
+	// 清理对话历史中的 thinking 内容（Thinking 模型优化）
 	rawBody = llm.CleanThinkingFromHistory(rawBody)
 
-	// 3. 仅提取路由所需的最小元数据（model、stream）
 	meta, err := llm.ExtractRequestMeta(rawBody)
 	if err != nil {
 		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
 		return
 	}
 
-	// 4. 检查 Token 配额
 	allowed, err := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("配额检查失败", zap.Error(err))
@@ -78,7 +73,6 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
-	// 5. 获取并发槽位
 	acquired, err := h.proxyService.AcquireConcurrency(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("并发控制失败", zap.Error(err))
@@ -89,7 +83,6 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	}
 	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
 
-	// 6. 根据模型名路由到合适的 Provider（集成负载均衡）
 	modelName := meta.Model
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
@@ -105,7 +98,6 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 		zap.String("format", string(provider.Format())),
 	)
 
-	// 7. 根据流式模式分别处理（透传原始请求体）
 	if meta.Stream {
 		h.handleStreamChatRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
@@ -146,7 +138,6 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 		return
 	}
 
-	// 设置 SSE 响应头
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -155,12 +146,9 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 
 	var totalUsage *llm.Usage
 
-	// 根据上游 Provider 格式选择不同的流读取策略
 	if provider.Format() == llm.FormatAnthropic {
-		// 上游返回 Anthropic 格式流 → 转换为 OpenAI 格式再返回
 		totalUsage = h.pipeAnthropicStreamToOpenAI(c, body, modelName)
 	} else {
-		// 上游返回 OpenAI 格式流 → 直接转发（SSE 行本身就是原始数据，tool_calls 等自然保留）
 		totalUsage = h.pipeOpenAIStream(c, body)
 	}
 
@@ -169,8 +157,14 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 }
 
+// ──────────────────────────────────
+// OpenAI Completions
+// ──────────────────────────────────
+
 // Completions 文本补全代理（OpenAI 格式）
 // POST /v1/completions
+//
+// 同样采用「原始请求体透传」模式，确保 suffix、logprobs 等所有字段完整保留
 func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -178,8 +172,14 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	apiKeyID := keyID.(int64)
 	deptID := middleware.GetDepartmentID(c)
 
-	var req llm.CompletionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	rawBody, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体读取失败")
+		return
+	}
+
+	meta, err := llm.ExtractRequestMeta(rawBody)
+	if err != nil {
 		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
 		return
 	}
@@ -197,7 +197,7 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	}
 	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
 
-	modelName := req.Model
+	modelName := meta.Model
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
@@ -205,46 +205,86 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 		return
 	}
 
-	if req.Stream {
-		body, err := provider.CompletionStream(ctx, &req)
-		if err != nil {
-			durationMs := int(time.Since(startTime).Milliseconds())
-			h.handleLLMError(c, err, userID, apiKeyID, modelName, "completion", durationMs)
-			return
-		}
-
-		c.Writer.Header().Set("Content-Type", "text/event-stream")
-		c.Writer.Header().Set("Cache-Control", "no-cache")
-		c.Writer.Header().Set("Connection", "keep-alive")
-		c.Status(http.StatusOK)
-
-		defer body.Close()
-		buf := make([]byte, 4096)
-		for {
-			n, readErr := body.Read(buf)
-			if n > 0 {
-				c.Writer.Write(buf[:n])
-				c.Writer.Flush()
-			}
-			if readErr != nil {
-				break
-			}
-		}
-
-		durationMs := int(time.Since(startTime).Milliseconds())
-		go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	if meta.Stream {
+		h.handleStreamCompletionRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		resp, err := provider.Completion(ctx, &req)
-		durationMs := int(time.Since(startTime).Milliseconds())
-		if err != nil {
-			h.handleLLMError(c, err, userID, apiKeyID, modelName, "completion", durationMs)
-			return
-		}
-		go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", resp.Usage, durationMs)
-		go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-		c.JSON(http.StatusOK, resp)
+		h.handleNonStreamCompletionRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
+
+// handleNonStreamCompletionRaw 非流式文本补全 — 原始请求体透传
+func (h *LLMProxyHandler) handleNonStreamCompletionRaw(
+	c *gin.Context, ctx context.Context, provider llm.Provider,
+	rawBody []byte,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
+) {
+	rawResp, usage, err := provider.CompletionRaw(ctx, rawBody)
+	durationMs := int(time.Since(startTime).Milliseconds())
+
+	if err != nil {
+		h.handleLLMError(c, err, userID, apiKeyID, modelName, "completion", durationMs)
+		return
+	}
+
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", usage, durationMs)
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+
+	c.Data(http.StatusOK, "application/json", rawResp)
+}
+
+// handleStreamCompletionRaw 流式文本补全 — 原始请求体透传
+func (h *LLMProxyHandler) handleStreamCompletionRaw(
+	c *gin.Context, ctx context.Context, provider llm.Provider,
+	rawBody []byte,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
+) {
+	body, err := provider.CompletionStreamRaw(ctx, rawBody)
+	if err != nil {
+		durationMs := int(time.Since(startTime).Milliseconds())
+		h.handleLLMError(c, err, userID, apiKeyID, modelName, "completion", durationMs)
+		return
+	}
+	defer body.Close()
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Status(http.StatusOK)
+
+	// Completions 流直接透传原始 SSE 数据
+	var totalUsage *llm.Usage
+	reader := llm.NewStreamReader(body)
+	defer reader.Close()
+
+	for {
+		rawLine, chunk, err := reader.ReadChunk()
+		if err != nil {
+			if err == io.EOF {
+				fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
+				c.Writer.Flush()
+				break
+			}
+			h.logger.Error("读取 Completions SSE 流失败", zap.Error(err))
+			break
+		}
+
+		fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
+		c.Writer.Flush()
+
+		if chunk != nil && chunk.Usage != nil {
+			totalUsage = chunk.Usage
+		}
+	}
+
+	durationMs := int(time.Since(startTime).Milliseconds())
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", totalUsage, durationMs)
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+}
+
+// ──────────────────────────────────
+// OpenAI Models
+// ──────────────────────────────────
 
 // ListModels 获取可用模型列表
 // GET /v1/models
@@ -262,12 +302,212 @@ func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// RetrieveModel 获取单个模型信息
+// GET /v1/models/:model
+func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
+	modelID := c.Param("model")
+	if modelID == "" {
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "模型 ID 不能为空")
+		return
+	}
+
+	provider, err := h.proxyService.GetProviderManager().GetDefault()
+	if err != nil {
+		h.sendOpenAIError(c, http.StatusBadGateway, "server_error", "获取模型信息失败")
+		return
+	}
+
+	resp, err := provider.RetrieveModel(c.Request.Context(), modelID)
+	if err != nil {
+		if llmErr, ok := err.(*llm.LLMError); ok && llmErr.StatusCode == 404 {
+			h.sendOpenAIError(c, http.StatusNotFound, "invalid_request_error",
+				fmt.Sprintf("The model '%s' does not exist", modelID))
+			return
+		}
+		h.sendOpenAIError(c, http.StatusBadGateway, "server_error", "获取模型信息失败")
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
+// ──────────────────────────────────
+// OpenAI Embeddings
+// ──────────────────────────────────
+
+// Embeddings 向量嵌入代理
+// POST /v1/embeddings
+func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
+	startTime := time.Now()
+	userID := middleware.GetUserID(c)
+	keyID, _ := c.Get(middleware.CtxKeyAPIKeyID)
+	apiKeyID := keyID.(int64)
+	deptID := middleware.GetDepartmentID(c)
+
+	rawBody, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体读取失败")
+		return
+	}
+
+	meta, err := llm.ExtractRequestMeta(rawBody)
+	if err != nil {
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
+		return
+	}
+
+	allowed, _ := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
+	if !allowed {
+		h.sendOpenAIError(c, http.StatusTooManyRequests, "rate_limit_exceeded", errcode.ErrTokenQuotaExceeded.Message)
+		return
+	}
+
+	modelName := meta.Model
+	ctx := c.Request.Context()
+	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
+	if err != nil {
+		h.sendOpenAIError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
+		return
+	}
+
+	rawResp, usage, err := provider.EmbeddingRaw(ctx, rawBody)
+	durationMs := int(time.Since(startTime).Milliseconds())
+
+	if err != nil {
+		h.handleLLMError(c, err, userID, apiKeyID, modelName, "embedding", durationMs)
+		return
+	}
+
+	// Embeddings 只有 prompt_tokens 和 total_tokens，映射到通用 Usage
+	if usage != nil {
+		go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "embedding", usage, durationMs)
+	}
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "embedding", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+
+	c.Data(http.StatusOK, "application/json", rawResp)
+}
+
+// ──────────────────────────────────
+// OpenAI Responses API
+// ──────────────────────────────────
+
+// Responses 代理（OpenAI Responses API）
+// POST /v1/responses
+//
+// Responses API 是 OpenAI 2025 年引入的新接口，与 Chat Completions 并存。
+// 采用原始请求体透传模式；流式输出使用命名事件格式（event: xxx\ndata: {...}），
+// 而非 Chat Completions 的 data-only 格式。
+func (h *LLMProxyHandler) Responses(c *gin.Context) {
+	startTime := time.Now()
+	userID := middleware.GetUserID(c)
+	keyID, _ := c.Get(middleware.CtxKeyAPIKeyID)
+	apiKeyID := keyID.(int64)
+	deptID := middleware.GetDepartmentID(c)
+
+	rawBody, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.sendResponsesError(c, http.StatusBadRequest, "invalid_request_error", "请求体读取失败")
+		return
+	}
+
+	meta, err := llm.ExtractRequestMeta(rawBody)
+	if err != nil {
+		h.sendResponsesError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
+		return
+	}
+
+	allowed, err := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
+	if err != nil {
+		h.logger.Error("配额检查失败", zap.Error(err))
+	}
+	if !allowed {
+		h.sendResponsesError(c, http.StatusTooManyRequests, "rate_limit_exceeded", errcode.ErrTokenQuotaExceeded.Message)
+		return
+	}
+
+	acquired, err := h.proxyService.AcquireConcurrency(c.Request.Context(), userID, deptID)
+	if err != nil {
+		h.logger.Error("并发控制失败", zap.Error(err))
+	}
+	if !acquired {
+		h.sendResponsesError(c, http.StatusTooManyRequests, "rate_limit_exceeded", errcode.ErrConcurrencyExceeded.Message)
+		return
+	}
+	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
+
+	modelName := meta.Model
+	ctx := c.Request.Context()
+	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
+	if err != nil {
+		h.logger.Error("获取 Provider 失败", zap.Error(err), zap.String("model", modelName))
+		h.sendResponsesError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
+		return
+	}
+
+	h.logger.Debug("Responses API 路由请求到 Provider",
+		zap.String("model", modelName),
+		zap.String("provider", provider.Name()),
+	)
+
+	if meta.Stream {
+		h.handleStreamResponses(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+	} else {
+		h.handleNonStreamResponses(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+	}
+}
+
+// handleNonStreamResponses 非流式 Responses API
+func (h *LLMProxyHandler) handleNonStreamResponses(
+	c *gin.Context, ctx context.Context, provider llm.Provider,
+	rawBody []byte,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
+) {
+	rawResp, usage, err := provider.ResponsesRaw(ctx, rawBody)
+	durationMs := int(time.Since(startTime).Milliseconds())
+
+	if err != nil {
+		h.handleLLMErrorResponses(c, err, userID, apiKeyID, modelName, "responses", durationMs)
+		return
+	}
+
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", usage, durationMs)
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+
+	c.Data(http.StatusOK, "application/json", rawResp)
+}
+
+// handleStreamResponses 流式 Responses API（SSE 命名事件格式）
+func (h *LLMProxyHandler) handleStreamResponses(
+	c *gin.Context, ctx context.Context, provider llm.Provider,
+	rawBody []byte,
+	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
+) {
+	body, err := provider.ResponsesStreamRaw(ctx, rawBody)
+	if err != nil {
+		durationMs := int(time.Since(startTime).Milliseconds())
+		h.handleLLMErrorResponses(c, err, userID, apiKeyID, modelName, "responses", durationMs)
+		return
+	}
+
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Status(http.StatusOK)
+
+	totalUsage := h.pipeResponsesStream(c, body)
+
+	durationMs := int(time.Since(startTime).Milliseconds())
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", totalUsage, durationMs)
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+}
+
 // ──────────────────────────────────
 // Anthropic 格式端点
 // ──────────────────────────────────
 
 // AnthropicMessages Anthropic 原生消息代理
 // POST /v1/messages
+// 采用原始请求体透传，避免结构体反序列化丢失 thinking 等未定义字段
 func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -275,14 +515,26 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	apiKeyID := keyID.(int64)
 	deptID := middleware.GetDepartmentID(c)
 
-	// 1. 解析 Anthropic 格式请求
-	var req llm.AnthropicMessagesRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.sendAnthropicError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
+	rawBody, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.sendAnthropicError(c, http.StatusBadRequest, "invalid_request_error", "读取请求体失败")
 		return
 	}
 
-	// 2. 检查配额
+	// 轻量解析：只提取路由和分流所需的最小字段
+	var partial struct {
+		Model  string `json:"model"`
+		Stream bool   `json:"stream"`
+	}
+	if err := json.Unmarshal(rawBody, &partial); err != nil {
+		h.sendAnthropicError(c, http.StatusBadRequest, "invalid_request_error", "请求体 JSON 格式无效")
+		return
+	}
+	if partial.Model == "" {
+		h.sendAnthropicError(c, http.StatusBadRequest, "invalid_request_error", "缺少必填字段 model")
+		return
+	}
+
 	allowed, err := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("配额检查失败", zap.Error(err))
@@ -292,7 +544,6 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 		return
 	}
 
-	// 3. 获取并发槽位
 	acquired, err := h.proxyService.AcquireConcurrency(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("并发控制失败", zap.Error(err))
@@ -303,8 +554,7 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	}
 	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
 
-	// 4. 路由到 Provider（集成负载均衡）
-	modelName := req.Model
+	modelName := partial.Model
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
@@ -318,21 +568,20 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 		zap.String("format", string(provider.Format())),
 	)
 
-	// 5. 流式/非流式处理
-	if req.Stream {
-		h.handleAnthropicStream(c, ctx, provider, &req, userID, apiKeyID, deptID, modelName, startTime)
+	if partial.Stream {
+		h.handleAnthropicStream(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleAnthropicNonStream(c, ctx, provider, &req, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleAnthropicNonStream(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
-// handleAnthropicNonStream 处理 Anthropic 非流式请求
+// handleAnthropicNonStream 处理 Anthropic 非流式请求（原始请求体透传）
 func (h *LLMProxyHandler) handleAnthropicNonStream(
 	c *gin.Context, ctx context.Context, provider llm.Provider,
-	req *llm.AnthropicMessagesRequest,
+	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
-	resp, err := provider.AnthropicMessages(ctx, req)
+	rawResp, usage, err := provider.AnthropicMessagesRaw(ctx, rawBody)
 	durationMs := int(time.Since(startTime).Milliseconds())
 
 	if err != nil {
@@ -340,31 +589,25 @@ func (h *LLMProxyHandler) handleAnthropicNonStream(
 		return
 	}
 
-	var usage *llm.Usage
-	if resp.Usage != nil {
-		usage = resp.Usage.ToUsage()
-	}
-
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
 
-	c.JSON(http.StatusOK, resp)
+	c.Data(http.StatusOK, "application/json", rawResp)
 }
 
-// handleAnthropicStream 处理 Anthropic 流式请求
+// handleAnthropicStream 处理 Anthropic 流式请求（原始请求体透传）
 func (h *LLMProxyHandler) handleAnthropicStream(
 	c *gin.Context, ctx context.Context, provider llm.Provider,
-	req *llm.AnthropicMessagesRequest,
+	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
-	body, err := provider.AnthropicMessagesStream(ctx, req)
+	body, err := provider.AnthropicMessagesStreamRaw(ctx, rawBody)
 	if err != nil {
 		durationMs := int(time.Since(startTime).Milliseconds())
 		h.handleLLMErrorAnthropic(c, err, userID, apiKeyID, modelName, "anthropic_messages", durationMs)
 		return
 	}
 
-	// 设置 Anthropic SSE 响应头
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -374,10 +617,8 @@ func (h *LLMProxyHandler) handleAnthropicStream(
 	var totalUsage *llm.Usage
 
 	if provider.Format() == llm.FormatOpenAI {
-		// 上游返回 OpenAI 格式流 → 转换为 Anthropic 格式再返回
 		totalUsage = h.pipeOpenAIStreamToAnthropic(c, body, modelName)
 	} else {
-		// 上游返回 Anthropic 格式流 → 直接转发
 		totalUsage = h.pipeAnthropicStream(c, body)
 	}
 
@@ -437,14 +678,12 @@ func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser
 			break
 		}
 
-		// 直接转发原始 SSE 文本
 		fmt.Fprint(c.Writer, rawLines)
 		if !endsWith(rawLines, "\n\n") {
 			fmt.Fprint(c.Writer, "\n")
 		}
 		c.Writer.Flush()
 
-		// 从 message_delta 事件提取用量
 		if eventType == llm.AnthropicEventMessageDelta && event != nil && event.Usage != nil {
 			totalUsage = event.Usage.ToUsage()
 		}
@@ -459,6 +698,7 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 	defer reader.Close()
 
 	var totalUsage *llm.Usage
+	state := &llm.AnthropicToOpenAIState{}
 
 	for {
 		eventType, _, event, err := reader.ReadEvent()
@@ -472,14 +712,12 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 			break
 		}
 
-		// 将 Anthropic 事件转换为 OpenAI chunk 格式
-		openaiData := llm.AnthropicEventToOpenAIChunk(eventType, event, model)
+		openaiData := llm.AnthropicEventToOpenAIChunk(eventType, event, model, state)
 		if openaiData != "" {
 			fmt.Fprint(c.Writer, openaiData)
 			c.Writer.Flush()
 		}
 
-		// 提取用量
 		if eventType == llm.AnthropicEventMessageDelta && event != nil && event.Usage != nil {
 			totalUsage = event.Usage.ToUsage()
 		}
@@ -495,13 +733,12 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 
 	var totalUsage *llm.Usage
 	isFirst := true
+	state := &llm.OpenAIToAnthropicState{}
 
 	for {
 		_, chunk, err := reader.ReadChunk()
 		if err != nil {
 			if err == io.EOF {
-				// 如果 OpenAI 流以 [DONE] 结束但没有 finish_reason
-				// 确保发送 Anthropic 的结束事件
 				break
 			}
 			h.logger.Error("读取 OpenAI SSE 流失败", zap.Error(err))
@@ -509,7 +746,7 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 		}
 
 		if chunk != nil {
-			anthropicData := llm.OpenAIChunkToAnthropicEvents(chunk, isFirst)
+			anthropicData := llm.OpenAIChunkToAnthropicEvents(chunk, isFirst, state)
 			if anthropicData != "" {
 				fmt.Fprint(c.Writer, anthropicData)
 				c.Writer.Flush()
@@ -518,6 +755,41 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 
 			if chunk.Usage != nil {
 				totalUsage = chunk.Usage
+			}
+		}
+	}
+
+	return totalUsage
+}
+
+// pipeResponsesStream 转发 Responses API 的 SSE 命名事件流
+// Responses API 使用 event: xxx\ndata: {...}\n\n 格式，
+// 从 response.completed 事件中提取最终 usage
+func (h *LLMProxyHandler) pipeResponsesStream(c *gin.Context, body io.ReadCloser) *llm.Usage {
+	reader := llm.NewResponsesStreamReader(body)
+	defer reader.Close()
+
+	var totalUsage *llm.Usage
+
+	for {
+		eventType, rawLines, dataPayload, err := reader.ReadEvent()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			h.logger.Error("读取 Responses SSE 流失败", zap.Error(err))
+			break
+		}
+
+		fmt.Fprint(c.Writer, rawLines)
+		if !endsWith(rawLines, "\n\n") {
+			fmt.Fprint(c.Writer, "\n")
+		}
+		c.Writer.Flush()
+
+		if eventType == llm.ResponsesEventCompleted && len(dataPayload) > 0 {
+			if usage := llm.ExtractUsageFromResponsesEvent(dataPayload); usage != nil {
+				totalUsage = usage
 			}
 		}
 	}
@@ -570,7 +842,6 @@ func (h *LLMProxyHandler) handleLLMErrorAnthropic(
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
 		if len(llmErr.Body) > 0 {
-			// 尝试转发原始错误体，但包装为 Anthropic 格式
 			var anthropicErr llm.AnthropicErrorResponse
 			if json.Unmarshal(llmErr.Body, &anthropicErr) == nil {
 				c.JSON(statusCode, anthropicErr)
@@ -589,16 +860,45 @@ func (h *LLMProxyHandler) handleLLMErrorAnthropic(
 	h.sendAnthropicError(c, statusCode, "api_error", errMsg)
 }
 
+// handleLLMErrorResponses 处理 LLM 服务错误（Responses API 格式响应）
+func (h *LLMProxyHandler) handleLLMErrorResponses(
+	c *gin.Context, err error,
+	userID, apiKeyID int64,
+	modelName, requestType string,
+	durationMs int,
+) {
+	var statusCode int
+	var errMsg string
+
+	if llmErr, ok := err.(*llm.LLMError); ok {
+		statusCode = llmErr.StatusCode
+		errMsg = llmErr.Message
+		if len(llmErr.Body) > 0 {
+			c.Data(statusCode, "application/json", llmErr.Body)
+			go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
+			return
+		}
+	} else {
+		statusCode = http.StatusBadGateway
+		errMsg = "LLM 服务不可用"
+	}
+
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
+	h.sendResponsesError(c, statusCode, "server_error", errMsg)
+}
+
+// sendResponsesError 发送 Responses API 格式错误响应
+func (h *LLMProxyHandler) sendResponsesError(c *gin.Context, status int, code, msg string) {
+	c.JSON(status, llm.NewResponsesError(code, msg))
+}
+
 // sendOpenAIError 发送 OpenAI 格式错误响应
 func (h *LLMProxyHandler) sendOpenAIError(c *gin.Context, status int, errType, msg string) {
 	c.JSON(status, llm.ErrorResponse{
-		Error: struct {
-			Message string `json:"message"`
-			Type    string `json:"type"`
-			Code    string `json:"code"`
-		}{
+		Error: llm.ErrorDetail{
 			Message: msg,
 			Type:    errType,
+			Param:   nil,
 			Code:    fmt.Sprintf("%d", status),
 		},
 	})
@@ -622,4 +922,3 @@ func (h *LLMProxyHandler) sendAnthropicError(c *gin.Context, status int, errType
 func endsWith(s, suffix string) bool {
 	return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
 }
-

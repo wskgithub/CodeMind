@@ -6,19 +6,28 @@ package llm
 // ──────────────────────────────────
 
 // AnthropicMessagesRequest Anthropic Messages API 请求体
+// 注意：直连 Anthropic 后端时使用原始请求体透传，此结构体仅用于跨格式转换场景
 type AnthropicMessagesRequest struct {
-	Model         string                  `json:"model"`
-	Messages      []AnthropicMessage      `json:"messages"`
-	System        interface{}             `json:"system,omitempty"`        // string 或 []AnthropicSystemBlock
-	MaxTokens     int                     `json:"max_tokens"`             // Anthropic 要求必填
-	Stream        bool                    `json:"stream,omitempty"`
-	Temperature   *float64                `json:"temperature,omitempty"`
-	TopP          *float64                `json:"top_p,omitempty"`
-	TopK          *int                    `json:"top_k,omitempty"`
-	StopSequences []string                `json:"stop_sequences,omitempty"`
-	Metadata      *AnthropicMetadata      `json:"metadata,omitempty"`
-	Tools         []AnthropicTool         `json:"tools,omitempty"`
-	ToolChoice    interface{}             `json:"tool_choice,omitempty"` // string 或 AnthropicToolChoice
+	Model            string                  `json:"model"`
+	Messages         []AnthropicMessage      `json:"messages"`
+	System           interface{}             `json:"system,omitempty"`            // string 或 []AnthropicSystemBlock
+	MaxTokens        int                     `json:"max_tokens"`                  // Anthropic 要求必填
+	Stream           bool                    `json:"stream,omitempty"`
+	Temperature      *float64                `json:"temperature,omitempty"`
+	TopP             *float64                `json:"top_p,omitempty"`
+	TopK             *int                    `json:"top_k,omitempty"`
+	StopSequences    []string                `json:"stop_sequences,omitempty"`
+	Metadata         *AnthropicMetadata      `json:"metadata,omitempty"`
+	Tools            []AnthropicTool         `json:"tools,omitempty"`
+	ToolChoice       interface{}             `json:"tool_choice,omitempty"`       // string 或 AnthropicToolChoice
+	Thinking         *AnthropicThinking      `json:"thinking,omitempty"`          // 扩展思考配置
+	ParallelToolUse  *bool                   `json:"parallel_tool_use,omitempty"` // 是否允许并行工具调用
+}
+
+// AnthropicThinking 扩展思考配置
+type AnthropicThinking struct {
+	Type         string `json:"type"`                    // "enabled" | "disabled" | "adaptive"
+	BudgetTokens int    `json:"budget_tokens,omitempty"` // 思考预算 token 数
 }
 
 // AnthropicMessage Anthropic 对话消息
@@ -37,20 +46,25 @@ type AnthropicSystemBlock struct {
 }
 
 // AnthropicContentBlock 内容块（消息中的一个元素）
+// 支持: text, image, tool_use, tool_result, thinking, document, server_tool_use
 type AnthropicContentBlock struct {
-	Type  string      `json:"type"`            // "text" | "image" | "tool_use" | "tool_result"
+	Type  string      `json:"type"`            // 内容块类型
 	Text  string      `json:"text,omitempty"`  // type="text" 时使用
-	ID    string      `json:"id,omitempty"`    // type="tool_use" 时的工具调用 ID
-	Name  string      `json:"name,omitempty"`  // type="tool_use" 时的工具名称
-	Input interface{} `json:"input,omitempty"` // type="tool_use" 时的输入参数
+	ID    string      `json:"id,omitempty"`    // type="tool_use" | "server_tool_use" 时的工具调用 ID
+	Name  string      `json:"name,omitempty"`  // type="tool_use" | "server_tool_use" 时的工具名称
+	Input interface{} `json:"input,omitempty"` // type="tool_use" | "server_tool_use" 时的输入参数
 
 	// type="tool_result" 相关字段
-	ToolUseID string      `json:"tool_use_id,omitempty"` // 关联的 tool_use ID
-	Content   interface{} `json:"content,omitempty"`     // 工具返回内容
-	IsError   bool        `json:"is_error,omitempty"`    // 是否为错误结果
+	ToolUseID string      `json:"tool_use_id,omitempty"`
+	Content   interface{} `json:"content,omitempty"` // 工具返回内容 (string 或 []ContentBlock)
+	IsError   bool        `json:"is_error,omitempty"`
 
 	// type="image" 相关字段
 	Source *AnthropicImageSource `json:"source,omitempty"`
+
+	// type="thinking" 相关字段（扩展思考）
+	Thinking  string `json:"thinking,omitempty"`  // 思考内容文本
+	Signature string `json:"signature,omitempty"` // 思考块完整性签名
 }
 
 // AnthropicImageSource 图片来源
@@ -132,9 +146,11 @@ type AnthropicStreamEvent struct {
 
 // AnthropicStreamDelta 流式增量数据
 type AnthropicStreamDelta struct {
-	Type         string  `json:"type,omitempty"`          // "text_delta" | "input_json_delta"
-	Text         string  `json:"text,omitempty"`          // 文本增量
-	PartialJSON  string  `json:"partial_json,omitempty"`  // JSON 增量（工具调用）
+	Type         string  `json:"type,omitempty"`          // "text_delta" | "input_json_delta" | "thinking_delta" | "signature_delta"
+	Text         string  `json:"text,omitempty"`          // text_delta 时的文本增量
+	PartialJSON  string  `json:"partial_json,omitempty"`  // input_json_delta 时的 JSON 增量
+	Thinking     string  `json:"thinking,omitempty"`      // thinking_delta 时的思考增量
+	Signature    string  `json:"signature,omitempty"`     // signature_delta 时的签名数据
 	StopReason   *string `json:"stop_reason,omitempty"`   // message_delta 中的停止原因
 	StopSequence *string `json:"stop_sequence,omitempty"` // message_delta 中的停止序列
 }

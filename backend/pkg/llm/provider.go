@@ -31,40 +31,62 @@ type Provider interface {
 	// Format 返回 Provider 支持的协议格式
 	Format() ProviderFormat
 
-	// ── 结构体方式调用（内部转换用） ──
+	// ── Chat Completions ──
 
-	// ChatCompletion OpenAI 格式 — 非流式对话补全
+	// ChatCompletion 非流式对话补全（结构体方式）
 	ChatCompletion(ctx context.Context, req *ChatCompletionRequest) (*ChatCompletionResponse, error)
 
-	// ChatCompletionStream OpenAI 格式 — 流式对话补全
+	// ChatCompletionStream 流式对话补全（结构体方式）
 	ChatCompletionStream(ctx context.Context, req *ChatCompletionRequest) (io.ReadCloser, error)
 
-	// ── 原始请求体透传（推荐的代理方式） ──
-
-	// ChatCompletionRaw 原始请求体透传 — 非流式对话补全
-	// 返回原始 JSON 响应和解析的用量信息，保留所有字段（tools、tool_calls 等）
+	// ChatCompletionRaw 非流式对话补全（原始请求体透传，推荐的代理方式）
 	ChatCompletionRaw(ctx context.Context, rawBody []byte) (rawResp []byte, usage *Usage, err error)
 
-	// ChatCompletionStreamRaw 原始请求体透传 — 流式对话补全
-	// 自动注入 stream_options.include_usage，确保返回用量信息
+	// ChatCompletionStreamRaw 流式对话补全（原始请求体透传）
 	ChatCompletionStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error)
 
-	// ── 其他端点 ──
+	// ── Completions ──
 
-	// Completion OpenAI 格式 — 非流式文本补全
+	// Completion 非流式文本补全（结构体方式）
 	Completion(ctx context.Context, req *CompletionRequest) (*CompletionResponse, error)
 
-	// CompletionStream OpenAI 格式 — 流式文本补全
+	// CompletionStream 流式文本补全（结构体方式）
 	CompletionStream(ctx context.Context, req *CompletionRequest) (io.ReadCloser, error)
+
+	// CompletionRaw 非流式文本补全（原始请求体透传）
+	CompletionRaw(ctx context.Context, rawBody []byte) (rawResp []byte, usage *Usage, err error)
+
+	// CompletionStreamRaw 流式文本补全（原始请求体透传）
+	CompletionStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error)
+
+	// ── Models ──
 
 	// ListModels 获取可用模型列表
 	ListModels(ctx context.Context) (*ModelListResponse, error)
 
-	// AnthropicMessages Anthropic 格式 — 非流式消息调用
-	AnthropicMessages(ctx context.Context, req *AnthropicMessagesRequest) (*AnthropicMessagesResponse, error)
+	// RetrieveModel 获取单个模型信息
+	RetrieveModel(ctx context.Context, modelID string) (*ModelInfo, error)
 
-	// AnthropicMessagesStream Anthropic 格式 — 流式消息调用
-	AnthropicMessagesStream(ctx context.Context, req *AnthropicMessagesRequest) (io.ReadCloser, error)
+	// ── Embeddings ──
+
+	// EmbeddingRaw 向量嵌入（原始请求体透传）
+	EmbeddingRaw(ctx context.Context, rawBody []byte) (rawResp []byte, usage *Usage, err error)
+
+	// ── Responses API ──
+
+	// ResponsesRaw 非流式 Responses API（原始请求体透传）
+	ResponsesRaw(ctx context.Context, rawBody []byte) (rawResp []byte, usage *Usage, err error)
+
+	// ResponsesStreamRaw 流式 Responses API（原始请求体透传）
+	ResponsesStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error)
+
+	// ── Anthropic 原生接口（原始请求体透传） ──
+
+	// AnthropicMessagesRaw 非流式消息调用（原始请求体透传）
+	AnthropicMessagesRaw(ctx context.Context, rawBody []byte) (rawResp []byte, usage *Usage, err error)
+
+	// AnthropicMessagesStreamRaw 流式消息调用（原始请求体透传）
+	AnthropicMessagesStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error)
 }
 
 // ──────────────────────────────────
@@ -96,12 +118,10 @@ func (p *OpenAIProvider) ChatCompletionStream(_ context.Context, req *ChatComple
 	return p.client.ChatCompletionStream(req)
 }
 
-// ChatCompletionRaw 直接转发原始请求体到 LLM（透传所有字段）
 func (p *OpenAIProvider) ChatCompletionRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	return p.client.ChatCompletionRawAll(rawBody)
 }
 
-// ChatCompletionStreamRaw 直接转发原始请求体的流式调用（自动注入 stream_options）
 func (p *OpenAIProvider) ChatCompletionStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
 	return p.client.ChatCompletionStreamRaw(rawBody)
 }
@@ -114,26 +134,61 @@ func (p *OpenAIProvider) CompletionStream(_ context.Context, req *CompletionRequ
 	return p.client.CompletionStream(req)
 }
 
+func (p *OpenAIProvider) CompletionRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	return p.client.CompletionRawAll(rawBody)
+}
+
+func (p *OpenAIProvider) CompletionStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
+	return p.client.CompletionStreamRaw(rawBody)
+}
+
 func (p *OpenAIProvider) ListModels(_ context.Context) (*ModelListResponse, error) {
 	return p.client.ListModels()
 }
 
-// AnthropicMessages OpenAI Provider 收到 Anthropic 格式请求时，先转换再调用
-func (p *OpenAIProvider) AnthropicMessages(ctx context.Context, req *AnthropicMessagesRequest) (*AnthropicMessagesResponse, error) {
-	// 将 Anthropic 请求转换为 OpenAI 格式
-	openaiReq := AnthropicToOpenAI(req)
-	resp, err := p.client.ChatCompletion(openaiReq)
-	if err != nil {
-		return nil, err
-	}
-	// 将 OpenAI 响应转换回 Anthropic 格式
-	return OpenAIResponseToAnthropic(resp), nil
+func (p *OpenAIProvider) RetrieveModel(_ context.Context, modelID string) (*ModelInfo, error) {
+	return p.client.RetrieveModel(modelID)
 }
 
-// AnthropicMessagesStream OpenAI Provider 收到 Anthropic 流式请求时的处理
-// 注意：此场景需要在 handler 层进行流式格式转换，此处返回原始 OpenAI 流
-func (p *OpenAIProvider) AnthropicMessagesStream(ctx context.Context, req *AnthropicMessagesRequest) (io.ReadCloser, error) {
-	openaiReq := AnthropicToOpenAI(req)
+func (p *OpenAIProvider) EmbeddingRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	return p.client.EmbeddingRaw(rawBody)
+}
+
+func (p *OpenAIProvider) ResponsesRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	return p.client.ResponsesRaw(rawBody)
+}
+
+func (p *OpenAIProvider) ResponsesStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
+	return p.client.ResponsesStreamRaw(rawBody)
+}
+
+// AnthropicMessagesRaw OpenAI Provider 收到 Anthropic 原始请求时，解析→转换→调用→转换回
+func (p *OpenAIProvider) AnthropicMessagesRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	var req AnthropicMessagesRequest
+	if err := json.Unmarshal(rawBody, &req); err != nil {
+		return nil, nil, fmt.Errorf("解析 Anthropic 请求体失败: %w", err)
+	}
+	openaiReq := AnthropicToOpenAI(&req)
+	resp, err := p.client.ChatCompletion(openaiReq)
+	if err != nil {
+		return nil, nil, err
+	}
+	anthropicResp := OpenAIResponseToAnthropic(resp)
+	data, err := json.Marshal(anthropicResp)
+	if err != nil {
+		return nil, nil, fmt.Errorf("序列化 Anthropic 响应失败: %w", err)
+	}
+	return data, resp.Usage, nil
+}
+
+// AnthropicMessagesStreamRaw OpenAI Provider 收到 Anthropic 流式请求时，返回 OpenAI 格式流
+// handler 层根据 provider.Format() 进行格式转换
+func (p *OpenAIProvider) AnthropicMessagesStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
+	var req AnthropicMessagesRequest
+	if err := json.Unmarshal(rawBody, &req); err != nil {
+		return nil, fmt.Errorf("解析 Anthropic 请求体失败: %w", err)
+	}
+	openaiReq := AnthropicToOpenAI(&req)
 	return p.client.ChatCompletionStream(openaiReq)
 }
 
@@ -160,25 +215,23 @@ func (p *AnthropicProvider) Format() ProviderFormat { return FormatAnthropic }
 
 // ChatCompletion Anthropic Provider 收到 OpenAI 格式请求时，先转换再调用
 func (p *AnthropicProvider) ChatCompletion(_ context.Context, req *ChatCompletionRequest) (*ChatCompletionResponse, error) {
-	// 将 OpenAI 请求转换为 Anthropic 格式
 	anthropicReq := OpenAIToAnthropic(req)
 	resp, err := p.client.Messages(anthropicReq)
 	if err != nil {
 		return nil, err
 	}
-	// 将 Anthropic 响应转换回 OpenAI 格式
 	return AnthropicResponseToOpenAI(resp), nil
 }
 
 // ChatCompletionStream Anthropic Provider 收到 OpenAI 流式请求时的处理
-// 注意：此场景需要在 handler 层进行流式格式转换，此处返回原始 Anthropic 流
+// 此处返回原始 Anthropic 流，handler 层负责格式转换
 func (p *AnthropicProvider) ChatCompletionStream(_ context.Context, req *ChatCompletionRequest) (io.ReadCloser, error) {
 	anthropicReq := OpenAIToAnthropic(req)
 	return p.client.MessagesStream(anthropicReq)
 }
 
-// ChatCompletionRaw Anthropic Provider 收到原始 OpenAI 请求时，需要解析→转换→调用→转换回来
-// 注意：跨格式转换会丢失部分 OpenAI 特有字段（如 tool_calls），这是协议差异的固有限制
+// ChatCompletionRaw Anthropic Provider 收到原始 OpenAI 请求时，需解析→转换→调用→转换
+// 跨格式转换会丢失部分 OpenAI 特有字段，这是协议差异的固有限制
 func (p *AnthropicProvider) ChatCompletionRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	var req ChatCompletionRequest
 	if err := json.Unmarshal(rawBody, &req); err != nil {
@@ -206,7 +259,6 @@ func (p *AnthropicProvider) ChatCompletionStreamRaw(ctx context.Context, rawBody
 
 // Completion Anthropic 不支持原始 Completions 接口，转换为 Messages 调用
 func (p *AnthropicProvider) Completion(_ context.Context, req *CompletionRequest) (*CompletionResponse, error) {
-	// 将 Completion 请求简单转换为 Chat 格式再通过 Anthropic 调用
 	chatReq := completionToChatRequest(req)
 	anthropicReq := OpenAIToAnthropic(chatReq)
 	resp, err := p.client.Messages(anthropicReq)
@@ -224,6 +276,32 @@ func (p *AnthropicProvider) CompletionStream(_ context.Context, req *CompletionR
 	return p.client.MessagesStream(anthropicReq)
 }
 
+// CompletionRaw Anthropic Provider 的 Completions 原始透传
+func (p *AnthropicProvider) CompletionRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	var req CompletionRequest
+	if err := json.Unmarshal(rawBody, &req); err != nil {
+		return nil, nil, fmt.Errorf("解析请求体失败: %w", err)
+	}
+	resp, err := p.Completion(ctx, &req)
+	if err != nil {
+		return nil, nil, err
+	}
+	data, err := json.Marshal(resp)
+	if err != nil {
+		return nil, nil, fmt.Errorf("序列化响应失败: %w", err)
+	}
+	return data, resp.Usage, nil
+}
+
+// CompletionStreamRaw Anthropic Provider 的 Completions 流式原始透传
+func (p *AnthropicProvider) CompletionStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error) {
+	var req CompletionRequest
+	if err := json.Unmarshal(rawBody, &req); err != nil {
+		return nil, fmt.Errorf("解析请求体失败: %w", err)
+	}
+	return p.CompletionStream(ctx, &req)
+}
+
 // ListModels Anthropic 无标准模型列表接口，返回预定义列表
 func (p *AnthropicProvider) ListModels(_ context.Context) (*ModelListResponse, error) {
 	return &ModelListResponse{
@@ -237,12 +315,46 @@ func (p *AnthropicProvider) ListModels(_ context.Context) (*ModelListResponse, e
 	}, nil
 }
 
-func (p *AnthropicProvider) AnthropicMessages(_ context.Context, req *AnthropicMessagesRequest) (*AnthropicMessagesResponse, error) {
-	return p.client.Messages(req)
+// RetrieveModel Anthropic 不支持查询单个模型，从预定义列表中查找
+func (p *AnthropicProvider) RetrieveModel(_ context.Context, modelID string) (*ModelInfo, error) {
+	resp, _ := p.ListModels(nil)
+	for _, m := range resp.Data {
+		if m.ID == modelID {
+			return &m, nil
+		}
+	}
+	return nil, &LLMError{StatusCode: 404, Message: fmt.Sprintf("模型 '%s' 不存在", modelID)}
 }
 
-func (p *AnthropicProvider) AnthropicMessagesStream(_ context.Context, req *AnthropicMessagesRequest) (io.ReadCloser, error) {
-	return p.client.MessagesStream(req)
+// EmbeddingRaw Anthropic 不支持 Embeddings 接口
+func (p *AnthropicProvider) EmbeddingRaw(_ context.Context, _ []byte) ([]byte, *Usage, error) {
+	return nil, nil, &LLMError{StatusCode: 404, Message: "Anthropic 不支持 Embeddings 接口"}
+}
+
+func (p *AnthropicProvider) ResponsesRaw(_ context.Context, _ []byte) ([]byte, *Usage, error) {
+	return nil, nil, &LLMError{StatusCode: 404, Message: "Anthropic 不支持 Responses 接口"}
+}
+
+func (p *AnthropicProvider) ResponsesStreamRaw(_ context.Context, _ []byte) (io.ReadCloser, error) {
+	return nil, &LLMError{StatusCode: 404, Message: "Anthropic 不支持 Responses 接口"}
+}
+
+// AnthropicMessagesRaw 直接透传原始请求体到 Anthropic 后端
+func (p *AnthropicProvider) AnthropicMessagesRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
+	respBytes, anthropicUsage, err := p.client.MessagesRaw(rawBody, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	var usage *Usage
+	if anthropicUsage != nil {
+		usage = anthropicUsage.ToUsage()
+	}
+	return respBytes, usage, nil
+}
+
+// AnthropicMessagesStreamRaw 直接透传原始请求体到 Anthropic 后端，返回 SSE 流
+func (p *AnthropicProvider) AnthropicMessagesStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
+	return p.client.MessagesStreamRaw(rawBody, nil)
 }
 
 // ──────────────────────────────────
@@ -280,7 +392,7 @@ func chatToCompletionResponse(resp *ChatCompletionResponse) *CompletionResponse 
 	for _, c := range resp.Choices {
 		text := ""
 		if c.Message != nil {
-			text = c.Message.Content
+			text = c.Message.ContentString()
 		}
 		choices = append(choices, CompletionChoice{
 			Index:        c.Index,
