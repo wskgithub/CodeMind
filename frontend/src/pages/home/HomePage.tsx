@@ -8,6 +8,9 @@ import {
   ThunderboltOutlined,
   SafetyCertificateOutlined,
   BarChartOutlined,
+  CloudServerOutlined,
+  CodeOutlined,
+  TeamOutlined,
   ArrowDownOutlined,
 } from '@ant-design/icons';
 import useAuthStore from '@/store/authStore';
@@ -17,49 +20,67 @@ const features = [
   {
     icon: <ApiOutlined />,
     title: 'OpenAI 兼容',
-    desc: '完整兼容 OpenAI API 格式，无缝对接现有开发工具与工作流',
+    desc: '完整兼容 OpenAI API 格式，无缝对接主流开发工具',
     gradient: 'var(--gradient-primary)',
   },
   {
     icon: <RobotOutlined />,
     title: 'Anthropic 原生',
-    desc: '原生支持 Anthropic 模型，提供企业级 Claude 接入能力',
+    desc: '原生支持 Anthropic 模型协议，提供Claude Code接入能力与最佳实践',
     gradient: 'var(--gradient-primary)',
   },
   {
     icon: <GatewayOutlined />,
     title: 'MCP 网关',
-    desc: '集成 MCP 协议网关，打通 AI 与外部工具的无缝协作',
+    desc: '集成 MCP 协议网关，打通 AI 与外部工具的无缝协作，扩展 AI 能力边界',
     gradient: 'var(--gradient-primary)',
   },
   {
-    icon: <ThunderboltOutlined />,
-    title: 'SSE 流式',
-    desc: '支持 Server-Sent Events 流式响应，实时输出模型生成内容',
+    icon: <CloudServerOutlined />,
+    title: '多节点负载均衡',
+    desc: '支持多 LLM 后端节点配置，智能权重分配与并发控制，保障服务高可用',
     gradient: 'var(--gradient-primary)',
   },
   {
     icon: <SafetyCertificateOutlined />,
     title: '三级权限控制',
-    desc: 'Super Admin / Dept Manager / User 三层 RBAC，精细化管理',
+    desc: 'Super Admin / Dept Manager / User 三层 RBAC，精细化部门级资源管控',
     gradient: 'var(--gradient-primary)',
   },
   {
     icon: <BarChartOutlined />,
     title: '实时用量计量',
-    desc: '实时 Token 计量与用量统计，清晰的可视化报表与趋势分析',
+    desc: '多维度 Token 用量统计，支持小时/周/月级限额控制，实时可视化监控',
+    gradient: 'var(--gradient-primary)',
+  },
+  {
+    icon: <CodeOutlined />,
+    title: '15+ IDE 生态',
+    desc: '提供 Claude Code、Cursor、VS Code、JetBrains 等 15+ 款工具的详细接入文档',
+    gradient: 'var(--gradient-primary)',
+  },
+  {
+    icon: <ThunderboltOutlined />,
+    title: 'SSE 流式响应',
+    desc: '支持 Server-Sent Events 流式输出，实时呈现模型生成内容，提升交互体验',
+    gradient: 'var(--gradient-primary)',
+  },
+  {
+    icon: <TeamOutlined />,
+    title: '私有化部署',
+    desc: '基于本地大语言模型，数据不出域，满足企业安全合规要求',
     gradient: 'var(--gradient-primary)',
   },
 ];
 
 /** 数字亮点数据 */
 const highlights = [
-  { value: 'OpenAI', label: '兼容 API 格式' },
-  { value: 'Anthropic', label: '原生支持' },
+  { value: 'OpenAI', label: '兼容 API' },
+  { value: 'Anthropic', label: '原生协议' },
   { value: 'MCP', label: '网关协议' },
-  { value: 'SSE', label: '流式响应' },
+  { value: '15+', label: 'IDE 工具' },
   { value: '3 级', label: '权限控制' },
-  { value: '实时', label: 'Token 计量' },
+  { value: '实时', label: '用量监控' },
 ];
 
 /** 粒子/连线背景动效 — 增强版 */
