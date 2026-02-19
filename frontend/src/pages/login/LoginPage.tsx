@@ -19,18 +19,18 @@ const loginTheme: ThemeConfig = {
   },
   components: {
     Input: {
-      colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+      colorBgContainer: 'transparent',
       colorBorder: 'rgba(255, 255, 255, 0.15)',
       colorText: '#ffffff',
       colorTextPlaceholder: 'rgba(255, 255, 255, 0.35)',
-      colorIcon: 'rgba(255, 255, 255, 0.5)',
+      colorIcon: 'rgba(255, 255, 255, 0.4)',
       colorIconHover: 'rgba(255, 255, 255, 0.8)',
-      borderRadius: 12,
+      borderRadius: 0,
       controlHeight: 52,
       activeBorderColor: '#00D9FF',
-      hoverBorderColor: 'rgba(0, 217, 255, 0.5)',
-      activeShadow: '0 0 0 3px rgba(0, 217, 255, 0.1)',
-      paddingInline: 16,
+      hoverBorderColor: 'rgba(255, 255, 255, 0.3)',
+      activeShadow: 'none',
+      paddingInline: 0,
       colorError: '#ff7875',
       colorErrorBorder: 'rgba(255, 120, 117, 0.8)',
     },
@@ -613,29 +613,37 @@ const LoginPage: React.FC = () => {
           transform: translateY(0) !important;
         }
         
-        /* 下划线输入框样式 */
+        /* 玻璃拟态输入框样式 */
         .login-form-item {
           margin-bottom: 24px !important;
         }
         
         .login-form-item .ant-input-affix-wrapper {
-          background: transparent !important;
-          border: none !important;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-          border-radius: 0 !important;
-          padding: 8px 4px 8px 0 !important;
-          box-shadow: none !important;
+          background: rgba(255, 255, 255, 0.03) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 12px !important;
+          padding: 12px 16px !important;
+          box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.03),
+            0 4px 20px rgba(0, 0, 0, 0.2) !important;
           transition: all 0.3s ease !important;
+          backdrop-filter: blur(10px) !important;
         }
         
         .login-form-item .ant-input-affix-wrapper:hover {
-          border-bottom-color: rgba(255, 255, 255, 0.4) !important;
+          border-color: rgba(0, 217, 255, 0.4) !important;
+          box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 4px 24px rgba(0, 217, 255, 0.1) !important;
         }
         
         .login-form-item .ant-input-affix-wrapper:focus,
         .login-form-item .ant-input-affix-wrapper-focused {
-          border-bottom-color: #00D9FF !important;
-          box-shadow: 0 2px 0 0 rgba(0, 217, 255, 0.6) !important;
+          border-color: #00D9FF !important;
+          box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.05),
+            0 0 0 3px rgba(0, 217, 255, 0.15),
+            0 4px 24px rgba(0, 217, 255, 0.2) !important;
         }
         
         .login-input-icon {
@@ -654,16 +662,15 @@ const LoginPage: React.FC = () => {
           color: #ffffff !important;
           font-size: 16px !important;
           font-weight: 400 !important;
-          letter-spacing: 0.3px !important;
         }
         
         .login-form-item .ant-input::placeholder {
-          color: rgba(255, 255, 255, 0.35) !important;
+          color: rgba(255, 255, 255, 0.3) !important;
         }
         
         /* 密码框眼睛图标 */
         .login-form-item .ant-input-suffix .anticon {
-          color: rgba(255, 255, 255, 0.4) !important;
+          color: rgba(255, 255, 255, 0.35) !important;
           font-size: 16px !important;
           transition: all 0.3s ease !important;
         }
@@ -672,12 +679,12 @@ const LoginPage: React.FC = () => {
           color: rgba(255, 255, 255, 0.8) !important;
         }
         
-        /* 覆盖浏览器自动填充 */
-        .login-form-item .ant-input:-webkit-autofill,
-        .login-form-item .ant-input:-webkit-autofill:hover,
-        .login-form-item .ant-input:-webkit-autofill:focus,
-        .login-form-item .ant-input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+        /* 覆盖浏览器自动填充 - 与输入框背景一致 */
+        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill,
+        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill:hover,
+        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill:focus,
+        .login-form-item .ant-input-affix-wrapper .ant-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.03) inset !important;
           -webkit-text-fill-color: #ffffff !important;
           caret-color: #ffffff !important;
           transition: background-color 5000s ease-in-out 0s !important;
