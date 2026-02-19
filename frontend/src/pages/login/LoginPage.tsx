@@ -632,12 +632,17 @@ const LoginPage: React.FC = () => {
           border-color: rgba(0, 217, 255, 0.5) !important;
         }
         
-        /* 覆盖浏览器自动填充背景色 */
+        /* 确保输入框内部背景透明，使用外层容器背景 */
+        .ant-input-affix-wrapper .ant-input {
+          background: transparent !important;
+        }
+        
+        /* 覆盖浏览器自动填充背景色 - 与输入框背景完全一致 */
         .ant-input-affix-wrapper .ant-input:-webkit-autofill,
         .ant-input-affix-wrapper .ant-input:-webkit-autofill:hover,
         .ant-input-affix-wrapper .ant-input:-webkit-autofill:focus,
         .ant-input-affix-wrapper .ant-input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px rgba(10, 22, 40, 0.8) inset !important;
+          -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.03) inset !important;
           -webkit-text-fill-color: #ffffff !important;
           caret-color: #ffffff !important;
           transition: background-color 5000s ease-in-out 0s !important;
