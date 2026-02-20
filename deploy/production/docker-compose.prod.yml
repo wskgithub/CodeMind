@@ -1,0 +1,134 @@
+# ============================================================
+# CodeMind 生产环境 Docker Compose
+# ============================================================
+# 所有服务使用非常用端口，避免与服务器上其他项目冲突
+# 端口配置通过 .env 文件管理
+# ============================================================
+
+services:
+  # ──────────────────────────────────
+  # 前端 (Nginx + React SPA)
+  # ──────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: codemind-frontend:${APP_VERSION:-latest}
+    container_name: codemind-frontend
+    ports:
+      - "${FRONTEND_PORT:-18080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - codemind-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────
+  # 后端 (Go API Server)
+  # ──────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: codemind-backend:${APP_VERSION:-latest}
+    container_name: codemind-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - APP_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-codemind}
+      - DB_USER=${DB_USER:-codemind}
+      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD is required}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - LLM_BASE_URL=${LLM_BASE_URL:?LLM_BASE_URL is required}
+      - LLM_API_KEY=${LLM_API_KEY:-}
+    volumes:
+      - ./config:/app/config:ro
+      - codemind_logs:/app/logs
+    networks:
+      - codemind-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────
+  # PostgreSQL 数据库
+  # ──────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: codemind-postgres
+    ports:
+      - "${DB_EXTERNAL_PORT:-15432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-codemind}
+      POSTGRES_USER: ${DB_USER:-codemind}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      TZ: Asia/Shanghai
+      PGTZ: Asia/Shanghai
+    volumes:
+      - codemind_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/postgres/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-codemind} -d ${DB_NAME:-codemind}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - codemind-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────
+  # Redis 缓存
+  # ──────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: codemind-redis
+    ports:
+      - "${REDIS_EXTERNAL_PORT:-16379}:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    command: >
+      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then
+        redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes;
+      else
+        redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes;
+      fi'
+    volumes:
+      - codemind_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ${REDIS_PASSWORD:+-a $REDIS_PASSWORD} --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - codemind-network
+    restart: unless-stopped
+
+# ──────────────────────────────────
+# 持久化卷
+# ──────────────────────────────────
+volumes:
+  codemind_postgres_data:
+    driver: local
+  codemind_redis_data:
+    driver: local
+  codemind_logs:
+    driver: local
+
+# ──────────────────────────────────
+# 内部网络
+# ──────────────────────────────────
+networks:
+  codemind-network:
+    driver: bridge
