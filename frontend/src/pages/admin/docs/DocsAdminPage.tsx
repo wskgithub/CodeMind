@@ -23,10 +23,12 @@ import {
 } from '@ant-design/icons';
 import { documentService, Document } from '@/services/documentService';
 
+
 const { Title } = Typography;
 
 const DocsAdminPage: React.FC = () => {
   const navigate = useNavigate();
+
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [initModalVisible, setInitModalVisible] = useState(false);

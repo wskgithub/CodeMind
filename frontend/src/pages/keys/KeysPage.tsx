@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import type { APIKey } from '@/types';
 import keyService from '@/services/keyService';
+import useAppStore from '@/store/appStore';
 
 const { Paragraph } = Typography;
 
@@ -25,6 +26,8 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** API Key 管理页面 — 与首页/登录页新设计风格统一 */
 const KeysPage: React.FC = () => {
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -98,7 +101,7 @@ const KeysPage: React.FC = () => {
       title: '名称', 
       dataIndex: 'name', 
       key: 'name',
-      render: (text) => <span style={{ color: '#fff', fontWeight: 500 }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontWeight: 500 }}>{text}</span>,
     },
     {
       title: 'Key 前缀',
@@ -132,7 +135,7 @@ const KeysPage: React.FC = () => {
       dataIndex: 'last_used_at',
       key: 'last_used_at',
       render: (v: string) => (
-        <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+        <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)' }}>
           {v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-'}
         </span>
       ),
@@ -142,7 +145,7 @@ const KeysPage: React.FC = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       render: (v: string) => (
-        <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+        <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)' }}>
           {dayjs(v).format('YYYY-MM-DD HH:mm')}
         </span>
       ),
@@ -183,10 +186,10 @@ const KeysPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<KeyOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 600 }}>
                 API Key 管理
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 4 }}>
                 管理您的 API 密钥，用于接入 CodeMind AI 编码服务
               </p>
             </div>
@@ -199,7 +202,7 @@ const KeysPage: React.FC = () => {
           style={{ padding: 24, animationDelay: '0.05s' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <span style={{ fontWeight: 600, color: '#fff', fontSize: 16 }}>密钥列表</span>
+            <span style={{ fontWeight: 600, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 16 }}>密钥列表</span>
             <Button 
               type="primary" 
               icon={<PlusOutlined />} 
@@ -228,7 +231,7 @@ const KeysPage: React.FC = () => {
         {/* 创建 Key 弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 18, fontWeight: 600 }}>
               创建 API Key
             </span>
           }
@@ -240,26 +243,26 @@ const KeysPage: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={handleCreate}>
             <Form.Item 
               name="name" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Key 名称</span>} 
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)' }}>Key 名称</span>} 
               rules={[{ required: true, message: '请输入名称' }]}
             >
               <Input 
                 placeholder="例如：VSCode Cline 插件" 
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                  color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 }}
               />
             </Form.Item>
             <Form.Item 
               name="expires_at" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>过期时间（可选）</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)' }}>过期时间（可选）</span>}
             >
               <DatePicker 
                 style={{ width: '100%' }} 
                 placeholder="留空表示永不过期"
-                suffixIcon={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>📅</span>}
+                suffixIcon={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>📅</span>}
               />
             </Form.Item>
             <Form.Item>
@@ -284,7 +287,7 @@ const KeysPage: React.FC = () => {
         {/* 显示新创建的 Key - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 18, fontWeight: 600 }}>
               API Key 已创建
             </span>
           }

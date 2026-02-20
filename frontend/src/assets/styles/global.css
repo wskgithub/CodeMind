@@ -6,14 +6,32 @@
    CodeMind 新设计系统 — CSS 变量
    与首页/登录页风格统一
    ────────────────────────────────── */
+
+/* 
+ * 核心品牌色 - 与首页/登录页一致
+ * 这些颜色在亮色/暗色模式下保持一致
+ */
 :root {
-  /* 核心品牌色 - 与首页/登录页一致 */
   --color-cyan: #00D9FF;
   --color-purple: #9D4EDD;
   --color-teal: #00F5D4;
   --color-orange: #FF6B6B;
   --color-gold: #FFBE0B;
   
+  /* 新渐变色 - 主题无关 */
+  --gradient-primary: linear-gradient(135deg, #00D9FF 0%, #9D4EDD 100%);
+  --gradient-primary-reverse: linear-gradient(135deg, #9D4EDD 0%, #00D9FF 100%);
+  --gradient-hero: linear-gradient(135deg, #fff 0%, #00D9FF 30%, #9D4EDD 60%, #00F5D4 100%);
+  --gradient-card-hover: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(157, 78, 221, 0.04) 100%);
+  --gradient-cyan: linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%);
+  --gradient-purple: linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%);
+  --gradient-gold: linear-gradient(135deg, #FFBE0B 0%, #FB5607 100%);
+}
+
+/* 
+ * 暗色模式变量（默认）
+ */
+:root {
   /* 深色背景系 */
   --bg-primary: #050d14;
   --bg-secondary: #0a1628;
@@ -36,25 +54,61 @@
   --header-bg: rgba(5, 13, 20, 0.85);
   --header-blur: 20px;
 
-  /* 新渐变色 */
-  --gradient-primary: linear-gradient(135deg, #00D9FF 0%, #9D4EDD 100%);
-  --gradient-primary-reverse: linear-gradient(135deg, #9D4EDD 0%, #00D9FF 100%);
-  --gradient-hero: linear-gradient(135deg, #fff 0%, #00D9FF 30%, #9D4EDD 60%, #00F5D4 100%);
-  --gradient-card-hover: linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(157, 78, 221, 0.04) 100%);
-  --gradient-cyan: linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%);
-  --gradient-purple: linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%);
-  --gradient-gold: linear-gradient(135deg, #FFBE0B 0%, #FB5607 100%);
-
   /* 装饰光圈 - 新设计 */
   --orb-primary: radial-gradient(circle, rgba(0, 217, 255, 0.12) 0%, transparent 70%);
   --orb-accent: radial-gradient(circle, rgba(157, 78, 221, 0.1) 0%, transparent 70%);
   --orb-teal: radial-gradient(circle, rgba(0, 245, 212, 0.08) 0%, transparent 70%);
   
-  /* 文字颜色 */
+  /* 文字颜色 - 深色模式（白底黑字） */
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-tertiary: rgba(255, 255, 255, 0.45);
   --text-muted: rgba(255, 255, 255, 0.3);
+  
+  /* 反色文字 - 用于对比 */
+  --text-inverse: #000000;
+}
+
+/* 
+ * 亮色模式变量
+ * 品牌色保持不变，只调整背景和文字颜色
+ */
+[data-theme='light'] {
+  /* 浅色背景系 */
+  --bg-primary: #f0f5fa;
+  --bg-secondary: #e8eef5;
+  --bg-tertiary: #e0e8f0;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  
+  /* 玻璃效果 - 亮色模式 */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border-strong: rgba(0, 0, 0, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --glass-blur: 20px;
+
+  /* 侧边栏 - 亮色玻璃 */
+  --sidebar-bg: rgba(255, 255, 255, 0.92);
+  --sidebar-border: rgba(0, 217, 255, 0.15);
+
+  /* 顶栏 */
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --header-blur: 20px;
+
+  /* 装饰光圈 - 亮色模式（增强可见性） */
+  --orb-primary: radial-gradient(circle, rgba(0, 217, 255, 0.2) 0%, transparent 70%);
+  --orb-accent: radial-gradient(circle, rgba(157, 78, 221, 0.15) 0%, transparent 70%);
+  --orb-teal: radial-gradient(circle, rgba(0, 245, 212, 0.12) 0%, transparent 70%);
+  
+  /* 文字颜色 - 亮色模式（黑底白字） */
+  --text-primary: rgba(0, 0, 0, 0.85);
+  --text-secondary: rgba(0, 0, 0, 0.65);
+  --text-tertiary: rgba(0, 0, 0, 0.45);
+  --text-muted: rgba(0, 0, 0, 0.35);
+  
+  /* 反色文字 */
+  --text-inverse: #ffffff;
 }
 
 /* ──────────────────────────────────
@@ -308,6 +362,47 @@ body {
   font-weight: 600;
 }
 
+/* 亮色模式表格头部 */
+[data-theme='light'] .ant-table-wrapper .ant-table-thead > tr > th {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 表格固定列背景 - 使用不透明背景防止内容重叠 */
+.ant-table-wrapper .ant-table-cell-fix-right,
+.ant-table-wrapper .ant-table-cell-fix-left {
+  background: #0d1d2d !important;
+}
+
+/* 表格固定列hover背景 */
+.ant-table-wrapper .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right,
+.ant-table-wrapper .ant-table-tbody > tr:hover > td.ant-table-cell-fix-left {
+  background: #1a2836 !important;
+}
+
+/* 表格固定列头部背景 */
+.ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell-fix-right,
+.ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell-fix-left {
+  background: #141e2e !important;
+}
+
+/* 亮色模式表格固定列背景 */
+[data-theme='light'] .ant-table-wrapper .ant-table-cell-fix-right,
+[data-theme='light'] .ant-table-wrapper .ant-table-cell-fix-left {
+  background: #ffffff !important;
+}
+
+/* 亮色模式表格固定列hover背景 */
+[data-theme='light'] .ant-table-wrapper .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right,
+[data-theme='light'] .ant-table-wrapper .ant-table-tbody > tr:hover > td.ant-table-cell-fix-left {
+  background: #f0f5fa !important;
+}
+
+/* 亮色模式表格固定列头部背景 */
+[data-theme='light'] .ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell-fix-right,
+[data-theme='light'] .ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell-fix-left {
+  background: #f5f5f5 !important;
+}
+
 /* Modal 玻璃效果 - 新设计 */
 .ant-modal .ant-modal-content {
   background: rgba(13, 29, 45, 0.95) !important;
@@ -321,6 +416,11 @@ body {
 .ant-modal .ant-modal-header {
   background: transparent !important;
   border-bottom: 1px solid var(--glass-border) !important;
+}
+
+/* 亮色模式 Modal */
+[data-theme='light'] .ant-modal .ant-modal-content {
+  background: rgba(255, 255, 255, 0.98) !important;
 }
 
 /* 菜单项过渡 - 新设计 */
@@ -369,6 +469,10 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+[data-theme='light'] .ant-tag {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
 /* 输入框 - 新设计 */
 .ant-input {
   background: rgba(255, 255, 255, 0.03) !important;
@@ -385,6 +489,11 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.15) !important;
 }
 
+/* 亮色模式输入框 */
+[data-theme='light'] .ant-input {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
 /* 下拉选择器 - 新设计 */
 .ant-select-selector {
   background: rgba(255, 255, 255, 0.03) !important;
@@ -393,6 +502,11 @@ body {
 
 .ant-select:hover .ant-select-selector {
   border-color: rgba(0, 217, 255, 0.4) !important;
+}
+
+/* 亮色模式下拉选择器 */
+[data-theme='light'] .ant-select-selector {
+  background: rgba(0, 0, 0, 0.03) !important;
 }
 
 /* 按钮 - 新设计 */
@@ -411,7 +525,7 @@ body {
    登录页专用样式 - 保持原有
    ────────────────────────────────── */
 
-/* 登录页输入框容器 — 统一纯色背景 */
+/* 登录页输入框容器 — 统一纯色背景（深色模式默认） */
 .ant-input-affix-wrapper.login-input {
   background: #0d1d2d !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -460,6 +574,93 @@ body {
   background-color: #0d1d2d !important;
 }
 
+/* ═══════════════════════════════════
+   亮色模式登录页输入框样式
+   使用更高优先级选择器确保覆盖内联样式
+   ═══════════════════════════════════ */
+
+/* 亮色模式 - 登录页输入框容器（高优先级） */
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input,
+[data-theme='light'] .ant-input-affix-wrapper.login-input {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 亮色模式 - 输入框内部背景（高优先级） */
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input .ant-input,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* 亮色模式 - placeholder */
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input .ant-input::placeholder,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input::placeholder {
+  color: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 亮色模式 - hover */
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input:hover,
+[data-theme='light'] .ant-input-affix-wrapper.login-input:hover {
+  background: #ffffff !important;
+  border-color: rgba(0, 217, 255, 0.5) !important;
+}
+
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input:hover .ant-input,
+[data-theme='light'] .ant-input-affix-wrapper.login-input:hover .ant-input {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* 亮色模式 - focus */
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input:focus,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input-focused,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input.ant-input-affix-wrapper-focused,
+[data-theme='light'] .ant-input-affix-wrapper.login-input:focus,
+[data-theme='light'] .ant-input-affix-wrapper.login-input-focused,
+[data-theme='light'] .ant-input-affix-wrapper.login-input.ant-input-affix-wrapper-focused {
+  background: #ffffff !important;
+  border-color: #00D9FF !important;
+  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2) !important;
+}
+
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input:focus .ant-input,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input-focused .ant-input,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input.ant-input-affix-wrapper-focused .ant-input,
+[data-theme='light'] .ant-input-affix-wrapper.login-input:focus .ant-input,
+[data-theme='light'] .ant-input-affix-wrapper.login-input-focused .ant-input,
+[data-theme='light'] .ant-input-affix-wrapper.login-input.ant-input-affix-wrapper-focused .ant-input {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* 登录页自动填充覆盖 - 深色模式 */
+.ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill,
+.ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:hover,
+.ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:focus,
+.ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 100px #0d1d2d inset !important;
+  box-shadow: 0 0 0 100px #0d1d2d inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* 登录页自动填充覆盖 - 亮色模式（高优先级） */
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:hover,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:focus,
+[data-theme='light'] .login-form-item .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:active,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:hover,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:focus,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 100px #ffffff inset !important;
+  box-shadow: 0 0 0 100px #ffffff inset !important;
+  -webkit-text-fill-color: rgba(0, 0, 0, 0.85) !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
 /* 输入框图标容器 */
 .login-input-icon {
   width: 36px;
@@ -475,6 +676,12 @@ body {
   flex-shrink: 0;
 }
 
+/* 亮色模式 - 输入框图标容器 */
+[data-theme='light'] .login-input-icon {
+  background: rgba(0, 217, 255, 0.08);
+  color: rgba(0, 0, 0, 0.6);
+}
+
 /* 图标容器在输入框前缀中的间距 */
 .ant-input-affix-wrapper.login-input .ant-input-prefix {
   display: flex;
@@ -482,10 +689,16 @@ body {
   margin-right: 10px;
 }
 
-/* 密码显示/隐藏按钮图标颜色 */
+/* 密码显示/隐藏按钮图标颜色 - 深色模式 */
 .ant-input-affix-wrapper.login-input .ant-input-password-icon,
 .ant-input-affix-wrapper.login-input .ant-input-password-icon:hover {
   color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 密码显示/隐藏按钮图标颜色 - 亮色模式 */
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input-password-icon,
+[data-theme='light'] .ant-input-affix-wrapper.login-input .ant-input-password-icon:hover {
+  color: rgba(0, 0, 0, 0.4) !important;
 }
 
 /* 登录按钮 */

@@ -3,30 +3,32 @@ import { Layout, Menu, Card, Typography, Skeleton, Empty, Alert, Button, Tooltip
 import { BookOutlined, EditOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
+import useAppStore from '@/store/appStore';
 import { documentService, Document, DocumentListItem } from '@/services/documentService';
 import '@/assets/styles/docs.css';
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
 
-// 自定义代码块渲染 - 固定使用深色主题
-const CodeBlock: React.FC<{ language: string; value: string }> = ({ 
+// 自定义代码块渲染 - 根据主题切换代码主题
+const CodeBlock: React.FC<{ language: string; value: string; isDark: boolean }> = ({ 
   language, 
   value,
+  isDark,
 }) => {
   return (
     <SyntaxHighlighter
-      style={vscDarkPlus}
+      style={isDark ? vscDarkPlus : oneLight}
       language={language || 'text'}
       PreTag="div"
       customStyle={{
         margin: '16px 0',
         borderRadius: '8px',
         fontSize: '14px',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
       }}
     >
       {value}
@@ -38,6 +40,8 @@ const DocsPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuthStore();
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [currentDoc, setCurrentDoc] = useState<Document | null>(null);
@@ -263,6 +267,7 @@ const DocsPage: React.FC = () => {
                           <CodeBlock
                             language={match[1] || 'text'}
                             value={String(children).replace(/\n$/, '')}
+                            isDark={isDark}
                           />
                         ) : (
                           <code className={className} {...props}>

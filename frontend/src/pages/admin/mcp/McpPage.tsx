@@ -15,6 +15,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import mcpService from '@/services/mcpService';
 import type { MCPService, MCPTool, MCPAccessRule } from '@/types';
+import useAppStore from '@/store/appStore';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
@@ -33,6 +34,10 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** MCP 服务管理页 — 与首页/登录页新设计风格统一 */
 const McpPage: React.FC = () => {
+  // 主题模式
+  const themeMode = useAppStore((state) => state.themeMode);
+  const isDark = themeMode === 'dark';
+
   // 服务列表状态
   const [services, setServices] = useState<MCPService[]>([]);
   const [loading, setLoading] = useState(false);
@@ -170,8 +175,8 @@ const McpPage: React.FC = () => {
       key: 'display_name',
       render: (text, record) => (
         <div>
-          <div style={{ fontWeight: 600, color: '#fff', fontSize: 15 }}>{text}</div>
-          <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>{record.name}</div>
+          <div style={{ fontWeight: 600, color: isDark ? '#fff' : '#1f2937', fontSize: 15 }}>{text}</div>
+          <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)' }}>{record.name}</div>
         </div>
       ),
     },
@@ -182,7 +187,7 @@ const McpPage: React.FC = () => {
       ellipsis: true,
       render: (url: string) => (
         <Tooltip title={url}>
-          <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)', fontFamily: 'monospace' }}>{url}</span>
+          <span style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontFamily: 'monospace' }}>{url}</span>
         </Tooltip>
       ),
     },
@@ -214,7 +219,7 @@ const McpPage: React.FC = () => {
           size="small"
           onClick={() => handleViewTools(record)}
           disabled={count === 0}
-          style={{ color: count === 0 ? 'rgba(255, 255, 255, 0.3)' : '#FFBE0B' }}
+          style={{ color: count === 0 ? (isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)') : '#FFBE0B' }}
         >
           {count} 个
         </Button>
@@ -229,7 +234,7 @@ const McpPage: React.FC = () => {
       render: (connected: boolean) => (
         <Badge 
           status={connected ? 'success' : 'default'} 
-          text={<span style={{ color: connected ? '#00F5D4' : 'rgba(255, 255, 255, 0.4)' }}>{connected ? '已连接' : '未连接'}</span>} 
+          text={<span style={{ color: connected ? '#00F5D4' : (isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)') }}>{connected ? '已连接' : '未连接'}</span>} 
         />
       ),
     },
@@ -289,7 +294,7 @@ const McpPage: React.FC = () => {
       title: '服务', 
       dataIndex: 'service_name', 
       key: 'service_name',
-      render: (text) => <span style={{ color: '#fff' }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? '#fff' : '#1f2937' }}>{text}</span>,
     },
     {
       title: '目标类型',
@@ -301,7 +306,7 @@ const McpPage: React.FC = () => {
           department: { text: '部门', color: '#9D4EDD', bg: 'rgba(157, 78, 221, 0.15)' },
           role: { text: '角色', color: '#FFBE0B', bg: 'rgba(255, 190, 11, 0.15)' },
         };
-        const t = map[type] || { text: type, color: '#fff', bg: 'rgba(255, 255, 255, 0.05)' };
+        const t = map[type] || { text: type, color: isDark ? '#fff' : '#1f2937', bg: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' };
         return (
           <Tag style={{ 
             color: t.color,
@@ -318,7 +323,7 @@ const McpPage: React.FC = () => {
       title: '目标', 
       dataIndex: 'target_name', 
       key: 'target_name',
-      render: (text) => <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>{text}</span>,
     },
     {
       title: '权限',
@@ -366,10 +371,10 @@ const McpPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<ApiOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : '#1f2937', fontSize: 24, fontWeight: 600 }}>
                 MCP 服务管理
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 4 }}>
                 管理 MCP 网关连接的后端服务和访问控制
               </p>
             </div>
@@ -383,7 +388,7 @@ const McpPage: React.FC = () => {
             items={[
               {
                 key: 'services',
-                label: <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>服务管理</span>,
+                label: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>服务管理</span>,
                 children: (
                   <>
                     <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -391,9 +396,9 @@ const McpPage: React.FC = () => {
                         icon={<ReloadOutlined />} 
                         onClick={fetchServices}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          borderColor: 'rgba(255, 255, 255, 0.1)',
-                          color: 'rgba(255, 255, 255, 0.8)',
+                          background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f3f4f6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#d1d5db',
+                          color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
                         }}
                       >
                         刷新
@@ -428,7 +433,7 @@ const McpPage: React.FC = () => {
               },
               {
                 key: 'access',
-                label: <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>访问控制</span>,
+                label: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>访问控制</span>,
                 children: (
                   <>
                     <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
@@ -436,9 +441,9 @@ const McpPage: React.FC = () => {
                         icon={<ReloadOutlined />} 
                         onClick={fetchRules}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          borderColor: 'rgba(255, 255, 255, 0.1)',
-                          color: 'rgba(255, 255, 255, 0.8)',
+                          background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f3f4f6',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#d1d5db',
+                          color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
                         }}
                       >
                         刷新
@@ -462,7 +467,7 @@ const McpPage: React.FC = () => {
         {/* 创建/编辑服务弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : '#1f2937', fontSize: 18, fontWeight: 600 }}>
               {editingService ? '编辑服务' : '注册 MCP 服务'}
             </span>
           }
@@ -487,67 +492,70 @@ const McpPage: React.FC = () => {
           <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
             <Form.Item
               name="name"
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>服务标识</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>服务标识</span>}
               rules={[{ required: true, message: '请输入服务标识' }]}
-              extra={<span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>唯一标识，用于路由和配置</span>}
+              extra={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)' }}>唯一标识，用于路由和配置</span>}
             >
               <Input 
                 placeholder="如：code-search" 
                 disabled={!!editingService}
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f9fafb',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#d1d5db',
+                  color: isDark ? '#fff' : '#1f2937',
                 }}
               />
             </Form.Item>
             <Form.Item
               name="display_name"
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>显示名称</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>显示名称</span>}
               rules={[{ required: true, message: '请输入显示名称' }]}
             >
               <Input 
                 placeholder="如：代码搜索服务"
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f9fafb',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#d1d5db',
+                  color: isDark ? '#fff' : '#1f2937',
                 }}
               />
             </Form.Item>
             <Form.Item 
               name="description" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>描述</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>描述</span>}
             >
               <Input.TextArea 
                 placeholder="服务功能描述" 
                 rows={2}
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f9fafb',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#d1d5db',
+                  color: isDark ? '#fff' : '#1f2937',
                 }}
               />
             </Form.Item>
             <Form.Item
               name="endpoint_url"
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>服务端点</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>服务端点</span>}
               rules={[{ required: true, message: '请输入服务端点 URL' }]}
             >
               <Input 
                 placeholder="如：http://localhost:3001/sse"
-                style={{ fontFamily: 'monospace', color: '#00D9FF' }}
+                style={{ fontFamily: 'monospace', color: isDark ? '#00D9FF' : '#0891b2' }}
               />
             </Form.Item>
             <div style={{ display: 'flex', gap: 16 }}>
               <Form.Item
                 name="transport_type"
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>传输类型</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>传输类型</span>}
                 rules={[{ required: true }]}
                 initialValue="sse"
                 style={{ flex: 1 }}
               >
                 <Select
+                  style={{
+                    background: isDark ? 'transparent' : '#f9fafb',
+                  }}
                   options={[
                     { label: 'SSE', value: 'sse' },
                     { label: 'Streamable HTTP', value: 'streamable-http' },
@@ -556,12 +564,15 @@ const McpPage: React.FC = () => {
               </Form.Item>
               <Form.Item
                 name="auth_type"
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>认证方式</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>认证方式</span>}
                 rules={[{ required: true }]}
                 initialValue="none"
                 style={{ flex: 1 }}
               >
                 <Select
+                  style={{
+                    background: isDark ? 'transparent' : '#f9fafb',
+                  }}
                   options={[
                     { label: '无认证', value: 'none' },
                     { label: 'Bearer Token', value: 'bearer' },
@@ -576,7 +587,7 @@ const McpPage: React.FC = () => {
         {/* 工具列表弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : '#1f2937', fontSize: 18, fontWeight: 600 }}>
               <ToolOutlined style={{ marginRight: 8 }} />
               工具列表
             </span>
@@ -593,14 +604,14 @@ const McpPage: React.FC = () => {
                 dataIndex: 'name', 
                 key: 'name', 
                 width: 200,
-                render: (text) => <span style={{ color: '#fff', fontFamily: 'monospace' }}>{text}</span>,
+                render: (text) => <span style={{ color: isDark ? '#fff' : '#1f2937', fontFamily: 'monospace' }}>{text}</span>,
               },
               { 
                 title: '描述', 
                 dataIndex: 'description', 
                 key: 'description', 
                 ellipsis: true,
-                render: (text) => <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{text}</span>,
+                render: (text) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)' }}>{text}</span>,
               },
             ]}
             dataSource={tools}

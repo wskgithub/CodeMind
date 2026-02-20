@@ -1,17 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert } from 'antd';
-import { UserOutlined, LockOutlined, LockFilled, PlayCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, LockFilled, PlayCircleOutlined, SunOutlined, MoonOutlined } from '@ant-design/icons';
 import useAuthStore from '@/store/authStore';
+import useAppStore from '@/store/appStore';
 import axios from 'axios';
 
-// 登录页专用主题配置
-const loginTheme: ThemeConfig = {
+// 登录页专用主题配置 - 根据主题动态生成
+const getLoginTheme = (isDark: boolean): ThemeConfig => ({
   token: {
     colorBgContainer: 'transparent',
-    colorBorder: 'rgba(255, 255, 255, 0.15)',
-    colorText: '#ffffff',
-    colorTextPlaceholder: 'rgba(255, 255, 255, 0.35)',
+    colorBorder: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+    colorText: isDark ? '#ffffff' : 'rgba(0, 0, 0, 0.85)',
+    colorTextPlaceholder: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.4)',
     borderRadius: 12,
     controlHeight: 52,
     colorError: '#ff7875',
@@ -20,22 +21,22 @@ const loginTheme: ThemeConfig = {
   components: {
     Input: {
       colorBgContainer: 'transparent',
-      colorBorder: 'rgba(255, 255, 255, 0.15)',
-      colorText: '#ffffff',
-      colorTextPlaceholder: 'rgba(255, 255, 255, 0.35)',
-      colorIcon: 'rgba(255, 255, 255, 0.4)',
-      colorIconHover: 'rgba(255, 255, 255, 0.8)',
+      colorBorder: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+      colorText: isDark ? '#ffffff' : 'rgba(0, 0, 0, 0.85)',
+      colorTextPlaceholder: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.4)',
+      colorIcon: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
+      colorIconHover: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
       borderRadius: 0,
       controlHeight: 52,
       activeBorderColor: '#00D9FF',
-      hoverBorderColor: 'rgba(255, 255, 255, 0.3)',
+      hoverBorderColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
       activeShadow: 'none',
       paddingInline: 0,
       colorError: '#ff7875',
       colorErrorBorder: 'rgba(255, 120, 117, 0.8)',
     },
   },
-};
+});
 
 /** 格式化剩余时间 */
 const formatRemainingTime = (seconds: number): string => {
@@ -192,6 +193,8 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((s) => s.login);
+  const { themeMode, toggleTheme } = useAppStore();
+  const isDark = themeMode === 'dark';
   const [loading, setLoading] = useState(false);
   const [lockInfo, setLockInfo] = useState<{
     locked: boolean;
@@ -278,10 +281,16 @@ const LoginPage: React.FC = () => {
         justifyContent: 'center',
         position: 'relative',
         overflow: 'hidden',
-        background: `
+        background: isDark
+          ? `
           radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.1), transparent),
           radial-gradient(ellipse 60% 40% at 80% 80%, rgba(157, 78, 221, 0.08), transparent),
           linear-gradient(180deg, #0a1628 0%, #050d14 100%)
+        `
+          : `
+          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.15), transparent),
+          radial-gradient(ellipse 60% 40% at 80% 80%, rgba(157, 78, 221, 0.12), transparent),
+          linear-gradient(180deg, #e8eef5 0%, #f0f5fa 100%)
         `,
       }}
     >
@@ -293,9 +302,14 @@ const LoginPage: React.FC = () => {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `
+          backgroundImage: isDark
+            ? `
             linear-gradient(rgba(0, 217, 255, 0.02) 1px, transparent 1px),
             linear-gradient(90deg, rgba(0, 217, 255, 0.02) 1px, transparent 1px)
+          `
+            : `
+            linear-gradient(rgba(0, 217, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 217, 255, 0.05) 1px, transparent 1px)
           `,
           backgroundSize: '60px 60px',
           animation: 'gridMove 25s linear infinite',
@@ -313,7 +327,7 @@ const LoginPage: React.FC = () => {
           width: 500,
           height: 500,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(0, 217, 255, 0.12) 0%, transparent 70%)',
+          background: isDark ? 'radial-gradient(circle, rgba(0, 217, 255, 0.12) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 217, 255, 0.22) 0%, transparent 70%)',
           filter: 'blur(80px)',
           animation: 'float 10s ease-in-out infinite',
           zIndex: 0,
@@ -328,7 +342,7 @@ const LoginPage: React.FC = () => {
           width: 450,
           height: 450,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(157, 78, 221, 0.1) 0%, transparent 70%)',
+          background: isDark ? 'radial-gradient(circle, rgba(157, 78, 221, 0.1) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(157, 78, 221, 0.18) 0%, transparent 70%)',
           filter: 'blur(80px)',
           animation: 'float 12s ease-in-out infinite reverse',
           zIndex: 0,
@@ -385,20 +399,48 @@ const LoginPage: React.FC = () => {
         <div style={{ paddingLeft: 10 }}>{`.connect()`}</div>
       </div>
 
+      {/* 主题切换按钮 */}
+      <Button
+        type="text"
+        shape="circle"
+        icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+        onClick={toggleTheme}
+        style={{
+          position: 'fixed',
+          top: 24,
+          right: 24,
+          width: 44,
+          height: 44,
+          zIndex: 100,
+          color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)',
+          background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      />
+
       {/* 玻璃登录卡片 */}
       <div
         style={{
           width: 440,
           position: 'relative',
           zIndex: 10,
-          background: 'rgba(255, 255, 255, 0.02)',
+          background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.8)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           borderRadius: 28,
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: `
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: isDark
+            ? `
             0 25px 80px rgba(0, 0, 0, 0.4),
             inset 0 1px 0 rgba(255, 255, 255, 0.05)
+          `
+            : `
+            0 25px 80px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.5)
           `,
           padding: '48px 40px 40px',
           animation: 'fadeInUp 0.8s ease-out',
@@ -431,6 +473,7 @@ const LoginPage: React.FC = () => {
               fontSize: 12,
               color: '#00D9FF',
               marginBottom: 20,
+            boxShadow: isDark ? 'none' : '0 4px 20px rgba(0, 217, 255, 0.15)',
             }}
           >
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00D9FF', animation: 'pulse 2s infinite' }} />
@@ -439,12 +482,15 @@ const LoginPage: React.FC = () => {
 
           {/* Logo */}
           <h1
+            key={isDark ? 'dark' : 'light'}
             style={{
               fontSize: 42,
               fontWeight: 900,
               margin: '0 0 8px',
               letterSpacing: -2,
-              background: 'linear-gradient(135deg, #fff 0%, #00D9FF 50%, #9D4EDD 100%)',
+              background: isDark
+                ? 'linear-gradient(135deg, #fff 0%, #00D9FF 50%, #9D4EDD 100%)'
+                : 'linear-gradient(135deg, #1a1a2e 0%, #00D9FF 40%, #9D4EDD 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -455,7 +501,7 @@ const LoginPage: React.FC = () => {
           <p
             style={{
               fontSize: 14,
-              color: 'rgba(255, 255, 255, 0.4)',
+              color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.5)',
               letterSpacing: 3,
               textTransform: 'uppercase',
             }}
@@ -494,7 +540,7 @@ const LoginPage: React.FC = () => {
         )}
 
         {/* 登录表单 */}
-        <ConfigProvider theme={loginTheme}>
+        <ConfigProvider theme={getLoginTheme(isDark)}>
           <Form
             name="login"
             onFinish={handleSubmit}
@@ -564,7 +610,7 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
             marginTop: 28,
             fontSize: 12,
-            color: 'rgba(255, 255, 255, 0.25)',
+            color: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.4)',
           }}
         >
           默认管理员：admin / Admin@123456
@@ -618,53 +664,38 @@ const LoginPage: React.FC = () => {
           margin-bottom: 24px !important;
         }
         
-        /* 输入框外层容器 - 统一背景色 */
+        /* 输入框外层容器 - 使用 CSS 变量或根据主题切换背景色 */
         .login-form-item .ant-input-affix-wrapper {
-          background: #0d1d2d !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          background: ${isDark ? '#0d1d2d' : '#ffffff'} !important;
+          border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)'} !important;
           border-radius: 12px !important;
           padding: 12px 16px !important;
           box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.05),
-            0 4px 20px rgba(0, 0, 0, 0.3) !important;
+            inset 0 1px 0 ${isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'},
+            0 4px 20px rgba(0, 0, 0, ${isDark ? '0.3' : '0.1'}) !important;
           transition: all 0.3s ease !important;
         }
         
-        /* hover状态 - 外层容器和内部输入框保持相同背景色 */
+        /* hover状态 */
         .login-form-item .ant-input-affix-wrapper:hover {
-          background: #0d1d2d !important;
           border-color: rgba(0, 217, 255, 0.5) !important;
           box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            inset 0 1px 0 ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'},
             0 4px 24px rgba(0, 217, 255, 0.15) !important;
         }
         
-        /* hover时内部输入框保持与外层一致 */
-        .login-form-item .ant-input-affix-wrapper:hover .ant-input {
-          background: #0d1d2d !important;
-          background-color: #0d1d2d !important;
-        }
-        
-        /* focus状态 - 统一背景色 */
+        /* focus状态 */
         .login-form-item .ant-input-affix-wrapper:focus,
         .login-form-item .ant-input-affix-wrapper-focused {
-          background: #0d1d2d !important;
           border-color: #00D9FF !important;
           box-shadow: 
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            inset 0 1px 0 ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)'},
             0 0 0 3px rgba(0, 217, 255, 0.2),
             0 4px 24px rgba(0, 217, 255, 0.25) !important;
         }
         
-        /* focus时内部输入框保持与外层一致 */
-        .login-form-item .ant-input-affix-wrapper:focus .ant-input,
-        .login-form-item .ant-input-affix-wrapper-focused .ant-input {
-          background: #0d1d2d !important;
-          background-color: #0d1d2d !important;
-        }
-        
         .login-input-icon {
-          color: rgba(255, 255, 255, 0.45) !important;
+          color: ${isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.45)'} !important;
           font-size: 18px !important;
           margin-right: 12px !important;
           transition: all 0.3s ease !important;
@@ -674,47 +705,23 @@ const LoginPage: React.FC = () => {
           color: #00D9FF !important;
         }
         
-        /* 内部输入框基础样式 - 与外层容器统一背景色 */
-        .login-form-item .ant-input {
-          background: #0d1d2d !important;
-          background-color: #0d1d2d !important;
-          color: #ffffff !important;
-          font-size: 16px !important;
-          font-weight: 400 !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-        
-        .login-form-item .ant-input::placeholder {
-          color: rgba(255, 255, 255, 0.35) !important;
-        }
-        
         /* 密码框眼睛图标 */
         .login-form-item .ant-input-suffix .anticon {
-          color: rgba(255, 255, 255, 0.4) !important;
+          color: ${isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'} !important;
           font-size: 16px !important;
           transition: all 0.3s ease !important;
         }
         
         .login-form-item .ant-input-suffix .anticon:hover {
-          color: rgba(255, 255, 255, 0.8) !important;
+          color: ${isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)'} !important;
         }
         
-        /* 覆盖浏览器自动填充 - 最强覆盖 */
-        .login-form-item .ant-input-affix-wrapper input.ant-input,
-        input.ant-input:-webkit-autofill,
-        input.ant-input:-webkit-autofill:hover,
-        input.ant-input:-webkit-autofill:focus,
-        input.ant-input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 100px #0d1d2d inset !important;
-          box-shadow: 0 0 0 100px #0d1d2d inset !important;
-          background: #0d1d2d !important;
-          background-color: #0d1d2d !important;
-          background-image: none !important;
-          -webkit-text-fill-color: #ffffff !important;
-          caret-color: #ffffff !important;
-          color: #ffffff !important;
-        }
+        /* 
+         * 注意：输入框背景和自动填充样式已在 global.css 中定义
+         * 深色模式：.ant-input-affix-wrapper.login-input 使用 #0d1d2d
+         * 亮色模式：[data-theme='light'] .ant-input-affix-wrapper.login-input 使用 #ffffff
+         * 自动填充覆盖也在 global.css 中处理
+         */
       `}</style>
     </div>
   );

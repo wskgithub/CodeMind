@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Tabs, Table, Button, Form, Input, Select, message, Modal, Switch, Popconfirm, Tag, Space } from 'antd';
+import useAppStore from '@/store/appStore';
 import {
   SettingOutlined,
   NotificationOutlined,
@@ -40,6 +41,9 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** 系统管理页面 — 与首页/登录页新设计风格统一 */
 const SystemPage = () => {
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
+  
   return (
     <div className="page-bg">
       <div className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1 }}>
@@ -49,10 +53,10 @@ const SystemPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<ControlOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : '#1a1a1a', fontSize: 24, fontWeight: 600 }}>
                 系统管理
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 4 }}>
                 系统配置、公告管理与审计日志查看
               </p>
             </div>
@@ -66,7 +70,7 @@ const SystemPage = () => {
               {
                 key: 'configs',
                 label: (
-                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                  <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>
                     <SettingOutlined /> 系统配置
                   </span>
                 ),
@@ -75,7 +79,7 @@ const SystemPage = () => {
               {
                 key: 'announcements',
                 label: (
-                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                  <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>
                     <NotificationOutlined /> 公告管理
                   </span>
                 ),
@@ -84,7 +88,7 @@ const SystemPage = () => {
               {
                 key: 'audit',
                 label: (
-                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                  <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>
                     <AuditOutlined /> 审计日志
                   </span>
                 ),
@@ -104,6 +108,8 @@ const ConfigsTab = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
 
   const configLabels: Record<string, { label: string; description?: string }> = {
     'system.default_concurrency': { label: '默认并发数', description: '用户默认的最大并发请求数' },
@@ -160,9 +166,9 @@ const ConfigsTab = () => {
     <div>
       <Form form={form} layout="vertical" style={{ maxWidth: 800 }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>加载中...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>加载中...</div>
         ) : configs.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>暂无配置项</div>
+          <div style={{ padding: 40, textAlign: 'center', color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>暂无配置项</div>
         ) : (
           configs.map((c) => {
             const config = configLabels[c.config_key] || { label: c.config_key };
@@ -170,8 +176,8 @@ const ConfigsTab = () => {
               <Form.Item
                 key={c.config_key}
                 name={c.config_key}
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: 500 }}>{config.label}</span>}
-                extra={<span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>{config.description || c.description}</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)', fontWeight: 500 }}>{config.label}</span>}
+                extra={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)' }}>{config.description || c.description}</span>}
               >
                 {c.config_key === 'system.force_change_password' ? (
                   <Select
@@ -180,24 +186,31 @@ const ConfigsTab = () => {
                       { label: '是', value: 'true' },
                       { label: '否', value: 'false' },
                     ]}
+                    style={{
+                      background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#fff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.2)',
+                    }}
+                    dropdownStyle={{
+                      background: isDark ? 'rgba(30, 30, 40, 0.95)' : '#fff',
+                    }}
                   />
                 ) : c.config_key === 'llm.models' ? (
                   <TextArea
                     rows={3}
                     placeholder={`当前值: ${c.config_value}`}
                     style={{ 
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
+                      background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#fff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.2)',
+                      color: isDark ? '#fff' : '#1a1a1a',
                     }}
                   />
                 ) : (
                   <Input 
                     placeholder={`当前值: ${c.config_value}`}
                     style={{ 
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
+                      background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#fff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.2)',
+                      color: isDark ? '#fff' : '#1a1a1a',
                     }}
                   />
                 )}
@@ -237,6 +250,8 @@ const AnnouncementsTab = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
 
   useEffect(() => {
     loadList();
@@ -320,7 +335,7 @@ const AnnouncementsTab = () => {
               置顶
             </Tag>
           )}
-          <span style={{ color: '#fff' }}>{val}</span>
+          <span style={{ color: isDark ? '#fff' : '#1a1a1a' }}>{val}</span>
         </Space>
       ),
     },
@@ -341,9 +356,9 @@ const AnnouncementsTab = () => {
           </Tag>
         ) : (
           <Tag style={{ 
-            color: 'rgba(255, 255, 255, 0.5)', 
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', 
+            background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
             borderRadius: 6,
           }}>
             草稿
@@ -355,7 +370,7 @@ const AnnouncementsTab = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 120,
-      render: (v: string) => <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{v?.slice(0, 10)}</span>,
+      render: (v: string) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>{v?.slice(0, 10)}</span>,
     },
     {
       title: '操作',
@@ -408,7 +423,7 @@ const AnnouncementsTab = () => {
 
       <Modal
         title={
-          <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+          <span style={{ color: isDark ? '#fff' : '#1a1a1a', fontSize: 18, fontWeight: 600 }}>
             {editingId ? '编辑公告' : '发布公告'}
           </span>
         }
@@ -424,58 +439,64 @@ const AnnouncementsTab = () => {
             boxShadow: '0 4px 16px rgba(0, 217, 255, 0.25)',
           },
         }}
+        style={{
+          '--modal-bg': isDark ? 'rgba(30, 30, 40, 0.95)' : '#fff',
+        } as React.CSSProperties}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item 
             name="title" 
-            label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>标题</span>} 
+            label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>标题</span>} 
             rules={[{ required: true, message: '请输入标题' }]}
           >
             <Input 
               maxLength={200}
               style={{ 
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#fff',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#fff',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.2)',
+                color: isDark ? '#fff' : '#1a1a1a',
               }}
             />
           </Form.Item>
           <Form.Item 
             name="content" 
-            label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>内容</span>} 
+            label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>内容</span>} 
             rules={[{ required: true, message: '请输入内容' }]}
           >
             <TextArea 
               rows={6}
               style={{ 
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#fff',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#fff',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.2)',
+                color: isDark ? '#fff' : '#1a1a1a',
               }}
             />
           </Form.Item>
           <Space>
             <Form.Item 
               name="pinned" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>置顶</span>} 
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>置顶</span>} 
               valuePropName="checked"
             >
               <Switch 
                 checkedChildren="是" 
                 unCheckedChildren="否"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                style={{ backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)' }}
               />
             </Form.Item>
             <Form.Item 
               name="status" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>发布状态</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>发布状态</span>}
             >
               <Select
                 options={[
                   { label: '草稿', value: 0 },
                   { label: '已发布', value: 1 },
                 ]}
-                style={{ width: 120 }}
+                style={{ width: 120, background: isDark ? 'rgba(255, 255, 255, 0.03)' : '#fff' }}
+                dropdownStyle={{
+                  background: isDark ? 'rgba(30, 30, 40, 0.95)' : '#fff',
+                }}
               />
             </Form.Item>
           </Space>
@@ -491,6 +512,8 @@ const AuditLogsTab = () => {
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
 
   useEffect(() => {
     loadLogs();
@@ -539,14 +562,14 @@ const AuditLogsTab = () => {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 170,
-      render: (v: string) => <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'monospace' }}>{v?.replace('T', ' ').slice(0, 19)}</span>,
+      render: (v: string) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)', fontFamily: 'monospace' }}>{v?.replace('T', ' ').slice(0, 19)}</span>,
     },
     {
       title: '操作人',
       dataIndex: 'operator',
       key: 'operator',
       width: 120,
-      render: (op: AuditLog['operator']) => <span style={{ color: '#fff' }}>{op?.display_name || op?.username || '-'}</span>,
+      render: (op: AuditLog['operator']) => <span style={{ color: isDark ? '#fff' : '#1a1a1a' }}>{op?.display_name || op?.username || '-'}</span>,
     },
     {
       title: '操作',
@@ -569,21 +592,21 @@ const AuditLogsTab = () => {
       dataIndex: 'target_type',
       key: 'target_type',
       width: 100,
-      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{v}</span>,
+      render: (v) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' }}>{v}</span>,
     },
     {
       title: '目标 ID',
       dataIndex: 'target_id',
       key: 'target_id',
       width: 80,
-      render: (v: number) => <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{v || '-'}</span>,
+      render: (v: number) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>{v || '-'}</span>,
     },
     {
       title: 'IP',
       dataIndex: 'client_ip',
       key: 'client_ip',
       width: 130,
-      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontFamily: 'monospace' }}>{v}</span>,
+      render: (v) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontFamily: 'monospace' }}>{v}</span>,
     },
     {
       title: '详情',
@@ -591,7 +614,7 @@ const AuditLogsTab = () => {
       key: 'detail',
       ellipsis: true,
       render: (v: Record<string, unknown>) =>
-        v ? <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)', fontFamily: 'monospace' }}>{JSON.stringify(v)}</span> : '-',
+        v ? <span style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)', fontFamily: 'monospace' }}>{JSON.stringify(v)}</span> : '-',
     },
   ];
 

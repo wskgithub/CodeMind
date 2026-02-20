@@ -15,12 +15,13 @@ import {
 } from '@ant-design/icons';
 import { getDashboardSummary, getSystemMetrics, getRequestMetrics, getLLMNodeMetrics } from '@/services/monitorService';
 import { useInterval } from '@/hooks/useInterval';
+import useAppStore from '@/store/appStore';
 import type { DashboardSummary, SystemMetricsSummary, RequestMetricsSummary, LLMNodeSummary } from '@/types';
 
 const { Title, Text } = Typography;
 
 /** 获取状态颜色 - 新设计 */
-const getStatusColor = (status: string): string => {
+const getStatusColor = (status: string, isDark = true): string => {
   const colorMap: Record<string, string> = {
     online: '#00F5D4',
     offline: '#FF6B6B',
@@ -28,7 +29,7 @@ const getStatusColor = (status: string): string => {
     error: '#FF6B6B',
     idle: '#00D9FF',
   };
-  return colorMap[status] || 'rgba(255, 255, 255, 0.5)';
+  return colorMap[status] || (isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)');
 };
 
 /** 获取状态文本 */
@@ -58,11 +59,17 @@ const SystemResourceCard: React.FC<{
   usage: number;
   details: React.ReactNode;
   gradient: string;
-}> = ({ title, icon, usage, details, gradient }) => (
+  colors: {
+    text: string;
+    textSecondary: string;
+    trailColor: string;
+    cardBg: string;
+  };
+}> = ({ title, icon, usage, details, gradient, colors }) => (
   <Card 
     className="glass-card" 
     bordered={false} 
-    style={{ height: '100%', width: '100%', background: 'rgba(255, 255, 255, 0.02)' }}
+    style={{ height: '100%', width: '100%', background: colors.cardBg }}
   >
     <Space direction="vertical" style={{ width: '100%', height: '100%' }}>
       <Space align="center" style={{ width: '100%' }}>
@@ -83,8 +90,8 @@ const SystemResourceCard: React.FC<{
           {icon}
         </div>
         <div style={{ flex: 1 }}>
-          <Text style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.5)' }}>{title}</Text>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>{usage.toFixed(1)}%</div>
+          <Text style={{ fontSize: 13, color: colors.textSecondary }}>{title}</Text>
+          <div style={{ fontSize: 28, fontWeight: 700, color: colors.text }}>{usage.toFixed(1)}%</div>
         </div>
       </Space>
       <Progress
@@ -93,7 +100,7 @@ const SystemResourceCard: React.FC<{
         showInfo={false}
         size="small"
         style={{ width: '100%' }}
-        trailColor="rgba(255, 255, 255, 0.1)"
+        trailColor={colors.trailColor}
       />
       {details}
     </Space>
@@ -102,6 +109,24 @@ const SystemResourceCard: React.FC<{
 
 /** 监控仪表盘页面 — 与首页/登录页新设计风格统一 */
 const MonitorPage: React.FC = () => {
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
+  
+  // 颜色配置
+  const colors = {
+    text: isDark ? '#fff' : '#1f2937',
+    textSecondary: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+    textTertiary: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
+    textMuted: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+    textLight: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+    trailColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+    cardBg: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.6)',
+    segmentedBg: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+    tagDefaultBg: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+    tagDefaultBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+    tagDefaultColor: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+  };
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
@@ -157,8 +182,8 @@ const MonitorPage: React.FC = () => {
       key: 'node_name',
       render: (name: string, record: LLMNodeSummary) => (
         <Space direction="vertical" size={0}>
-          <Text style={{ color: '#fff', fontWeight: 600 }}>{name || record.node_id}</Text>
-          <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>{record.node_id}</Text>
+          <Text style={{ color: colors.text, fontWeight: 600 }}>{name || record.node_id}</Text>
+          <Text style={{ fontSize: 12, color: colors.textTertiary }}>{record.node_id}</Text>
         </Space>
       ),
     },
@@ -170,7 +195,7 @@ const MonitorPage: React.FC = () => {
       render: (status: string) => (
         <Badge 
           status={status === 'online' ? 'success' : status === 'error' ? 'error' : 'default'} 
-          text={<span style={{ color: getStatusColor(status) }}>{getStatusText(status)}</span>} 
+          text={<span style={{ color: getStatusColor(status, isDark) }}>{getStatusText(status)}</span>} 
         />
       ),
     },
@@ -180,15 +205,15 @@ const MonitorPage: React.FC = () => {
       width: 150,
       render: (_: unknown, record: LLMNodeSummary) => (
         <Space direction="vertical" size={0} style={{ width: '100%' }}>
-          <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.7)' }}>利用率: {record.gpu_utilization?.toFixed(1)}%</Text>
+          <Text style={{ fontSize: 12, color: colors.textMuted }}>利用率: {record.gpu_utilization?.toFixed(1)}%</Text>
           <Progress
             percent={record.gpu_utilization}
             size="small"
             strokeColor={record.gpu_utilization > 90 ? '#FF6B6B' : '#00F5D4'}
             showInfo={false}
-            trailColor="rgba(255, 255, 255, 0.1)"
+            trailColor={colors.trailColor}
           />
-          <Text style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)' }}>
+          <Text style={{ fontSize: 11, color: colors.textTertiary }}>
             {formatBytes(record.gpu_used_memory_gb)} / {formatBytes(record.gpu_total_memory_gb)}
           </Text>
         </Space>
@@ -204,7 +229,7 @@ const MonitorPage: React.FC = () => {
           percent={record.cpu_usage_percent}
           size={40}
           strokeColor={record.cpu_usage_percent > 80 ? '#FF6B6B' : '#00D9FF'}
-          trailColor="rgba(255, 255, 255, 0.1)"
+          trailColor={colors.trailColor}
         />
       ),
     },
@@ -218,7 +243,7 @@ const MonitorPage: React.FC = () => {
           percent={record.memory_usage_percent}
           size={40}
           strokeColor={record.memory_usage_percent > 80 ? '#FF6B6B' : '#9D4EDD'}
-          trailColor="rgba(255, 255, 255, 0.1)"
+          trailColor={colors.trailColor}
         />
       ),
     },
@@ -229,10 +254,10 @@ const MonitorPage: React.FC = () => {
       render: (_: unknown, record: LLMNodeSummary) => (
         <Space direction="vertical" size={0}>
           <Text style={{ fontSize: 12, color: '#00D9FF' }}>{record.requests_per_min} req/min</Text>
-          <Text style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)' }}>
+          <Text style={{ fontSize: 11, color: colors.textTertiary }}>
             活跃: {record.active_requests}
           </Text>
-          <Text style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.4)' }}>
+          <Text style={{ fontSize: 11, color: colors.textTertiary }}>
             响应: {record.avg_response_time_ms?.toFixed(0)}ms
           </Text>
         </Space>
@@ -259,7 +284,12 @@ const MonitorPage: React.FC = () => {
           ))}
           {(record.loaded_models?.length || 0) > 3 && (
             <Tooltip title={record.loaded_models?.slice(3).join(', ')}>
-              <Tag style={{ borderRadius: 6 }}>+{record.loaded_models.length - 3}</Tag>
+              <Tag style={{ 
+                borderRadius: 6, 
+                background: colors.tagDefaultBg,
+                borderColor: colors.tagDefaultBorder,
+                color: colors.tagDefaultColor,
+              }}>+{record.loaded_models.length - 3}</Tag>
             </Tooltip>
           )}
         </Space>
@@ -290,13 +320,13 @@ const MonitorPage: React.FC = () => {
       title: '挂载点',
       dataIndex: 'mount_point',
       key: 'mount_point',
-      render: (mount: string) => <code style={{ fontSize: 12, color: '#00D9FF', fontFamily: 'monospace' }}>{mount}</code>,
+      render: (mount: string) => <code style={{ fontSize: 12, color: '#00D9FF', fontFamily: 'monospace', background: isDark ? 'transparent' : 'rgba(0, 217, 255, 0.1)', padding: '2px 4px', borderRadius: 4 }}>{mount}</code>,
     },
     {
       title: '设备',
       dataIndex: 'device',
       key: 'device',
-      render: (device: string) => <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)' }}>{device}</Text>,
+      render: (device: string) => <Text style={{ fontSize: 12, color: colors.textSecondary }}>{device}</Text>,
     },
     {
       title: '使用率',
@@ -308,8 +338,8 @@ const MonitorPage: React.FC = () => {
           percent={Math.round(percent * 10) / 10}
           size="small"
           strokeColor={percent > 90 ? '#FF6B6B' : percent > 70 ? '#FFBE0B' : '#00F5D4'}
-          format={(p) => <span style={{ color: '#fff' }}>{p}%</span>}
-          trailColor="rgba(255, 255, 255, 0.1)"
+          format={(p) => <span style={{ color: colors.text }}>{p}%</span>}
+          trailColor={colors.trailColor}
         />
       ),
     },
@@ -318,7 +348,7 @@ const MonitorPage: React.FC = () => {
       key: 'size',
       width: 150,
       render: (_: unknown, record: { used_gb: number; total_gb: number }) => (
-        <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.7)' }}>
+        <Text style={{ fontSize: 12, color: colors.textMuted }}>
           {formatBytes(record.used_gb)} / {formatBytes(record.total_gb)}
         </Text>
       ),
@@ -359,8 +389,8 @@ const MonitorPage: React.FC = () => {
                   <DashboardOutlined />
                 </div>
                 <div>
-                  <Title level={3} style={{ margin: 0, color: '#fff' }}>系统监控</Title>
-                  <Text style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                  <Title level={3} style={{ margin: 0, color: colors.text }}>系统监控</Title>
+                  <Text style={{ color: colors.textSecondary }}>
                     实时监控服务器资源、请求性能和 LLM 节点状态
                   </Text>
                 </div>
@@ -377,15 +407,15 @@ const MonitorPage: React.FC = () => {
                   value={refreshInterval}
                   onChange={(value) => setRefreshInterval(value as number)}
                   disabled={!autoRefresh}
-                  style={{ background: 'rgba(255, 255, 255, 0.05)' }}
+                  style={{ background: colors.segmentedBg }}
                 />
                 <Tag
                   color={autoRefresh ? 'success' : 'default'}
                   style={{ 
                     cursor: 'pointer',
-                    background: autoRefresh ? 'rgba(0, 245, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${autoRefresh ? 'rgba(0, 245, 212, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                    color: autoRefresh ? '#00F5D4' : 'rgba(255, 255, 255, 0.5)',
+                    background: autoRefresh ? 'rgba(0, 245, 212, 0.15)' : colors.tagDefaultBg,
+                    border: `1px solid ${autoRefresh ? 'rgba(0, 245, 212, 0.3)' : colors.tagDefaultBorder}`,
+                    color: autoRefresh ? '#00F5D4' : colors.tagDefaultColor,
                   }}
                   onClick={() => setAutoRefresh(!autoRefresh)}
                 >
@@ -421,7 +451,7 @@ const MonitorPage: React.FC = () => {
           title={
             <Space>
               <DesktopOutlined style={{ color: '#00D9FF' }} />
-              <span style={{ color: '#fff', fontWeight: 600 }}>系统资源</span>
+              <span style={{ color: colors.text, fontWeight: 600 }}>系统资源</span>
             </Space>
           }
           style={{ marginBottom: 24, background: 'transparent', border: 'none' }}
@@ -434,13 +464,14 @@ const MonitorPage: React.FC = () => {
                 icon={<ThunderboltOutlined />}
                 usage={systemMetrics?.cpu_usage?.usage_percent || 0}
                 gradient="linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)"
+                colors={colors}
                 details={
                   <Space direction="vertical" size={0}>
-                    <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+                    <Text style={{ fontSize: 12, color: colors.textTertiary }}>
                       {systemMetrics?.cpu_usage?.core_count} 核心 · {systemMetrics?.cpu_usage?.model_name}
                     </Text>
                     {systemMetrics?.load_average && (
-                      <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+                      <Text style={{ fontSize: 12, color: colors.textTertiary }}>
                         负载: {systemMetrics.load_average.load_1.toFixed(2)} / {systemMetrics.load_average.load_5.toFixed(2)} / {systemMetrics.load_average.load_15.toFixed(2)}
                       </Text>
                     )}
@@ -454,12 +485,13 @@ const MonitorPage: React.FC = () => {
                 icon={<ApiOutlined />}
                 usage={systemMetrics?.memory_usage?.usage_percent || 0}
                 gradient="linear-gradient(135deg, #9D4EDD 0%, #00D9FF 100%)"
+                colors={colors}
                 details={
                   <Space direction="vertical" size={0}>
-                    <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+                    <Text style={{ fontSize: 12, color: colors.textTertiary }}>
                       已用: {formatBytes(systemMetrics?.memory_usage?.used_gb || 0)}
                     </Text>
-                    <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+                    <Text style={{ fontSize: 12, color: colors.textTertiary }}>
                       总计: {formatBytes(systemMetrics?.memory_usage?.total_gb || 0)} · 空闲: {formatBytes(systemMetrics?.memory_usage?.free_gb || 0)}
                     </Text>
                   </Space>
@@ -467,7 +499,7 @@ const MonitorPage: React.FC = () => {
               />
             </Col>
             <Col xs={24} sm={12} lg={8} style={{ display: 'flex' }}>
-              <Card className="glass-card" bordered={false} style={{ height: '100%', width: '100%', background: 'rgba(255, 255, 255, 0.02)' }}>
+              <Card className="glass-card" bordered={false} style={{ height: '100%', width: '100%', background: colors.cardBg }}>
                 <Space direction="vertical" style={{ width: '100%', height: '100%' }}>
                   <Space align="center" style={{ width: '100%' }}>
                     <div
@@ -487,13 +519,13 @@ const MonitorPage: React.FC = () => {
                       <CloudServerOutlined />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.5)' }}>LLM 节点</Text>
-                      <div style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>
+                      <Text style={{ fontSize: 13, color: colors.textSecondary }}>LLM 节点</Text>
+                      <div style={{ fontSize: 28, fontWeight: 700, color: colors.text }}>
                         {dashboard?.active_nodes || 0} / {dashboard?.total_nodes || 0}
                       </div>
                     </div>
                   </Space>
-                  <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+                  <Text style={{ fontSize: 12, color: colors.textTertiary }}>
                     活跃节点 / 总节点数
                   </Text>
                 </Space>
@@ -504,7 +536,7 @@ const MonitorPage: React.FC = () => {
           {/* 磁盘使用情况 */}
           {systemMetrics?.disk_usage && systemMetrics.disk_usage.length > 0 && (
             <div style={{ marginTop: 24 }}>
-              <Title level={5} style={{ color: '#fff' }}>磁盘使用</Title>
+              <Title level={5} style={{ color: colors.text }}>磁盘使用</Title>
               <Table
                 columns={diskColumns}
                 dataSource={[...systemMetrics.disk_usage].sort((a, b) => a.mount_point.localeCompare(b.mount_point))}
@@ -522,7 +554,7 @@ const MonitorPage: React.FC = () => {
           title={
             <Space>
               <ClockCircleOutlined style={{ color: '#FFBE0B' }} />
-              <span style={{ color: '#fff', fontWeight: 600 }}>请求性能</span>
+              <span style={{ color: colors.text, fontWeight: 600 }}>请求性能</span>
             </Space>
           }
           style={{ marginBottom: 24, background: 'transparent', border: 'none' }}
@@ -531,7 +563,7 @@ const MonitorPage: React.FC = () => {
           <Row gutter={[16, 16]}>
             <Col xs={12} sm={6}>
               <Statistic
-                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>QPS</span>}
+                title={<span style={{ color: colors.textSecondary }}>QPS</span>}
                 value={requestMetrics?.qps?.toFixed(2) || 0}
                 suffix="req/s"
                 valueStyle={{ color: '#00D9FF', fontSize: 28, fontWeight: 700 }}
@@ -539,7 +571,7 @@ const MonitorPage: React.FC = () => {
             </Col>
             <Col xs={12} sm={6}>
               <Statistic
-                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>平均响应时间</span>}
+                title={<span style={{ color: colors.textSecondary }}>平均响应时间</span>}
                 value={requestMetrics?.avg_response_time?.toFixed(2) || 0}
                 suffix="ms"
                 valueStyle={{ color: '#00F5D4', fontSize: 28, fontWeight: 700 }}
@@ -547,7 +579,7 @@ const MonitorPage: React.FC = () => {
             </Col>
             <Col xs={12} sm={6}>
               <Statistic
-                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>P95 响应时间</span>}
+                title={<span style={{ color: colors.textSecondary }}>P95 响应时间</span>}
                 value={requestMetrics?.p95_response_time?.toFixed(2) || 0}
                 suffix="ms"
                 valueStyle={{ color: '#FFBE0B', fontSize: 28, fontWeight: 700 }}
@@ -555,7 +587,7 @@ const MonitorPage: React.FC = () => {
             </Col>
             <Col xs={12} sm={6}>
               <Statistic
-                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>错误率</span>}
+                title={<span style={{ color: colors.textSecondary }}>错误率</span>}
                 value={requestMetrics?.error_rate?.toFixed(2) || 0}
                 suffix="%"
                 valueStyle={{ color: (requestMetrics?.error_rate || 0) > 5 ? '#FF6B6B' : '#00F5D4', fontSize: 28, fontWeight: 700 }}
@@ -567,15 +599,15 @@ const MonitorPage: React.FC = () => {
           {/* HTTP 状态码分布 */}
           {requestMetrics?.status_codes && Object.keys(requestMetrics.status_codes).length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>HTTP 状态码分布</Text>
+              <Text style={{ fontSize: 12, color: colors.textTertiary }}>HTTP 状态码分布</Text>
               <Space wrap style={{ marginTop: 8 }}>
                 {Object.entries(requestMetrics.status_codes).map(([code, count]) => (
                   <Tag
                     key={code}
                     style={{
-                      color: code.startsWith('2') ? '#00F5D4' : code.startsWith('4') ? '#FFBE0B' : code.startsWith('5') ? '#FF6B6B' : 'rgba(255, 255, 255, 0.6)',
-                      background: code.startsWith('2') ? 'rgba(0, 245, 212, 0.15)' : code.startsWith('4') ? 'rgba(255, 190, 11, 0.15)' : code.startsWith('5') ? 'rgba(255, 107, 107, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                      border: `1px solid ${code.startsWith('2') ? 'rgba(0, 245, 212, 0.3)' : code.startsWith('4') ? 'rgba(255, 190, 11, 0.3)' : code.startsWith('5') ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                      color: code.startsWith('2') ? '#00F5D4' : code.startsWith('4') ? '#FFBE0B' : code.startsWith('5') ? '#FF6B6B' : colors.textSecondary,
+                      background: code.startsWith('2') ? 'rgba(0, 245, 212, 0.15)' : code.startsWith('4') ? 'rgba(255, 190, 11, 0.15)' : code.startsWith('5') ? 'rgba(255, 107, 107, 0.15)' : colors.tagDefaultBg,
+                      border: `1px solid ${code.startsWith('2') ? 'rgba(0, 245, 212, 0.3)' : code.startsWith('4') ? 'rgba(255, 190, 11, 0.3)' : code.startsWith('5') ? 'rgba(255, 107, 107, 0.3)' : colors.tagDefaultBorder}`,
                       borderRadius: 6,
                     }}
                   >
@@ -592,7 +624,7 @@ const MonitorPage: React.FC = () => {
           title={
             <Space>
               <CloudServerOutlined style={{ color: '#00F5D4' }} />
-              <span style={{ color: '#fff', fontWeight: 600 }}>LLM 节点状态</span>
+              <span style={{ color: colors.text, fontWeight: 600 }}>LLM 节点状态</span>
               {llmNodes.length > 0 && (
                 <Badge
                   count={llmNodes.filter(n => n.status === 'online').length}
@@ -627,7 +659,7 @@ const MonitorPage: React.FC = () => {
 
         {/* 数据更新时间 */}
         <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Text style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.3)' }}>
+          <Text style={{ fontSize: 12, color: colors.textLight }}>
             数据更新时间: {dashboard?.updated_at ? new Date(dashboard.updated_at).toLocaleString() : '-'}
           </Text>
         </div>

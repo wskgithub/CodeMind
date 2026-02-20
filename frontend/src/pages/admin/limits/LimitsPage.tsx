@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, InputNumber, Select, message, Popconfirm, T
 import { PlusOutlined, DeleteOutlined, SafetyOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { listLimits, upsertLimit, deleteLimit } from '@/services/limitService';
+import useAppStore from '@/store/appStore';
 import type { RateLimit } from '@/types';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
@@ -22,6 +23,8 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** 限额管理页面 — 与首页/登录页新设计风格统一 */
 const LimitsPage = () => {
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   const [limits, setLimits] = useState<RateLimit[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -78,11 +81,11 @@ const LimitsPage = () => {
     }
   };
 
-  // 目标类型标签 - 新设计
+  // 目标类型标签 - 新设计（适配亮色/暗色模式）
   const targetTypeLabel: Record<string, { text: string; color: string; bg: string }> = {
-    global: { text: '全局', color: '#FF6B6B', bg: 'rgba(255, 107, 107, 0.15)' },
-    department: { text: '部门', color: '#00D9FF', bg: 'rgba(0, 217, 255, 0.15)' },
-    user: { text: '用户', color: '#00F5D4', bg: 'rgba(0, 245, 212, 0.15)' },
+    global: { text: '全局', color: '#FF6B6B', bg: isDark ? 'rgba(255, 107, 107, 0.15)' : 'rgba(255, 107, 107, 0.1)' },
+    department: { text: '部门', color: '#00D9FF', bg: isDark ? 'rgba(0, 217, 255, 0.15)' : 'rgba(0, 217, 255, 0.1)' },
+    user: { text: '用户', color: '#00F5D4', bg: isDark ? 'rgba(0, 245, 212, 0.15)' : 'rgba(0, 245, 212, 0.1)' },
   };
 
   const periodLabel: Record<string, string> = {
@@ -126,21 +129,21 @@ const LimitsPage = () => {
       dataIndex: 'target_id', 
       key: 'target_id', 
       width: 80,
-      render: (v) => <span style={{ color: '#fff' }}>{v}</span>,
+      render: (v) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{v}</span>,
     },
     {
       title: '周期',
       dataIndex: 'period',
       key: 'period',
       width: 80,
-      render: (val: string) => <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{periodLabel[val] || val}</span>,
+      render: (val: string) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)' }}>{periodLabel[val] || val}</span>,
     },
     {
       title: '周期时长',
       dataIndex: 'period_hours',
       key: 'period_hours',
       width: 140,
-      render: (v: number) => <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{formatPeriodHours(v)}</span>,
+      render: (v: number) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)' }}>{formatPeriodHours(v)}</span>,
     },
     {
       title: '最大 Token 数',
@@ -154,7 +157,7 @@ const LimitsPage = () => {
       dataIndex: 'max_requests',
       key: 'max_requests',
       align: 'right',
-      render: (v: number) => <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{v === 0 ? '不限制' : v.toLocaleString()}</span>,
+      render: (v: number) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>{v === 0 ? '不限制' : v.toLocaleString()}</span>,
     },
     {
       title: '最大并发',
@@ -179,7 +182,7 @@ const LimitsPage = () => {
         v === 1 ? (
           <Tag style={{ 
             color: '#00F5D4', 
-            background: 'rgba(0, 245, 212, 0.15)',
+            background: isDark ? 'rgba(0, 245, 212, 0.15)' : 'rgba(0, 245, 212, 0.1)',
             border: '1px solid rgba(0, 245, 212, 0.3)',
             borderRadius: 6,
           }}>
@@ -187,9 +190,9 @@ const LimitsPage = () => {
           </Tag>
         ) : (
           <Tag style={{ 
-            color: 'rgba(255, 255, 255, 0.5)', 
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.45)', 
+            background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
             borderRadius: 6,
           }}>
             禁用
@@ -222,10 +225,10 @@ const LimitsPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<SafetyOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 600 }}>
                 限额管理
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 4 }}>
                 配置全局、部门及用户的 Token 限额、请求数、并发数与告警阈值
               </p>
             </div>
@@ -235,9 +238,9 @@ const LimitsPage = () => {
               icon={<ReloadOutlined />} 
               onClick={loadLimits}
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.8)',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)',
               }}
             >
               刷新
@@ -271,7 +274,7 @@ const LimitsPage = () => {
         {/* 创建/编辑限额弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 18, fontWeight: 600 }}>
               配置限额
             </span>
           }
@@ -292,7 +295,7 @@ const LimitsPage = () => {
             <Space style={{ width: '100%' }} size={12}>
               <Form.Item
                 name="target_type"
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>目标类型</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>目标类型</span>}
                 rules={[{ required: true, message: '请选择' }]}
                 style={{ width: 150 }}
               >
@@ -306,7 +309,7 @@ const LimitsPage = () => {
               </Form.Item>
               <Form.Item
                 name="target_id"
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>目标 ID</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>目标 ID</span>}
                 rules={[{ required: true, message: '请输入' }]}
                 style={{ width: 120 }}
               >
@@ -314,7 +317,7 @@ const LimitsPage = () => {
               </Form.Item>
               <Form.Item
                 name="period"
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>周期</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>周期</span>}
                 rules={[{ required: true, message: '请选择' }]}
                 style={{ width: 120 }}
               >
@@ -337,7 +340,7 @@ const LimitsPage = () => {
                 getFieldValue('period') === 'custom' ? (
                   <Form.Item
                     name="period_hours"
-                    label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>自定义周期（小时）</span>}
+                    label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>自定义周期（小时）</span>}
                     rules={[{ required: true, message: '请输入周期时长' }]}
                   >
                     <InputNumber min={1} style={{ width: '100%' }} placeholder="如 5 表示每 5 小时" />
@@ -348,18 +351,18 @@ const LimitsPage = () => {
 
             <Form.Item
               name="max_tokens"
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>最大 Token 数</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>最大 Token 数</span>}
               rules={[{ required: true, message: '请输入' }]}
             >
               <InputNumber min={0} style={{ width: '100%' }} placeholder="如 1000000" />
             </Form.Item>
-            <Form.Item name="max_requests" label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>最大请求数（0=不限制）</span>}>
+            <Form.Item name="max_requests" label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>最大请求数（0=不限制）</span>}>
               <InputNumber min={0} style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item name="max_concurrency" label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>最大并发数</span>}>
+            <Form.Item name="max_concurrency" label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>最大并发数</span>}>
               <InputNumber min={1} max={100} style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item name="alert_threshold" label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>告警阈值 (%)</span>}>
+            <Form.Item name="alert_threshold" label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.75)' }}>告警阈值 (%)</span>}>
               <InputNumber min={0} max={100} style={{ width: '100%' }} />
             </Form.Item>
           </Form>

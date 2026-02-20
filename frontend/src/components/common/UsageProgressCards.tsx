@@ -7,6 +7,7 @@ import {
   CheckCircleOutlined,
 } from '@ant-design/icons';
 import { getMyLimitProgress } from '@/services/limitService';
+import useAppStore from '@/store/appStore';
 import type { LimitProgressItem, LimitProgressResponse } from '@/types';
 
 /** 周期标签到中文映射 */
@@ -64,6 +65,8 @@ function getStrokeColor(percent: number, exceeded: boolean) {
 
 /** 单个限额进度卡片 - 新设计 */
 const LimitCard = ({ item }: { item: LimitProgressItem }) => {
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   const percent = Math.min(item.usage_percent, 100);
   const color = getProgressColor(percent, item.exceeded);
 
@@ -75,8 +78,8 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
         position: 'relative',
         overflow: 'hidden',
         minWidth: 0,
-        background: 'rgba(255, 255, 255, 0.02)',
-        border: '1px solid rgba(255, 255, 255, 0.06)',
+        background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.7)',
+        border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.06)',
         borderRadius: 20,
       }}
     >
@@ -119,7 +122,7 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
           <span style={{
             fontWeight: 600,
             fontSize: 14,
-            color: '#fff',
+            color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
           }}>
             {formatPeriod(item.period, item.period_hours)}
           </span>
@@ -140,7 +143,7 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
       <Progress
         percent={percent}
         strokeColor={getStrokeColor(percent, item.exceeded)}
-        trailColor="rgba(255, 255, 255, 0.1)"
+        trailColor={isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}
         showInfo={false}
         size="small"
         style={{ marginBottom: 10 }}
@@ -159,7 +162,7 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
           }}>
             {item.usage_percent}%
           </span>
-          <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
+          <span style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)' }}>
             / {formatTokens(item.max_tokens)}
           </span>
         </div>
@@ -171,13 +174,13 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
         alignItems: 'center',
         gap: 4,
         fontSize: 12,
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
       }}>
         <ClockCircleOutlined style={{ fontSize: 11 }} />
         {item.reset_in_hours !== null ? (
           <span>{formatResetTime(item.reset_in_hours)} 后重置</span>
         ) : (
-          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>等待使用后开始计时</span>
+          <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.35)' }}>等待使用后开始计时</span>
         )}
       </div>
     </div>

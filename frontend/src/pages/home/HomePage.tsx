@@ -13,8 +13,11 @@ import {
   TeamOutlined,
   ArrowDownOutlined,
   PlayCircleOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import useAuthStore from '@/store/authStore';
+import useAppStore from '@/store/appStore';
 
 /** 功能特点卡片数据 */
 const features = [
@@ -284,6 +287,8 @@ const AnimatedCounter: React.FC<{ value: number; suffix: string; duration?: numb
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { themeMode, toggleTheme } = useAppStore();
+  const isDark = themeMode === 'dark';
   const featuresRef = useRef<HTMLDivElement>(null);
 
   // 滚动动画
@@ -306,7 +311,7 @@ const HomePage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ overflow: 'hidden', background: '#050d14' }}>
+    <div className="min-h-screen" style={{ overflow: 'hidden', background: isDark ? '#050d14' : '#f0f5fa' }}>
       {/* ═══ Hero 区域 - 全新设计 ═══ */}
       <section
         className="hero-section"
@@ -316,11 +321,18 @@ const HomePage: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: `
+          background: isDark
+            ? `
             radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.15), transparent),
             radial-gradient(ellipse 60% 40% at 80% 80%, rgba(157, 78, 221, 0.1), transparent),
             radial-gradient(ellipse 50% 30% at 20% 100%, rgba(0, 245, 212, 0.08), transparent),
             linear-gradient(180deg, #0a1628 0%, #050d14 100%)
+          `
+            : `
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 217, 255, 0.2), transparent),
+            radial-gradient(ellipse 60% 40% at 80% 80%, rgba(157, 78, 221, 0.15), transparent),
+            radial-gradient(ellipse 50% 30% at 20% 100%, rgba(0, 245, 212, 0.12), transparent),
+            linear-gradient(180deg, #e8eef5 0%, #f0f5fa 100%)
           `,
         }}
       >
@@ -333,9 +345,14 @@ const HomePage: React.FC = () => {
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundImage: `
+            backgroundImage: isDark
+            ? `
               linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
               linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px)
+            `
+            : `
+              linear-gradient(rgba(0, 217, 255, 0.06) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0, 217, 255, 0.06) 1px, transparent 1px)
             `,
             backgroundSize: '60px 60px',
             animation: 'gridMove 20s linear infinite',
@@ -353,7 +370,7 @@ const HomePage: React.FC = () => {
             width: 400,
             height: 400,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0, 217, 255, 0.15) 0%, transparent 70%)',
+            background: isDark ? 'radial-gradient(circle, rgba(0, 217, 255, 0.15) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 217, 255, 0.25) 0%, transparent 70%)',
             filter: 'blur(60px)',
             animation: 'float 8s ease-in-out infinite',
             zIndex: 0,
@@ -368,7 +385,7 @@ const HomePage: React.FC = () => {
             width: 500,
             height: 500,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(157, 78, 221, 0.12) 0%, transparent 70%)',
+            background: isDark ? 'radial-gradient(circle, rgba(157, 78, 221, 0.12) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(157, 78, 221, 0.2) 0%, transparent 70%)',
             filter: 'blur(80px)',
             animation: 'float 10s ease-in-out infinite reverse',
             zIndex: 0,
@@ -383,7 +400,7 @@ const HomePage: React.FC = () => {
             width: 300,
             height: 300,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, transparent 70%)',
+            background: isDark ? 'radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(0, 245, 212, 0.18) 0%, transparent 70%)',
             filter: 'blur(50px)',
             animation: 'float 12s ease-in-out infinite',
             animationDelay: '-4s',
@@ -399,13 +416,13 @@ const HomePage: React.FC = () => {
             top: '25%',
             right: '15%',
             padding: '16px 20px',
-            background: 'rgba(0, 217, 255, 0.05)',
+            background: isDark ? 'rgba(0, 217, 255, 0.05)' : 'rgba(0, 217, 255, 0.08)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(0, 217, 255, 0.1)',
+            border: isDark ? '1px solid rgba(0, 217, 255, 0.1)' : '1px solid rgba(0, 217, 255, 0.2)',
             borderRadius: 12,
             fontFamily: 'monospace',
             fontSize: 13,
-            color: 'rgba(0, 217, 255, 0.7)',
+            color: isDark ? 'rgba(0, 217, 255, 0.7)' : 'rgba(0, 217, 255, 0.9)',
             transform: 'perspective(1000px) rotateY(-15deg) rotateX(5deg)',
             animation: 'floatCode 6s ease-in-out infinite',
             zIndex: 2,
@@ -424,13 +441,13 @@ const HomePage: React.FC = () => {
             bottom: '30%',
             left: '10%',
             padding: '16px 20px',
-            background: 'rgba(157, 78, 221, 0.05)',
+            background: isDark ? 'rgba(157, 78, 221, 0.05)' : 'rgba(157, 78, 221, 0.08)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(157, 78, 221, 0.1)',
+            border: isDark ? '1px solid rgba(157, 78, 221, 0.1)' : '1px solid rgba(157, 78, 221, 0.2)',
             borderRadius: 12,
             fontFamily: 'monospace',
             fontSize: 13,
-            color: 'rgba(157, 78, 221, 0.7)',
+            color: isDark ? 'rgba(157, 78, 221, 0.7)' : 'rgba(157, 78, 221, 0.9)',
             transform: 'perspective(1000px) rotateY(15deg) rotateX(-5deg)',
             animation: 'floatCode 8s ease-in-out infinite reverse',
             zIndex: 2,
@@ -440,6 +457,29 @@ const HomePage: React.FC = () => {
           <div>{`const result = await ai`}</div>
           <div style={{ paddingLeft: 12 }}>{`.generate({ prompt })`}</div>
         </div>
+
+        {/* 主题切换按钮 */}
+        <Button
+          type="text"
+          shape="circle"
+          icon={isDark ? <SunOutlined /> : <MoonOutlined />}
+          onClick={toggleTheme}
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            width: 48,
+            height: 48,
+            zIndex: 100,
+            color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)',
+            background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        />
 
         {/* 主内容 */}
         <div className="relative z-10 text-center px-4" style={{ maxWidth: 900 }}>
@@ -457,6 +497,7 @@ const HomePage: React.FC = () => {
               fontSize: 14,
               color: '#00D9FF',
               marginBottom: 32,
+              boxShadow: isDark ? 'none' : '0 4px 20px rgba(0, 217, 255, 0.15)',
               animation: 'fadeInDown 0.8s ease-out',
             }}
           >
@@ -494,7 +535,7 @@ const HomePage: React.FC = () => {
           <p
             style={{
               fontSize: 'clamp(1.25rem, 3vw, 1.75rem)',
-              color: 'rgba(255, 255, 255, 0.7)',
+              color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)',
               marginBottom: 16,
               fontWeight: 400,
               letterSpacing: 8,
@@ -509,7 +550,7 @@ const HomePage: React.FC = () => {
           <p
             style={{
               fontSize: 'clamp(1rem, 2vw, 1.15rem)',
-              color: 'rgba(255, 255, 255, 0.45)',
+              color: isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.5)',
               marginBottom: 48,
               maxWidth: 560,
               marginInline: 'auto',
@@ -563,9 +604,9 @@ const HomePage: React.FC = () => {
                 paddingInline: 40,
                 borderRadius: 28,
                 fontSize: 16,
-                color: '#fff',
-                borderColor: 'rgba(255, 255, 255, 0.25)',
-                background: 'rgba(255, 255, 255, 0.03)',
+                color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.8)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
                 backdropFilter: 'blur(10px)',
               }}
             >
@@ -589,7 +630,7 @@ const HomePage: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             gap: 8,
-            color: 'rgba(255, 255, 255, 0.3)',
+            color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)',
             fontSize: 12,
             animation: 'fadeIn 1s ease-out 1.5s both',
           }}
@@ -603,7 +644,7 @@ const HomePage: React.FC = () => {
       <section
         style={{
           padding: '80px 24px',
-          background: 'linear-gradient(180deg, #050d14 0%, #0a1628 100%)',
+          background: isDark ? 'linear-gradient(180deg, #050d14 0%, #0a1628 100%)' : 'linear-gradient(180deg, #f0f5fa 0%, #e8eef5 100%)',
           position: 'relative',
         }}
       >
@@ -620,8 +661,8 @@ const HomePage: React.FC = () => {
                 key={stat.label}
                 className="stat-card"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.8)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.06)',
                   borderRadius: 24,
                   padding: '32px 24px',
                   textAlign: 'center',
@@ -647,7 +688,7 @@ const HomePage: React.FC = () => {
                   {stat.icon}
                 </div>
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-                <div style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 14, marginTop: 8 }}>
+                <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 8 }}>
                   {stat.label}
                 </div>
               </div>
@@ -661,9 +702,14 @@ const HomePage: React.FC = () => {
         ref={featuresRef}
         style={{
           padding: '120px 24px',
-          background: `
+          background: isDark
+            ? `
             radial-gradient(ellipse 50% 30% at 50% 0%, rgba(0, 217, 255, 0.05), transparent),
             #0a1628
+          `
+            : `
+            radial-gradient(ellipse 50% 30% at 50% 0%, rgba(0, 217, 255, 0.08), transparent),
+            #e8eef5
           `,
           position: 'relative',
         }}
@@ -681,6 +727,7 @@ const HomePage: React.FC = () => {
                 fontSize: 13,
                 color: '#9D4EDD',
                 marginBottom: 20,
+                boxShadow: isDark ? 'none' : '0 4px 20px rgba(157, 78, 221, 0.15)',
               }}
             >
               核心能力
@@ -689,7 +736,7 @@ const HomePage: React.FC = () => {
               style={{
                 fontSize: 'clamp(2rem, 4vw, 3rem)',
                 fontWeight: 800,
-                color: '#fff',
+                color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 marginBottom: 16,
                 letterSpacing: -1,
               }}
@@ -698,7 +745,7 @@ const HomePage: React.FC = () => {
             </h2>
             <p
               style={{
-                color: 'rgba(255, 255, 255, 0.4)',
+                color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.5)',
                 fontSize: 17,
                 maxWidth: 500,
                 margin: '0 auto',
@@ -721,8 +768,8 @@ const HomePage: React.FC = () => {
                 key={f.title}
                 className="feature-card"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.7)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.06)',
                   borderRadius: 24,
                   padding: 32,
                   position: 'relative',
@@ -769,7 +816,7 @@ const HomePage: React.FC = () => {
                     style={{
                       fontSize: 19,
                       fontWeight: 600,
-                      color: '#fff',
+                      color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                       marginBottom: 10,
                     }}
                   >
@@ -777,7 +824,7 @@ const HomePage: React.FC = () => {
                   </h3>
                   <p
                     style={{
-                      color: 'rgba(255, 255, 255, 0.45)',
+                      color: isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.55)',
                       fontSize: 15,
                       lineHeight: 1.7,
                       margin: 0,
@@ -796,7 +843,7 @@ const HomePage: React.FC = () => {
       <section
         style={{
           padding: '100px 24px',
-          background: '#050d14',
+          background: isDark ? '#050d14' : '#f0f5fa',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -818,7 +865,7 @@ const HomePage: React.FC = () => {
             style={{
               fontSize: 14,
               fontWeight: 500,
-              color: 'rgba(255, 255, 255, 0.3)',
+              color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)',
               textTransform: 'uppercase',
               letterSpacing: 4,
               marginBottom: 40,
@@ -842,11 +889,11 @@ const HomePage: React.FC = () => {
                 className="tool-tag"
                 style={{
                   padding: '12px 24px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
                   borderRadius: 50,
                   fontSize: 15,
-                  color: 'rgba(255, 255, 255, 0.6)',
+                  color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
                   opacity: 0,
                   transform: 'scale(0.9)',
                   transition: `all 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${i * 0.05}s`,
@@ -864,9 +911,14 @@ const HomePage: React.FC = () => {
       <section
         style={{
           padding: '120px 24px',
-          background: `
+          background: isDark
+            ? `
             radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0, 217, 255, 0.1), transparent),
             linear-gradient(180deg, #050d14 0%, #0a1628 100%)
+          `
+            : `
+            radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0, 217, 255, 0.15), transparent),
+            linear-gradient(180deg, #f0f5fa 0%, #e8eef5 100%)
           `,
           textAlign: 'center',
         }}
@@ -876,7 +928,7 @@ const HomePage: React.FC = () => {
             style={{
               fontSize: 'clamp(2rem, 4vw, 2.75rem)',
               fontWeight: 800,
-              color: '#fff',
+              color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
               marginBottom: 20,
               letterSpacing: -1,
             }}
@@ -885,7 +937,7 @@ const HomePage: React.FC = () => {
           </h2>
           <p
             style={{
-              color: 'rgba(255, 255, 255, 0.4)',
+              color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.5)',
               fontSize: 17,
               marginBottom: 40,
               lineHeight: 1.7,
@@ -917,8 +969,8 @@ const HomePage: React.FC = () => {
         style={{
           padding: '48px 24px',
           textAlign: 'center',
-          background: '#050d14',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          background: isDark ? '#050d14' : '#f0f5fa',
+          borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)',
         }}
       >
         <div
@@ -933,10 +985,10 @@ const HomePage: React.FC = () => {
         >
           CodeMind
         </div>
-        <p style={{ fontSize: 14, color: 'rgba(255, 255, 255, 0.3)', margin: 0 }}>
+        <p style={{ fontSize: 14, color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)', margin: 0 }}>
           度影智能编码服务 v0.2.0
         </p>
-        <p style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.2)', marginTop: 8 }}>
+        <p style={{ fontSize: 13, color: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.35)', marginTop: 8 }}>
           © {new Date().getFullYear()} RayShape. All Rights Reserved.
         </p>
       </footer>

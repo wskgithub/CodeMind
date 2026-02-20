@@ -12,6 +12,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { listLLMBackends, createLLMBackend, updateLLMBackend, deleteLLMBackend } from '@/services/llmBackendService';
+import useAppStore from '@/store/appStore';
 import type { LLMBackend } from '@/types';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
@@ -36,11 +37,11 @@ const statusMap: Record<number, { label: string; color: string; bg: string }> = 
 };
 
 /** 表单字段标签 + 提示 */
-const FieldLabel = ({ label, tip }: { label: string; tip: string }) => (
+const FieldLabel = ({ label, tip, isDark }: { label: string; tip: string; isDark: boolean }) => (
   <Space size={4}>
-    <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{label}</span>
+    <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>{label}</span>
     <Tooltip title={tip}>
-      <QuestionCircleOutlined style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: 12 }} />
+      <QuestionCircleOutlined style={{ color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)', fontSize: 12 }} />
     </Tooltip>
   </Space>
 );
@@ -52,6 +53,9 @@ const BackendsPage: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<LLMBackend | null>(null);
   const [form] = Form.useForm();
+  
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
 
   useEffect(() => { loadData(); }, []);
 
@@ -123,31 +127,31 @@ const BackendsPage: React.FC = () => {
   // 表格列 - 新设计
   const columns = [
     {
-      title: '节点',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>节点</span>,
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record: LLMBackend) => (
         <div>
-          <div style={{ fontWeight: 600, color: '#fff', fontSize: 15 }}>
+          <div style={{ fontWeight: 600, color: isDark ? '#fff' : '#000', fontSize: 15 }}>
             {record.display_name || name}
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>{name}</div>
+          <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)' }}>{name}</div>
         </div>
       ),
     },
     {
-      title: '服务地址',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>服务地址</span>,
       dataIndex: 'base_url',
       key: 'base_url',
       ellipsis: true,
       render: (url: string) => (
-        <span style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'monospace' }}>
+        <span style={{ fontSize: 13, color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)', fontFamily: 'monospace' }}>
           {url}
         </span>
       ),
     },
     {
-      title: '协议',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>协议</span>,
       dataIndex: 'format',
       key: 'format',
       width: 100,
@@ -163,40 +167,40 @@ const BackendsPage: React.FC = () => {
       ),
     },
     {
-      title: '模型模式',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>模型模式</span>,
       dataIndex: 'model_patterns',
       key: 'model_patterns',
       width: 180,
       ellipsis: true,
       render: (p: string) => (
         <Tooltip title={p}>
-          <code style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'monospace' }}>{p}</code>
+          <code style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)', fontFamily: 'monospace' }}>{p}</code>
         </Tooltip>
       ),
     },
     {
-      title: '权重',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>权重</span>,
       dataIndex: 'weight',
       key: 'weight',
       width: 70,
       align: 'center' as const,
-      render: (w: number) => <span style={{ fontWeight: 600, color: '#FFBE0B' }}>{w}</span>,
+      render: (w: number) => <span style={{ fontWeight: 600, color: isDark ? '#FFBE0B' : '#D48806' }}>{w}</span>,
     },
     {
-      title: '并发',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>并发</span>,
       dataIndex: 'max_concurrency',
       key: 'max_concurrency',
       width: 70,
       align: 'center' as const,
-      render: (v: number) => <span style={{ color: '#00F5D4' }}>{v}</span>,
+      render: (v: number) => <span style={{ color: isDark ? '#00F5D4' : '#13C2C2' }}>{v}</span>,
     },
     {
-      title: '状态',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>状态</span>,
       dataIndex: 'status',
       key: 'status',
       width: 80,
       render: (s: number) => {
-        const info = statusMap[s] ?? { label: '未知', color: 'rgba(255, 255, 255, 0.5)', bg: 'rgba(255, 255, 255, 0.05)' };
+        const info = statusMap[s] ?? { label: '未知', color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', bg: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' };
         return (
           <Tag style={{ 
             color: info.color,
@@ -210,7 +214,7 @@ const BackendsPage: React.FC = () => {
       },
     },
     {
-      title: '操作',
+      title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>操作</span>,
       key: 'actions',
       width: 130,
       render: (_: unknown, record: LLMBackend) => (
@@ -248,10 +252,10 @@ const BackendsPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <PageIcon icon={<CloudServerOutlined />} />
               <div>
-                <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+                <h2 style={{ margin: 0, color: isDark ? '#fff' : '#000', fontSize: 24, fontWeight: 600 }}>
                   LLM 节点管理
                 </h2>
-                <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+                <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 4 }}>
                   配置后端 LLM 服务节点，每个节点独立管理地址、密钥、模型和负载策略
                 </p>
               </div>
@@ -261,9 +265,9 @@ const BackendsPage: React.FC = () => {
                 icon={<ReloadOutlined />} 
                 onClick={loadData}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: 'rgba(255, 255, 255, 0.8)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                  color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)',
                 }}
               >
                 刷新
@@ -294,7 +298,7 @@ const BackendsPage: React.FC = () => {
             pagination={false}
             size="middle"
             locale={{ 
-              emptyText: <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>暂无节点，点击右上角「添加节点」开始配置</span> 
+              emptyText: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>暂无节点，点击右上角「添加节点」开始配置</span> 
             }}
           />
         </div>
@@ -302,7 +306,7 @@ const BackendsPage: React.FC = () => {
         {/* 创建 / 编辑弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : '#000', fontSize: 18, fontWeight: 600 }}>
               <CloudServerOutlined style={{ marginRight: 8 }} />
               {editing ? `编辑节点：${editing.display_name || editing.name}` : '添加后端节点'}
             </span>
@@ -327,29 +331,29 @@ const BackendsPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <Form.Item
                 name="name"
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>节点标识</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>节点标识</span>}
                 rules={[{ required: true, message: '请输入节点标识' }]}
               >
                 <Input 
                   placeholder="如 gpu-node-01" 
                   disabled={!!editing}
                   style={{ 
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    color: '#fff',
+                    background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                    color: isDark ? '#fff' : '#000',
                   }}
                 />
               </Form.Item>
               <Form.Item 
                 name="display_name" 
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>显示名称</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>显示名称</span>}
               >
                 <Input 
                   placeholder="如 GPU 服务器 01"
                   style={{ 
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    color: '#fff',
+                    background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                    color: isDark ? '#fff' : '#000',
                   }}
                 />
               </Form.Item>
@@ -357,111 +361,146 @@ const BackendsPage: React.FC = () => {
 
             <Form.Item
               name="base_url"
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>服务地址</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>服务地址</span>}
               rules={[{ required: true, message: '请输入服务地址' }]}
             >
               <Input 
                 placeholder="http://192.168.1.100:8000/v1" 
-                style={{ fontFamily: 'monospace', color: '#00D9FF' }}
+                style={{ fontFamily: 'monospace', color: isDark ? '#00D9FF' : '#1890FF' }}
               />
             </Form.Item>
 
             <Form.Item 
               name="api_key" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>API Key</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>API Key</span>}
             >
               <Input.Password 
                 placeholder={editing ? '留空则保持不变' : '无需认证时留空'}
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                  color: isDark ? '#fff' : '#000',
                 }}
               />
             </Form.Item>
 
-            <Divider style={{ margin: '4px 0 16px', borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+            <Divider style={{ margin: '4px 0 16px', borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
 
             {/* ── 协议与状态 ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <Form.Item
                 name="format"
-                label={<FieldLabel label="协议格式" tip="OpenAI 兼容接口或 Anthropic 原生接口" />}
+                label={<FieldLabel label="协议格式" tip="OpenAI 兼容接口或 Anthropic 原生接口" isDark={isDark} />}
                 rules={[{ required: true }]}
               >
-                <Select options={[
-                  { value: 'openai', label: 'OpenAI 兼容' },
-                  { value: 'anthropic', label: 'Anthropic 原生' },
-                ]} />
+                <Select 
+                  options={[
+                    { value: 'openai', label: 'OpenAI 兼容' },
+                    { value: 'anthropic', label: 'Anthropic 原生' },
+                  ]}
+                  style={{ 
+                    background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  }}
+                />
               </Form.Item>
               <Form.Item 
                 name="status" 
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>运行状态</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>运行状态</span>}
               >
-                <Select options={[
-                  { value: 1, label: '启用' },
-                  { value: 0, label: '禁用' },
-                  { value: 2, label: '排空（不接新请求）' },
-                ]} />
+                <Select 
+                  options={[
+                    { value: 1, label: '启用' },
+                    { value: 0, label: '禁用' },
+                    { value: 2, label: '排空（不接新请求）' },
+                  ]}
+                  style={{ 
+                    background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  }}
+                />
               </Form.Item>
             </div>
 
-            <Divider style={{ margin: '4px 0 16px', borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+            <Divider style={{ margin: '4px 0 16px', borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
 
             {/* ── 模型路由 ── */}
             <Form.Item
               name="model_patterns"
-              label={<FieldLabel label="支持的模型" tip="逗号分隔的模型名匹配模式，支持通配符 *。如 gpt-*,o1-* 表示只路由 GPT 和 o1 系列请求" />}
+              label={<FieldLabel label="支持的模型" tip="逗号分隔的模型名匹配模式，支持通配符 *。如 gpt-*,o1-* 表示只路由 GPT 和 o1 系列请求" isDark={isDark} />}
             >
               <Input 
                 placeholder="* 匹配所有模型，多个模式用逗号分隔，如 gpt-*,claude-*" 
-                style={{ fontFamily: 'monospace', color: '#fff' }}
+                style={{ 
+                  fontFamily: 'monospace', 
+                  color: isDark ? '#fff' : '#000',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                }}
               />
             </Form.Item>
 
-            <Divider style={{ margin: '4px 0 16px', borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+            <Divider style={{ margin: '4px 0 16px', borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
 
             {/* ── 负载均衡 ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <Form.Item
                 name="weight"
-                label={<FieldLabel label="负载权重" tip="相对权重，数值越大分配的请求越多。如节点 A 权重 200、节点 B 权重 100，则 A 承接约 2/3 的请求" />}
+                label={<FieldLabel label="负载权重" tip="相对权重，数值越大分配的请求越多。如节点 A 权重 200、节点 B 权重 100，则 A 承接约 2/3 的请求" isDark={isDark} />}
               >
-                <InputNumber min={1} max={10000} style={{ width: '100%' }} />
+                <InputNumber 
+                  min={1} 
+                  max={10000} 
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
               <Form.Item
                 name="max_concurrency"
-                label={<FieldLabel label="最大并发" tip="此节点允许的最大同时请求数，超出后新请求将路由至其他节点" />}
+                label={<FieldLabel label="最大并发" tip="此节点允许的最大同时请求数，超出后新请求将路由至其他节点" isDark={isDark} />}
               >
-                <InputNumber min={1} style={{ width: '100%' }} />
+                <InputNumber 
+                  min={1} 
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
             </div>
 
-            <Divider style={{ margin: '4px 0 16px', borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+            <Divider style={{ margin: '4px 0 16px', borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
 
             {/* ── 超时配置 ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <Form.Item
                 name="timeout_seconds"
-                label={<FieldLabel label="普通请求超时（秒）" tip="非流式请求的最大等待时间" />}
+                label={<FieldLabel label="普通请求超时（秒）" tip="非流式请求的最大等待时间" isDark={isDark} />}
               >
-                <InputNumber min={10} max={3600} style={{ width: '100%' }} />
+                <InputNumber 
+                  min={10} 
+                  max={3600} 
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
               <Form.Item
                 name="stream_timeout_seconds"
-                label={<FieldLabel label="流式请求超时（秒）" tip="流式（SSE）请求的最大等待时间，建议设置较长" />}
+                label={<FieldLabel label="流式请求超时（秒）" tip="流式（SSE）请求的最大等待时间，建议设置较长" isDark={isDark} />}
               >
-                <InputNumber min={10} max={7200} style={{ width: '100%' }} />
+                <InputNumber 
+                  min={10} 
+                  max={7200} 
+                  style={{ width: '100%' }}
+                />
               </Form.Item>
             </div>
 
             <Form.Item
               name="health_check_url"
-              label={<FieldLabel label="健康检查地址" tip="可选。系统定期 GET 此 URL，响应 2xx 则视为节点健康。留空则跳过健康检查" />}
+              label={<FieldLabel label="健康检查地址" tip="可选。系统定期 GET 此 URL，响应 2xx 则视为节点健康。留空则跳过健康检查" isDark={isDark} />}
             >
               <Input 
                 placeholder="http://192.168.1.100:8000/health" 
-                style={{ fontFamily: 'monospace', color: '#fff' }}
+                style={{ 
+                  fontFamily: 'monospace', 
+                  color: isDark ? '#fff' : '#000',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                }}
               />
             </Form.Item>
 

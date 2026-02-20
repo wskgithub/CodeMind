@@ -11,6 +11,7 @@ import * as echarts from 'echarts';
 import dayjs from 'dayjs';
 import { getUsageStats, getRanking, exportUsageCSV } from '@/services/statsService';
 import useAuthStore from '@/store/authStore';
+import useAppStore from '@/store/appStore';
 import type { UsageItem, RankingItem } from '@/types';
 import UsageProgressCards from '@/components/common/UsageProgressCards';
 
@@ -48,6 +49,8 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 /** 用量统计页面 — 与首页/登录页新设计风格统一 */
 const UsagePage = () => {
   const { user } = useAuthStore();
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   const isAdmin = user?.role === 'super_admin' || user?.role === 'dept_manager';
 
   const [period, setPeriod] = useState<string>('daily');
@@ -76,6 +79,11 @@ const UsagePage = () => {
   useEffect(() => {
     if (usageData.length > 0 && chartRef.current) renderChart();
   }, [usageData]);
+
+  // 主题切换时重新渲染图表
+  useEffect(() => {
+    if (usageData.length > 0 && chartInstance.current) renderChart();
+  }, [themeMode]);
 
   useEffect(() => {
     const handleResize = () => chartInstance.current?.resize();
@@ -128,13 +136,13 @@ const UsagePage = () => {
       backgroundColor: 'transparent',
       tooltip: { 
         trigger: 'axis',
-        backgroundColor: 'rgba(13, 29, 45, 0.95)',
-        borderColor: 'rgba(0, 217, 255, 0.2)',
-        textStyle: { color: '#fff' },
+        backgroundColor: isDark ? 'rgba(13, 29, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        borderColor: isDark ? 'rgba(0, 217, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+        textStyle: { color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' },
       },
       legend: { 
         data: ['Prompt Tokens', 'Completion Tokens', '请求次数'],
-        textStyle: { color: 'rgba(255, 255, 255, 0.7)' },
+        textStyle: { color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)' },
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
@@ -142,23 +150,23 @@ const UsagePage = () => {
         data: dates,
         axisLabel: { 
           formatter: (v: string) => v.slice(5),
-          color: 'rgba(255, 255, 255, 0.5)',
+          color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
         },
-        axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
+        axisLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } },
       },
       yAxis: [
         { 
           type: 'value', 
           name: 'Tokens',
-          nameTextStyle: { color: 'rgba(255, 255, 255, 0.5)' },
-          axisLabel: { color: 'rgba(255, 255, 255, 0.5)' },
-          splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.05)' } },
+          nameTextStyle: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
+          axisLabel: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
+          splitLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' } },
         },
         { 
           type: 'value', 
           name: '请求数',
-          nameTextStyle: { color: 'rgba(255, 255, 255, 0.5)' },
-          axisLabel: { color: 'rgba(255, 255, 255, 0.5)' },
+          nameTextStyle: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
+          axisLabel: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
           splitLine: { show: false },
         },
       ],
@@ -214,7 +222,7 @@ const UsagePage = () => {
       dataIndex: 'date', 
       key: 'date', 
       width: 120,
-      render: (text) => <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>{text}</span>,
     },
     {
       title: 'Prompt Tokens',
@@ -235,7 +243,7 @@ const UsagePage = () => {
       dataIndex: 'total_tokens',
       key: 'total_tokens',
       align: 'right',
-      render: (v: number) => <strong style={{ color: '#fff' }}>{v.toLocaleString()}</strong>,
+      render: (v: number) => <strong style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{v.toLocaleString()}</strong>,
     },
     {
       title: '请求次数',
@@ -255,7 +263,7 @@ const UsagePage = () => {
       align: 'center',
       render: (v) => (
         <span style={{ 
-          color: v <= 3 ? '#FFBE0B' : 'rgba(255, 255, 255, 0.6)',
+          color: v <= 3 ? '#FFBE0B' : (isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)'),
           fontWeight: v <= 3 ? 700 : 400,
         }}>
           {v}
@@ -266,7 +274,7 @@ const UsagePage = () => {
       title: '名称', 
       dataIndex: 'name', 
       key: 'name',
-      render: (text) => <span style={{ color: '#fff' }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{text}</span>,
     },
     {
       title: '总 Tokens',
@@ -336,10 +344,10 @@ const UsagePage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<BarChartOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 600 }}>
                 用量统计
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 14, marginTop: 4 }}>
                 查看您的 API 使用情况和资源消耗统计
               </p>
             </div>
@@ -356,8 +364,8 @@ const UsagePage = () => {
                   gradient="linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)' }}>总 Tokens</div>
-                  <div style={{ fontWeight: 700, color: '#fff', fontSize: 20 }}>{formatNum(totalTokens)}</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>总 Tokens</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalTokens)}</div>
                 </div>
               </div>
             </div>
@@ -370,8 +378,8 @@ const UsagePage = () => {
                   gradient="linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)' }}>总请求数</div>
-                  <div style={{ fontWeight: 700, color: '#fff', fontSize: 20 }}>{totalRequests.toLocaleString()}</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>总请求数</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{totalRequests.toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -384,8 +392,8 @@ const UsagePage = () => {
                   gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)' }}>Prompt Tokens</div>
-                  <div style={{ fontWeight: 700, color: '#fff', fontSize: 20 }}>{formatNum(totalPrompt)}</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>Prompt Tokens</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalPrompt)}</div>
                 </div>
               </div>
             </div>
@@ -398,8 +406,8 @@ const UsagePage = () => {
                   gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)' }}>Completion Tokens</div>
-                  <div style={{ fontWeight: 700, color: '#fff', fontSize: 20 }}>{formatNum(totalCompletion)}</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>Completion Tokens</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalCompletion)}</div>
                 </div>
               </div>
             </div>
@@ -410,7 +418,7 @@ const UsagePage = () => {
         <div className="glass-card p-5 animate-fade-in-up" style={{ marginBottom: 24, animationDelay: '0.08s' }}>
           <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
             <Space wrap size={16}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>统计周期：</span>
+              <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)' }}>统计周期：</span>
               <Select
                 value={period}
                 onChange={setPeriod}
@@ -421,10 +429,10 @@ const UsagePage = () => {
                 ]}
                 style={{ 
                   width: 120,
-                  background: 'rgba(255, 255, 255, 0.03)',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
                 }}
               />
-              <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>日期范围：</span>
+              <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)' }}>日期范围：</span>
               <RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null)}
@@ -457,7 +465,7 @@ const UsagePage = () => {
           >
             <h3 style={{ 
               marginBottom: 20, 
-              color: '#fff',
+              color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
               fontSize: 18,
               fontWeight: 600,
               display: 'flex',
@@ -474,7 +482,7 @@ const UsagePage = () => {
             </h3>
             <div ref={chartRef} style={{ height: 400, width: '100%' }} />
             {usageData.length === 0 && !loading && (
-              <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)', paddingTop: 40 }}>
+              <div style={{ textAlign: 'center', color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', paddingTop: 40 }}>
                 暂无数据
               </div>
             )}
@@ -490,7 +498,7 @@ const UsagePage = () => {
             >
               <h3 style={{ 
                 marginBottom: 20, 
-                color: '#fff',
+                color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 fontSize: 18,
                 fontWeight: 600,
                 display: 'flex',
@@ -526,7 +534,7 @@ const UsagePage = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                   <h3 style={{ 
                     margin: 0, 
-                    color: '#fff',
+                    color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                     fontSize: 18,
                     fontWeight: 600,
                     display: 'flex',
@@ -549,7 +557,7 @@ const UsagePage = () => {
                       { label: '部门', value: 'department' },
                     ]}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
                     }}
                   />
                 </div>

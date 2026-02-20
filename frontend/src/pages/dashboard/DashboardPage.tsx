@@ -12,6 +12,7 @@ import { getOverview } from '@/services/statsService';
 import { getUsageStats } from '@/services/statsService';
 import { listAnnouncements } from '@/services/systemService';
 import useAuthStore from '@/store/authStore';
+import useAppStore from '@/store/appStore';
 import type { StatsOverview, UsageItem, Announcement } from '@/types';
 import UsageProgressCards from '@/components/common/UsageProgressCards';
 
@@ -38,6 +39,8 @@ const StatIcon = ({
 /** 仪表盘页面 — 与首页/登录页新设计风格统一 */
 const DashboardPage = () => {
   const { user } = useAuthStore();
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   const [overview, setOverview] = useState<StatsOverview | null>(null);
   const [usageData, setUsageData] = useState<UsageItem[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -60,6 +63,13 @@ const DashboardPage = () => {
       renderChart();
     }
   }, [usageData]);
+
+  // 主题切换时重新渲染图表
+  useEffect(() => {
+    if (usageData.length > 0 && chartInstance.current) {
+      renderChart();
+    }
+  }, [themeMode]);
 
   // 窗口 resize 时调整图表
   useEffect(() => {
@@ -102,13 +112,13 @@ const DashboardPage = () => {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross' },
-        backgroundColor: 'rgba(13, 29, 45, 0.95)',
+        backgroundColor: isDark ? 'rgba(13, 29, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
         borderColor: 'rgba(0, 217, 255, 0.2)',
-        textStyle: { color: '#fff' },
+        textStyle: { color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' },
       },
       legend: {
         data: ['Token 用量', '请求次数'],
-        textStyle: { color: 'rgba(255, 255, 255, 0.7)' },
+        textStyle: { color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' },
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
@@ -116,28 +126,28 @@ const DashboardPage = () => {
         data: dates,
         axisLabel: {
           formatter: (val: string) => val.slice(5),
-          color: 'rgba(255, 255, 255, 0.5)',
+          color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
         },
-        axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
+        axisLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } },
       },
       yAxis: [
         {
           type: 'value',
           name: 'Token 用量',
-          nameTextStyle: { color: 'rgba(255, 255, 255, 0.5)' },
+          nameTextStyle: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
           axisLabel: {
             formatter: (val: number) =>
               val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` :
               val >= 1000 ? `${(val / 1000).toFixed(0)}K` : String(val),
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
           },
-          splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.05)' } },
+          splitLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' } },
         },
         {
           type: 'value',
           name: '请求次数',
-          nameTextStyle: { color: 'rgba(255, 255, 255, 0.5)' },
-          axisLabel: { color: 'rgba(255, 255, 255, 0.5)' },
+          nameTextStyle: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
+          axisLabel: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
           splitLine: { show: false },
         },
       ],
@@ -199,7 +209,7 @@ const DashboardPage = () => {
       <h2 
         style={{ 
           marginBottom: 24, 
-          color: '#fff',
+          color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
           fontSize: 24,
           fontWeight: 600,
         }}
@@ -224,10 +234,10 @@ const DashboardPage = () => {
                 gradient="linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)"
               />
               <Statistic
-                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>今日 Token 用量</span>}
+                title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>今日 Token 用量</span>}
                 value={overview?.today.total_tokens || 0}
                 formatter={(val) => formatNumber(Number(val))}
-                valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
+                valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
                 suffix={
                   <ArrowUpOutlined style={{ fontSize: 12, color: '#00F5D4', marginLeft: 4 }} />
                 }
@@ -243,9 +253,9 @@ const DashboardPage = () => {
                 gradient="linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%)"
               />
               <Statistic
-                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>今日请求数</span>}
+                title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>今日请求数</span>}
                 value={overview?.today.total_requests || 0}
-                valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
+                valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
               />
             </div>
           </div>
@@ -260,9 +270,9 @@ const DashboardPage = () => {
                     gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                   />
                   <Statistic
-                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>总用户数</span>}
+                    title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>总用户数</span>}
                     value={overview?.total_users || 0}
-                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
+                    valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
@@ -275,9 +285,9 @@ const DashboardPage = () => {
                     gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                   />
                   <Statistic
-                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>活跃 API Key</span>}
+                    title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>活跃 API Key</span>}
                     value={overview?.total_api_keys || 0}
-                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
+                    valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
@@ -294,10 +304,10 @@ const DashboardPage = () => {
                     gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                   />
                   <Statistic
-                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>本月 Token 用量</span>}
+                    title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>本月 Token 用量</span>}
                     value={overview?.this_month.total_tokens || 0}
                     formatter={(val) => formatNumber(Number(val))}
-                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
+                    valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
@@ -310,9 +320,9 @@ const DashboardPage = () => {
                     gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                   />
                   <Statistic
-                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>本月请求数</span>}
+                    title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>本月请求数</span>}
                     value={overview?.this_month.total_requests || 0}
-                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
+                    valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
@@ -328,7 +338,7 @@ const DashboardPage = () => {
       >
         <h3 style={{ 
           marginBottom: 20, 
-          color: '#fff',
+          color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
           fontSize: 18,
           fontWeight: 600,
           display: 'flex',
@@ -356,7 +366,7 @@ const DashboardPage = () => {
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>暂无用量数据</span>}
+            description={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>暂无用量数据</span>}
             style={{ padding: 40 }}
           />
         )}
@@ -370,7 +380,7 @@ const DashboardPage = () => {
         >
           <h3 style={{ 
             marginBottom: 20, 
-            color: '#fff',
+            color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
             fontSize: 18,
             fontWeight: 600,
             display: 'flex',
@@ -392,17 +402,17 @@ const DashboardPage = () => {
                 style={{
                   paddingBottom: 16,
                   marginBottom: index < 4 ? 16 : 0,
-                  borderBottom: index < 4 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
+                  borderBottom: index < 4 ? (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid rgba(0, 0, 0, 0.06)') : 'none',
                 }}
               >
                 <div className="flex items-center gap-2 flex-wrap">
                   {ann.pinned && (
                     <Tag color="error" style={{ borderRadius: 4, border: 'none' }}>置顶</Tag>
                   )}
-                  <strong style={{ color: '#fff', fontSize: 15 }}>{ann.title}</strong>
+                  <strong style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 15 }}>{ann.title}</strong>
                   <span
                     style={{
-                      color: 'rgba(255, 255, 255, 0.4)',
+                      color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)',
                       fontSize: 12,
                       marginLeft: 'auto',
                     }}
@@ -412,7 +422,7 @@ const DashboardPage = () => {
                 </div>
                 <div
                   style={{
-                    color: 'rgba(255, 255, 255, 0.6)',
+                    color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)',
                     fontSize: 14,
                     marginTop: 8,
                     lineHeight: 1.6,

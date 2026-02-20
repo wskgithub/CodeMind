@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Avatar, Dropdown, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Button, Tooltip } from 'antd';
 import {
   DashboardOutlined,
   KeyOutlined,
@@ -16,6 +16,8 @@ import {
   MonitorOutlined,
   BookOutlined,
   FileTextOutlined,
+  MoonOutlined,
+  SunOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import useAuthStore from '@/store/authStore';
@@ -28,7 +30,7 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { sidebarCollapsed, toggleSidebar } = useAppStore();
+  const { sidebarCollapsed, toggleSidebar, themeMode, toggleTheme } = useAppStore();
 
   const isSuperAdmin = user?.role === 'super_admin';
   const isDeptManager = user?.role === 'dept_manager';
@@ -137,7 +139,7 @@ const DashboardLayout: React.FC = () => {
   const selectedKey = location.pathname;
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#050d14' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* 背景装饰光圈 - 新设计 */}
       <div
         style={{
@@ -198,10 +200,10 @@ const DashboardLayout: React.FC = () => {
           top: 0,
           bottom: 0,
           zIndex: 20,
-          background: 'rgba(10, 22, 40, 0.95)',
+          background: themeMode === 'dark' ? 'rgba(10, 22, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
-          borderRight: '1px solid rgba(0, 217, 255, 0.08)',
+          borderRight: `1px solid ${themeMode === 'dark' ? 'rgba(0, 217, 255, 0.08)' : 'rgba(0, 217, 255, 0.15)'}`,
         }}
       >
         {/* Logo - 新设计 */}
@@ -212,7 +214,7 @@ const DashboardLayout: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            borderBottom: '1px solid rgba(0, 217, 255, 0.08)',
+            borderBottom: `1px solid ${themeMode === 'dark' ? 'rgba(0, 217, 255, 0.08)' : 'rgba(0, 217, 255, 0.15)'}`,
             transition: 'all 0.3s',
           }}
           onClick={() => navigate('/dashboard')}
@@ -293,7 +295,7 @@ const DashboardLayout: React.FC = () => {
             background: 'transparent',
             padding: '12px 0',
           }}
-          theme="dark"
+          theme={themeMode === 'dark' ? 'dark' : 'light'}
         />
       </Sider>
 
@@ -312,10 +314,10 @@ const DashboardLayout: React.FC = () => {
           className="glass-header"
           style={{
             padding: '0 24px',
-            background: 'rgba(5, 13, 20, 0.85)',
+            background: themeMode === 'dark' ? 'rgba(5, 13, 20, 0.85)' : 'rgba(255, 255, 255, 0.85)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(0, 217, 255, 0.06)',
+            borderBottom: `1px solid ${themeMode === 'dark' ? 'rgba(0, 217, 255, 0.06)' : 'rgba(0, 217, 255, 0.1)'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -332,19 +334,40 @@ const DashboardLayout: React.FC = () => {
             onClick={toggleSidebar}
             style={{
               fontSize: 18,
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'rgba(255, 255, 255, 0.7)',
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
+              color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)',
+              background: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+              border: `1px solid ${themeMode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'}`,
             }}
           />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* 主题切换按钮 */}
+            <Tooltip title={themeMode === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}>
+              <Button
+                type="text"
+                icon={themeMode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+                onClick={toggleTheme}
+                style={{
+                  fontSize: 18,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)',
+                  background: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                  border: `1px solid ${themeMode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'}`,
+                }}
+              />
+            </Tooltip>
+            
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <div
                 style={{
@@ -352,30 +375,30 @@ const DashboardLayout: React.FC = () => {
                   alignItems: 'center',
                   gap: 12,
                   cursor: 'pointer',
-                  padding: '8px 16px',
-                  borderRadius: 14,
+                  padding: '6px 14px',
+                  borderRadius: 12,
                   transition: 'all 0.2s',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  background: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+                  border: 'none',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'rgba(0, 217, 255, 0.08)';
-                  e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.2)';
+                  e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0, 217, 255, 0.2)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.background = themeMode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 <Avatar
-                  size={36}
+                  size={32}
                   style={{
                     background: 'linear-gradient(135deg, #00D9FF 0%, #9D4EDD 100%)',
                     boxShadow: '0 2px 12px rgba(0, 217, 255, 0.3)',
                   }}
                   icon={<UserOutlined />}
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.85)', fontSize: 14, fontWeight: 500 }}>
                   {user?.display_name || user?.username}
                 </span>
               </div>

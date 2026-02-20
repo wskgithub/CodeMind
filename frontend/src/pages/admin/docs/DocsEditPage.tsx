@@ -24,14 +24,16 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { documentService, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/documentService';
+import useAppStore from '@/store/appStore';
 
 const { Title } = Typography;
 const { TextArea } = Input;
 
-// 自定义代码块渲染 - 固定使用深色主题
-const CodeBlock: React.FC<{ language: string; value: string }> = ({ 
+// 自定义代码块渲染 - 代码块始终使用深色主题
+const CodeBlock: React.FC<{ language: string; value: string; isDark?: boolean }> = ({ 
   language, 
   value,
+  isDark = true,
 }) => {
   return (
     <SyntaxHighlighter
@@ -41,7 +43,7 @@ const CodeBlock: React.FC<{ language: string; value: string }> = ({
       customStyle={{
         margin: '16px 0',
         borderRadius: '8px',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
         fontSize: '14px',
       }}
     >
@@ -55,6 +57,8 @@ const DocsEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const [form] = Form.useForm();
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
   
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -277,13 +281,13 @@ const DocsEditPage: React.FC = () => {
                   children: (
                     <div
                       style={{
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
                         borderRadius: 6,
                         padding: 16,
                         minHeight: 550,
                         maxHeight: 550,
                         overflow: 'auto',
-                        background: 'rgba(20, 20, 26, 0.5)',
+                        background: isDark ? 'rgba(20, 20, 26, 0.5)' : 'rgba(240, 240, 245, 0.5)',
                       }}
                       className="docs-markdown-preview"
                     >
@@ -296,6 +300,7 @@ const DocsEditPage: React.FC = () => {
                                 <CodeBlock
                                   language={match[1] || 'text'}
                                   value={String(children).replace(/\n$/, '')}
+                                  isDark={isDark}
                                 />
                               ) : (
                                 <code className={className} {...props}>
@@ -308,7 +313,7 @@ const DocsEditPage: React.FC = () => {
                           {content}
                         </ReactMarkdown>
                       ) : (
-                        <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingTop: 100 }}>
+                        <div style={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)', textAlign: 'center', paddingTop: 100 }}>
                           暂无内容，请在编辑标签页输入 Markdown 内容
                         </div>
                       )}

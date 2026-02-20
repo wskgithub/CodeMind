@@ -12,6 +12,7 @@ import type { UserDetail, DeptTree } from '@/types';
 import userService, { type UserListParams, type CreateUserParams } from '@/services/userService';
 import departmentService from '@/services/departmentService';
 import useAuthStore from '@/store/authStore';
+import useAppStore from '@/store/appStore';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
@@ -58,6 +59,10 @@ const UsersPage: React.FC = () => {
   const currentUser = useAuthStore((s) => s.user);
   const isSuperAdmin = currentUser?.role === 'super_admin';
   const isDeptManager = currentUser?.role === 'dept_manager';
+
+  // 获取主题模式
+  const themeMode = useAppStore((state) => state.themeMode);
+  const isDark = themeMode === 'dark';
 
   const [users, setUsers] = useState<UserDetail[]>([]);
   const [departments, setDepartments] = useState<DeptTree[]>([]);
@@ -316,46 +321,46 @@ const UsersPage: React.FC = () => {
   // 表格列 - 新设计
   const columns: ColumnsType<UserDetail> = [
     { 
-      title: '用户名', 
+      title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>用户名</span>, 
       dataIndex: 'username', 
       key: 'username', 
       width: 120,
-      render: (text) => <span style={{ color: '#fff', fontWeight: 500 }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontWeight: 500 }}>{text}</span>,
     },
     { 
-      title: '姓名', 
+      title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>姓名</span>, 
       dataIndex: 'display_name', 
       key: 'display_name', 
       width: 120,
-      render: (text) => <span style={{ color: '#fff' }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{text}</span>,
     },
     { 
-      title: '邮箱', 
+      title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>邮箱</span>, 
       dataIndex: 'email', 
       key: 'email', 
       width: 180, 
-      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{v || '-'}</span>,
+      render: (v) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)' }}>{v || '-'}</span>,
     },
-    { title: '角色', dataIndex: 'role', key: 'role', width: 120, render: roleTag },
+    { title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>角色</span>, dataIndex: 'role', key: 'role', width: 120, render: roleTag },
     {
-      title: '部门', 
+      title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>部门</span>, 
       key: 'department', 
       width: 120,
-      render: (_, r) => <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{r.department?.name || '-'}</span>,
+      render: (_, r) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)' }}>{r.department?.name || '-'}</span>,
     },
     {
-      title: '状态', 
+      title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>状态</span>, 
       key: 'status', 
       width: 160,
       render: (_, record) => statusTag(record),
     },
     {
-      title: '最后登录', 
+      title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>最后登录</span>, 
       dataIndex: 'last_login_at', 
       key: 'last_login_at', 
       width: 160,
       render: (v: string) => (
-        <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+        <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.45)' }}>
           {v ? dayjs(v).format('YYYY-MM-DD HH:mm') : '-'}
         </span>
       ),
@@ -426,10 +431,10 @@ const UsersPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<UserOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 600 }}>
                 用户管理
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginTop: 4 }}>
                 管理系统用户，支持创建、编辑、启用/禁用及角色分配
               </p>
             </div>
@@ -445,9 +450,9 @@ const UsersPage: React.FC = () => {
               icon={<ReloadOutlined />} 
               onClick={loadUsers}
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.8)',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)',
               }}
             >
               刷新
@@ -489,7 +494,7 @@ const UsersPage: React.FC = () => {
         {/* 创建/编辑弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 18, fontWeight: 600 }}>
               {editingUser ? '编辑用户' : '创建用户'}
             </span>
           }
@@ -504,29 +509,29 @@ const UsersPage: React.FC = () => {
               <>
                 <Form.Item 
                   name="username" 
-                  label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>用户名</span>} 
+                  label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>用户名</span>} 
                   rules={[{ required: true, message: '请输入用户名' }]}
                 >
                   <Input 
                     placeholder="2-50 位字母、数字、下划线"
                     style={{ 
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
+                      background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                      color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                     }}
                   />
                 </Form.Item>
                 <Form.Item 
                   name="password" 
-                  label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>初始密码</span>} 
+                  label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>初始密码</span>} 
                   rules={[{ required: true, message: '请设置初始密码' }, { min: 8, message: '不少于 8 位' }]}
                 >
                   <Input.Password 
                     placeholder="至少 8 位，含大小写字母和数字"
                     style={{ 
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#fff',
+                      background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                      color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                     }}
                   />
                 </Form.Item>
@@ -534,46 +539,46 @@ const UsersPage: React.FC = () => {
             )}
             <Form.Item 
               name="display_name" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>姓名</span>} 
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>姓名</span>} 
               rules={[{ required: true, message: '请输入姓名' }]}
             >
               <Input 
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                  color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 }}
               />
             </Form.Item>
             <Form.Item 
               name="email" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>邮箱</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>邮箱</span>}
             >
               <Input 
                 type="email"
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                  color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 }}
               />
             </Form.Item>
             <Form.Item 
               name="phone" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>手机号</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>手机号</span>}
             >
               <Input 
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                  color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 }}
               />
             </Form.Item>
             {!editingUser && (
               <Form.Item 
                 name="role" 
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>角色</span>} 
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>角色</span>} 
                 rules={[{ required: true, message: '请选择角色' }]}
               >
                 <Select>
@@ -585,7 +590,7 @@ const UsersPage: React.FC = () => {
             )}
             <Form.Item
               name="department_id"
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>所属部门</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>所属部门</span>}
               rules={isDeptManager ? [{ required: true, message: '请选择所属部门' }] : undefined}
             >
               <Select

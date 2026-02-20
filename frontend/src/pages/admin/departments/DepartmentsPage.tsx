@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table';
 import type { DeptTree, UserDetail } from '@/types';
 import departmentService, { type CreateDepartmentParams } from '@/services/departmentService';
 import userService from '@/services/userService';
+import useAppStore from '@/store/appStore';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
@@ -23,6 +24,9 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** 部门管理页面 — 与首页/登录页新设计风格统一 */
 const DepartmentsPage: React.FC = () => {
+  const { themeMode } = useAppStore();
+  const isDark = themeMode === 'dark';
+
   const [departments, setDepartments] = useState<DeptTree[]>([]);
   const [users, setUsers] = useState<UserDetail[]>([]);
   const [loading, setLoading] = useState(false);
@@ -143,19 +147,19 @@ const DepartmentsPage: React.FC = () => {
       title: '部门名称', 
       dataIndex: 'name', 
       key: 'name',
-      render: (text) => <span style={{ color: '#fff', fontWeight: 500 }}>{text}</span>,
+      render: (text) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontWeight: 500 }}>{text}</span>,
     },
     { 
       title: '描述', 
       dataIndex: 'description', 
       key: 'description', 
-      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{v || '-'}</span>,
+      render: (v) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.45)' }}>{v || '-'}</span>,
     },
     {
       title: '部门经理',
       key: 'manager',
       render: (_, r) => (
-        <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+        <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>
           {r.manager?.display_name || '-'}
         </span>
       ),
@@ -231,10 +235,10 @@ const DepartmentsPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <PageIcon icon={<ApartmentOutlined />} />
             <div>
-              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+              <h2 style={{ margin: 0, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 600 }}>
                 部门管理
               </h2>
-              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+              <p style={{ margin: 0, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.45)', fontSize: 14, marginTop: 4 }}>
                 管理组织架构，支持树形结构、上级部门选择及部门经理配置
               </p>
             </div>
@@ -244,9 +248,9 @@ const DepartmentsPage: React.FC = () => {
               icon={<ReloadOutlined />} 
               onClick={loadDepartments}
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.8)',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)',
               }}
             >
               刷新
@@ -281,7 +285,7 @@ const DepartmentsPage: React.FC = () => {
         {/* 创建/编辑弹窗 - 新设计 */}
         <Modal
           title={
-            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 18, fontWeight: 600 }}>
               {editingDept ? '编辑部门' : '创建部门'}
             </span>
           }
@@ -293,46 +297,49 @@ const DepartmentsPage: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={handleSubmit}>
             <Form.Item 
               name="name" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>部门名称</span>} 
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>部门名称</span>} 
               rules={[{ required: true, message: '请输入部门名称' }]}
             >
               <Input 
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                  color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 }}
               />
             </Form.Item>
             <Form.Item 
               name="description" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>部门描述</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>部门描述</span>}
             >
               <Input.TextArea 
                 rows={3}
                 style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderColor: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)',
+                  color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
                 }}
               />
             </Form.Item>
             {!editingDept && (
               <Form.Item 
                 name="parent_id" 
-                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>上级部门</span>}
+                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>上级部门</span>}
               >
                 <TreeSelect
                   placeholder="选择上级部门（留空表示顶级部门）"
                   allowClear
                   treeData={convertToTreeData(departments)}
                   treeDefaultExpandAll
+                  style={{
+                    background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  }}
                 />
               </Form.Item>
             )}
             <Form.Item 
               name="manager_id" 
-              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>部门经理</span>}
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>部门经理</span>}
             >
               <Select
                 placeholder="选择部门经理（可选）"
@@ -345,6 +352,9 @@ const DepartmentsPage: React.FC = () => {
                   label: `${u.display_name} (${u.username})`,
                   value: u.id,
                 }))}
+                style={{
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                }}
               />
             </Form.Item>
             <Form.Item>
