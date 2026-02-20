@@ -5,11 +5,6 @@
 
 .docs-page {
   min-height: calc(100vh - 112px);
-  background: #f5f5f5;
-}
-
-/* 深色模式 - 页面背景 */
-.dark .docs-page {
   background: #0f0f13;
 }
 
@@ -23,15 +18,9 @@
 
 /* Sider Styles */
 .docs-sider {
-  background: #fff;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-  z-index: 10;
-}
-
-/* 深色模式 - 侧边栏 */
-.dark .docs-sider {
   background: rgba(24, 24, 30, 0.95);
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
 
 .docs-sider-header {
@@ -39,12 +28,6 @@
   display: flex;
   align-items: center;
   padding: 0 24px;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fafafa;
-}
-
-/* 深色模式 - 侧边栏头部 */
-.dark .docs-sider-header {
   background: rgba(30, 30, 36, 0.9);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -58,11 +41,6 @@
 .docs-sider-title {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
-}
-
-/* 深色模式 - 侧边栏标题 */
-.dark .docs-sider-title {
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -81,21 +59,10 @@
 }
 
 .docs-menu .ant-menu-item:hover {
-  background: #f0f7ff;
-}
-
-/* 深色模式 - 菜单悬停 */
-.dark .docs-menu .ant-menu-item:hover {
   background: rgba(43, 124, 179, 0.15);
 }
 
 .docs-menu .ant-menu-item-selected {
-  background: #e6f7ff !important;
-  color: #1890ff;
-}
-
-/* 深色模式 - 选中菜单项 */
-.dark .docs-menu .ant-menu-item-selected {
   background: rgba(43, 124, 179, 0.2) !important;
   color: #4BA3D4;
 }
@@ -114,33 +81,18 @@
 .docs-menu-title {
   font-weight: 500;
   font-size: 14px;
-  color: #262626;
-}
-
-/* 深色模式 - 菜单标题 */
-.dark .docs-menu-title {
   color: rgba(255, 255, 255, 0.9);
 }
 
 .docs-menu-subtitle {
   font-size: 12px;
-  color: #8c8c8c;
+  color: rgba(255, 255, 255, 0.5);
   white-space: normal;
   line-height: 1.4;
 }
 
-/* 深色模式 - 菜单副标题 */
-.dark .docs-menu-subtitle {
-  color: rgba(255, 255, 255, 0.5);
-}
-
 /* Content Styles */
 .docs-content-layout {
-  background: #f5f5f5;
-}
-
-/* 深色模式 - 内容区布局 */
-.dark .docs-content-layout {
   background: #0f0f13;
 }
 
@@ -151,7 +103,7 @@
 
 .docs-content-header {
   display: flex;
-  justify-content: space-between;
+  justifyContent: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
   gap: 16px;
@@ -177,11 +129,6 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #262626 !important;
-}
-
-/* 深色模式 - 标题 */
-.dark .docs-title {
   color: rgba(255, 255, 255, 0.95) !important;
 }
 
@@ -192,11 +139,6 @@
 .docs-subtitle {
   margin-top: 8px;
   font-size: 14px;
-  color: #595959;
-}
-
-/* 深色模式 - 副标题 */
-.dark .docs-subtitle {
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -207,25 +149,14 @@
 }
 
 .docs-content-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-/* 深色模式 - 内容卡片 */
-.dark .docs-content-card {
   background: rgba(30, 30, 36, 0.7);
+  border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .docs-markdown {
   font-size: 15px;
   line-height: 1.8;
-  color: #262626;
-}
-
-/* 深色模式 - Markdown文字 */
-.dark .docs-markdown {
   color: rgba(255, 255, 255, 0.85);
 }
 
@@ -234,25 +165,14 @@
   font-weight: 600;
   margin: 32px 0 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
-  color: #262626;
-}
-
-/* 深色模式 - H2 */
-.dark .docs-markdown h2 {
-  color: rgba(255, 255, 255, 0.95);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .docs-markdown h3 {
   font-size: 20px;
   font-weight: 600;
   margin: 24px 0 12px;
-  color: #262626;
-}
-
-/* 深色模式 - H3 */
-.dark .docs-markdown h3 {
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -271,17 +191,11 @@
 }
 
 .docs-markdown code {
-  background: #f5f5f5;
+  background: rgba(255, 255, 255, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   font-size: 14px;
-  color: #d63384;
-}
-
-/* 深色模式 - 行内代码 */
-.dark .docs-markdown code {
-  background: rgba(255, 255, 255, 0.1);
   color: #ff6b9d;
 }
 
@@ -289,22 +203,17 @@
   margin: 16px 0;
   border-radius: 8px;
   overflow: auto;
+  background: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 代码块容器样式 - 亮色模式 */
+/* 代码块容器样式 */
 .docs-markdown pre > div {
   border-radius: 8px !important;
   margin: 0 !important;
 }
 
-/* 深色模式 - 代码块 */
-.dark .docs-markdown pre {
-  background: #1e1e1e !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 深色模式下代码块背景 */
-.dark .docs-markdown pre code {
+.docs-markdown pre code {
   background: transparent !important;
   color: inherit !important;
 }
@@ -312,15 +221,9 @@
 .docs-markdown blockquote {
   margin: 16px 0;
   padding: 12px 16px;
-  background: #f6ffed;
-  border-left: 4px solid #52c41a;
-  border-radius: 4px;
-}
-
-/* 深色模式 - 引用块 */
-.dark .docs-markdown blockquote {
   background: rgba(82, 196, 26, 0.1);
   border-left: 4px solid #52c41a;
+  border-radius: 4px;
 }
 
 .docs-markdown blockquote p {
@@ -336,38 +239,21 @@
 .docs-markdown th,
 .docs-markdown td {
   padding: 12px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   text-align: left;
 }
 
-/* 深色模式 - 表格边框 */
-.dark .docs-markdown th,
-.dark .docs-markdown td {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
 .docs-markdown th {
-  background: #fafafa;
-  font-weight: 600;
-  color: #262626;
-}
-
-/* 深色模式 - 表头 */
-.dark .docs-markdown th {
   background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .docs-markdown tr:nth-child(even) {
-  background: #fafafa;
-}
-
-/* 深色模式 - 表格行 */
-.dark .docs-markdown tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.dark .docs-markdown tr:hover {
+.docs-markdown tr:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -376,23 +262,14 @@
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   margin: 16px 0;
   display: block;
 }
 
-/* 深色模式 - 图片 */
-.dark .docs-markdown img {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
 /* 图片点击放大效果 */
 .docs-markdown img:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.dark .docs-markdown img:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -403,16 +280,10 @@
 .docs-update-time {
   margin-top: 32px;
   padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  font-size: 12px;
-  color: #8c8c8c;
-  text-align: right;
-}
-
-/* 深色模式 - 更新时间 */
-.dark .docs-update-time {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
+  text-align: right;
 }
 
 /* Mobile Responsive */
@@ -469,30 +340,19 @@
 }
 
 .docs-editor-pane {
-  background: #fff;
+  background: rgba(30, 30, 36, 0.7);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-}
-
-/* 深色模式 - 编辑器面板 */
-.dark .docs-editor-pane {
-  background: rgba(30, 30, 36, 0.7);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .docs-editor-pane-title {
   font-weight: 600;
   margin-bottom: 16px;
-  color: #262626;
+  color: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-/* 深色模式 - 编辑器标题 */
-.dark .docs-editor-pane-title {
-  color: rgba(255, 255, 255, 0.9);
 }
 
 .docs-editor-textarea {
@@ -501,18 +361,12 @@
 }
 
 .docs-preview {
-  border: 1px solid #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   padding: 16px;
   min-height: 500px;
   max-height: 600px;
   overflow: auto;
-  background: #fafafa;
-}
-
-/* 深色模式 - 预览区 */
-.dark .docs-preview {
-  border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(20, 20, 26, 0.5);
 }
 
@@ -520,16 +374,12 @@
 .docs-preview pre {
   border-radius: 6px;
   overflow: auto;
+  background: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .docs-preview pre > div {
   border-radius: 6px !important;
-}
-
-/* 深色模式 - 预览区代码块 */
-.dark .docs-preview pre {
-  background: #1e1e1e !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* 编辑器预览中的图片样式 */

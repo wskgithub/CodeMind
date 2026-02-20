@@ -23,28 +23,25 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import useAppStore from '@/store/appStore';
 import { documentService, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/documentService';
 
 const { Title } = Typography;
 const { TextArea } = Input;
 
-// 自定义代码块渲染
-const CodeBlock: React.FC<{ language: string; value: string; darkMode?: boolean }> = ({ 
+// 自定义代码块渲染 - 固定使用深色主题
+const CodeBlock: React.FC<{ language: string; value: string }> = ({ 
   language, 
   value,
-  darkMode = false 
 }) => {
   return (
     <SyntaxHighlighter
-      style={darkMode ? vscDarkPlus : oneLight}
+      style={vscDarkPlus}
       language={language || 'text'}
       PreTag="div"
       customStyle={{
         margin: '16px 0',
         borderRadius: '8px',
-        border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+        border: '1px solid rgba(255,255,255,0.1)',
         fontSize: '14px',
       }}
     >
@@ -58,7 +55,6 @@ const DocsEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const [form] = Form.useForm();
-  const { darkMode } = useAppStore();
   
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -281,13 +277,13 @@ const DocsEditPage: React.FC = () => {
                   children: (
                     <div
                       style={{
-                        border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid #d9d9d9',
+                        border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: 6,
                         padding: 16,
                         minHeight: 550,
                         maxHeight: 550,
                         overflow: 'auto',
-                        background: darkMode ? 'rgba(20, 20, 26, 0.5)' : '#fafafa',
+                        background: 'rgba(20, 20, 26, 0.5)',
                       }}
                       className="docs-markdown-preview"
                     >
@@ -300,7 +296,6 @@ const DocsEditPage: React.FC = () => {
                                 <CodeBlock
                                   language={match[1] || 'text'}
                                   value={String(children).replace(/\n$/, '')}
-                                  darkMode={darkMode}
                                 />
                               ) : (
                                 <code className={className} {...props}>
@@ -313,7 +308,7 @@ const DocsEditPage: React.FC = () => {
                           {content}
                         </ReactMarkdown>
                       ) : (
-                        <div style={{ color: darkMode ? 'rgba(255,255,255,0.3)' : '#bfbfbf', textAlign: 'center', paddingTop: 100 }}>
+                        <div style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', paddingTop: 100 }}>
                           暂无内容，请在编辑标签页输入 Markdown 内容
                         </div>
                       )}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Progress, Tooltip, Spin, theme } from 'antd';
+import { Progress, Tooltip, Spin } from 'antd';
 import {
   ThunderboltOutlined,
   ClockCircleOutlined,
@@ -48,23 +48,22 @@ function formatResetTime(hours: number | null): string {
   return `${days} 天 ${remainHours} 小时`;
 }
 
-/** 获取进度条渐变色 */
+/** 获取进度条渐变色 - 新设计 */
 function getProgressColor(percent: number, exceeded: boolean): string {
-  if (exceeded) return '#ff4d4f';
-  if (percent >= 80) return '#faad14';
-  return '#2B7CB3';
+  if (exceeded) return '#FF6B6B';
+  if (percent >= 80) return '#FFBE0B';
+  return '#00D9FF';
 }
 
-/** 获取进度条渐变配置 */
+/** 获取进度条渐变配置 - 新设计 */
 function getStrokeColor(percent: number, exceeded: boolean) {
-  if (exceeded) return { '0%': '#ff4d4f', '100%': '#ff7875' };
-  if (percent >= 80) return { '0%': '#faad14', '100%': '#ffc53d' };
-  return { '0%': '#2B7CB3', '100%': '#4BA3D4' };
+  if (exceeded) return { '0%': '#FF6B6B', '100%': '#FF8787' };
+  if (percent >= 80) return { '0%': '#FFBE0B', '100%': '#FFD43B' };
+  return { '0%': '#00D9FF', '100%': '#00F5D4' };
 }
 
-/** 单个限额进度卡片 */
+/** 单个限额进度卡片 - 新设计 */
 const LimitCard = ({ item }: { item: LimitProgressItem }) => {
-  const { token } = theme.useToken();
   const percent = Math.min(item.usage_percent, 100);
   const color = getProgressColor(percent, item.exceeded);
 
@@ -76,9 +75,12 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
         position: 'relative',
         overflow: 'hidden',
         minWidth: 0,
+        background: 'rgba(255, 255, 255, 0.02)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        borderRadius: 20,
       }}
     >
-      {/* 顶部状态指示条 */}
+      {/* 顶部状态指示条 - 新设计 */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -86,10 +88,10 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
         right: 0,
         height: 3,
         background: item.exceeded
-          ? 'linear-gradient(90deg, #ff4d4f, #ff7875)'
+          ? 'linear-gradient(90deg, #FF6B6B, #FF8787)'
           : percent >= 80
-          ? 'linear-gradient(90deg, #faad14, #ffc53d)'
-          : 'var(--gradient-primary)',
+          ? 'linear-gradient(90deg, #FFBE0B, #FFD43B)'
+          : 'linear-gradient(90deg, #00D9FF, #00F5D4)',
         opacity: percent > 50 ? 1 : 0.6,
       }} />
 
@@ -97,26 +99,27 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
+            width: 36,
+            height: 36,
+            borderRadius: 10,
             background: item.exceeded
-              ? 'rgba(255, 77, 79, 0.1)'
-              : 'rgba(43, 124, 179, 0.1)',
+              ? 'rgba(255, 107, 107, 0.15)'
+              : 'rgba(0, 217, 255, 0.15)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
+            border: `1px solid ${item.exceeded ? 'rgba(255, 107, 107, 0.3)' : 'rgba(0, 217, 255, 0.3)'}`,
           }}>
             <ThunderboltOutlined style={{
-              fontSize: 16,
-              color: item.exceeded ? '#ff4d4f' : '#2B7CB3',
+              fontSize: 18,
+              color: item.exceeded ? '#FF6B6B' : '#00D9FF',
             }} />
           </span>
           <span style={{
             fontWeight: 600,
             fontSize: 14,
-            color: token.colorTextHeading,
+            color: '#fff',
           }}>
             {formatPeriod(item.period, item.period_hours)}
           </span>
@@ -124,20 +127,20 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
 
         {item.exceeded ? (
           <Tooltip title="已达限额，等待重置">
-            <WarningOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />
+            <WarningOutlined style={{ color: '#FF6B6B', fontSize: 16 }} />
           </Tooltip>
         ) : item.cycle_start_at ? (
           <Tooltip title="周期进行中">
-            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />
+            <CheckCircleOutlined style={{ color: '#00F5D4', fontSize: 16 }} />
           </Tooltip>
         ) : null}
       </div>
 
-      {/* 进度条 */}
+      {/* 进度条 - 新设计 */}
       <Progress
         percent={percent}
         strokeColor={getStrokeColor(percent, item.exceeded)}
-        trailColor="rgba(0,0,0,0.06)"
+        trailColor="rgba(255, 255, 255, 0.1)"
         showInfo={false}
         size="small"
         style={{ marginBottom: 10 }}
@@ -145,14 +148,18 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
 
       {/* 数值详情 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color }}>
+        <span style={{ fontSize: 22, fontWeight: 700, color }}>
           {formatTokens(item.used_tokens)}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: item.exceeded ? '#ff4d4f' : percent >= 80 ? '#faad14' : '#2B7CB3' }}>
+          <span style={{ 
+            fontSize: 14, 
+            fontWeight: 600, 
+            color: item.exceeded ? '#FF6B6B' : percent >= 80 ? '#FFBE0B' : '#00D9FF' 
+          }}>
             {item.usage_percent}%
           </span>
-          <span style={{ fontSize: 12, color: token.colorTextTertiary }}>
+          <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)' }}>
             / {formatTokens(item.max_tokens)}
           </span>
         </div>
@@ -164,20 +171,20 @@ const LimitCard = ({ item }: { item: LimitProgressItem }) => {
         alignItems: 'center',
         gap: 4,
         fontSize: 12,
-        color: token.colorTextSecondary,
+        color: 'rgba(255, 255, 255, 0.5)',
       }}>
         <ClockCircleOutlined style={{ fontSize: 11 }} />
         {item.reset_in_hours !== null ? (
           <span>{formatResetTime(item.reset_in_hours)} 后重置</span>
         ) : (
-          <span style={{ color: token.colorTextTertiary }}>等待使用后开始计时</span>
+          <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>等待使用后开始计时</span>
         )}
       </div>
     </div>
   );
 };
 
-/** 限额使用进度卡片组 — 根据规则数量自适应布局 */
+/** 限额使用进度卡片组 — 与首页/登录页新设计风格统一 */
 const UsageProgressCards: React.FC = () => {
   const [data, setData] = useState<LimitProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -225,12 +232,12 @@ const UsageProgressCards: React.FC = () => {
   };
 
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 24 }}>
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: getGridCols(),
-          gap: 12,
+          gap: 16,
         }}
       >
         {sortedLimits.map((item, index) => (

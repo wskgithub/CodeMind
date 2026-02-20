@@ -4,66 +4,97 @@ import { ConfigProvider, App as AntApp, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import router from '@/router';
 import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
 
-/** Ant Design 品牌主题 — Glassmorphism 风格 */
+/** Ant Design 品牌主题 — 与首页/登录页新设计风格统一 */
 const brandToken = {
-  colorPrimary: '#2B7CB3',
-  colorInfo: '#4BA3D4',
-  colorSuccess: '#52C41A',
-  colorWarning: '#FAAD14',
-  colorError: '#FF4D4F',
+  // 主色 - 使用新设计的青色
+  colorPrimary: '#00D9FF',
+  colorInfo: '#9D4EDD',
+  colorSuccess: '#00F5D4',
+  colorWarning: '#FFBE0B',
+  colorError: '#FF6B6B',
+  // 背景色 - 深色主题
+  colorBgLayout: '#050d14',
+  colorBgContainer: 'rgba(255, 255, 255, 0.02)',
+  colorBgElevated: 'rgba(13, 29, 45, 0.95)',
+  // 文字颜色
+  colorText: 'rgba(255, 255, 255, 0.9)',
+  colorTextSecondary: 'rgba(255, 255, 255, 0.7)',
+  colorTextTertiary: 'rgba(255, 255, 255, 0.45)',
+  // 边框和圆角
   borderRadius: 12,
+  borderRadiusLG: 24,
   fontFamily: "'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif",
   wireframe: false,
 };
 
 const App: React.FC = () => {
   const restore = useAuthStore((s) => s.restore);
-  const darkMode = useAppStore((s) => s.darkMode);
 
   // 应用启动时恢复登录态
   useEffect(() => {
     restore();
   }, [restore]);
 
-  // 暗色模式 class 控制
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-  }, [darkMode]);
-
   return (
     <ConfigProvider
       locale={zhCN}
       theme={{
-        token: {
-          ...brandToken,
-          colorBgLayout: darkMode ? '#0f0f13' : '#f0f4f8',
-          colorBgContainer: darkMode ? 'rgba(30, 30, 36, 0.72)' : 'rgba(255, 255, 255, 0.72)',
-          colorBgElevated: darkMode ? 'rgba(36, 36, 42, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-        },
-        algorithm: darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: brandToken,
+        algorithm: theme.darkAlgorithm,
         components: {
           Card: {
-            borderRadiusLG: 16,
+            borderRadiusLG: 24,
+            colorBgContainer: 'rgba(255, 255, 255, 0.02)',
           },
           Button: {
-            borderRadius: 10,
+            borderRadius: 12,
+            borderRadiusLG: 14,
             controlHeight: 40,
+            controlHeightLG: 48,
+            primaryShadow: '0 4px 16px rgba(0, 217, 255, 0.25)',
           },
           Input: {
-            borderRadius: 10,
+            borderRadius: 12,
+            borderRadiusLG: 14,
             controlHeight: 42,
+            controlHeightLG: 48,
+            colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+            colorBorder: 'rgba(255, 255, 255, 0.08)',
+            activeBorderColor: '#00D9FF',
+            hoverBorderColor: 'rgba(0, 217, 255, 0.4)',
+            activeShadow: '0 0 0 3px rgba(0, 217, 255, 0.15)',
           },
           Table: {
-            borderRadiusLG: 12,
+            borderRadiusLG: 16,
+            colorBgContainer: 'transparent',
+            headerBg: 'rgba(255, 255, 255, 0.03)',
+            headerColor: 'rgba(255, 255, 255, 0.9)',
+            rowHoverBg: 'rgba(0, 217, 255, 0.05)',
           },
           Modal: {
-            borderRadiusLG: 16,
+            borderRadiusLG: 24,
+            colorBgElevated: 'rgba(13, 29, 45, 0.98)',
           },
           Menu: {
-            itemBorderRadius: 8,
-            itemMarginInline: 8,
+            itemBorderRadius: 12,
+            itemMarginInline: 12,
+            itemMarginBlock: 4,
+            colorItemText: 'rgba(255, 255, 255, 0.7)',
+            colorItemTextHover: '#00D9FF',
+            colorItemBgHover: 'rgba(0, 217, 255, 0.08)',
+            colorItemTextSelected: '#00D9FF',
+            colorItemBgSelected: 'rgba(0, 217, 255, 0.12)',
+          },
+          Select: {
+            borderRadius: 12,
+            colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+          },
+          Tag: {
+            borderRadius: 6,
+          },
+          Statistic: {
+            colorTextHeading: 'rgba(255, 255, 255, 0.7)',
           },
         },
       }}

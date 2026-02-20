@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Col, Row, Statistic, Spin, Tag, Empty, theme } from 'antd';
+import { Col, Row, Statistic, Spin, Tag, Empty } from 'antd';
 import {
   ThunderboltOutlined,
   MessageOutlined,
@@ -15,7 +15,7 @@ import useAuthStore from '@/store/authStore';
 import type { StatsOverview, UsageItem, Announcement } from '@/types';
 import UsageProgressCards from '@/components/common/UsageProgressCards';
 
-/** 图标包裹层 — 渐变圆形背景 */
+/** 图标包裹层 — 渐变圆形背景 - 新设计 */
 const StatIcon = ({
   icon,
   gradient,
@@ -24,19 +24,19 @@ const StatIcon = ({
   gradient: string;
 }) => (
   <span
-    className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+    className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0"
     style={{
       background: gradient,
       color: '#fff',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
     }}
   >
     {icon}
   </span>
 );
 
-/** 仪表盘页面 — Glassmorphism 风格，展示用量总览和趋势图表 */
+/** 仪表盘页面 — 与首页/登录页新设计风格统一 */
 const DashboardPage = () => {
-  const { token } = theme.useToken();
   const { user } = useAuthStore();
   const [overview, setOverview] = useState<StatsOverview | null>(null);
   const [usageData, setUsageData] = useState<UsageItem[]>([]);
@@ -59,7 +59,7 @@ const DashboardPage = () => {
     if (usageData.length > 0 && chartRef.current) {
       renderChart();
     }
-  }, [usageData, token]);
+  }, [usageData]);
 
   // 窗口 resize 时调整图表
   useEffect(() => {
@@ -98,32 +98,47 @@ const DashboardPage = () => {
     const requests = usageData.map((d) => d.request_count);
 
     chartInstance.current.setOption({
+      backgroundColor: 'transparent',
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross' },
+        backgroundColor: 'rgba(13, 29, 45, 0.95)',
+        borderColor: 'rgba(0, 217, 255, 0.2)',
+        textStyle: { color: '#fff' },
       },
-      legend: { data: ['Token 用量', '请求次数'] },
+      legend: {
+        data: ['Token 用量', '请求次数'],
+        textStyle: { color: 'rgba(255, 255, 255, 0.7)' },
+      },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
         data: dates,
         axisLabel: {
-          formatter: (val: string) => val.slice(5), // 只显示 MM-DD
+          formatter: (val: string) => val.slice(5),
+          color: 'rgba(255, 255, 255, 0.5)',
         },
+        axisLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } },
       },
       yAxis: [
         {
           type: 'value',
           name: 'Token 用量',
+          nameTextStyle: { color: 'rgba(255, 255, 255, 0.5)' },
           axisLabel: {
             formatter: (val: number) =>
               val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` :
               val >= 1000 ? `${(val / 1000).toFixed(0)}K` : String(val),
+            color: 'rgba(255, 255, 255, 0.5)',
           },
+          splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.05)' } },
         },
         {
           type: 'value',
           name: '请求次数',
+          nameTextStyle: { color: 'rgba(255, 255, 255, 0.5)' },
+          axisLabel: { color: 'rgba(255, 255, 255, 0.5)' },
+          splitLine: { show: false },
         },
       ],
       series: [
@@ -133,8 +148,8 @@ const DashboardPage = () => {
           data: tokens,
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: token.colorPrimary },
-              { offset: 1, color: token.colorInfo },
+              { offset: 0, color: '#00D9FF' },
+              { offset: 1, color: '#9D4EDD' },
             ]),
             borderRadius: [4, 4, 0, 0],
           },
@@ -145,12 +160,12 @@ const DashboardPage = () => {
           yAxisIndex: 1,
           data: requests,
           smooth: true,
-          lineStyle: { color: token.colorSuccess, width: 2 },
-          itemStyle: { color: token.colorSuccess },
+          lineStyle: { color: '#00F5D4', width: 2 },
+          itemStyle: { color: '#00F5D4' },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(82, 196, 26, 0.25)' },
-              { offset: 1, color: 'rgba(82, 196, 26, 0.02)' },
+              { offset: 0, color: 'rgba(0, 245, 212, 0.25)' },
+              { offset: 1, color: 'rgba(0, 245, 212, 0.02)' },
             ]),
           },
         },
@@ -169,7 +184,7 @@ const DashboardPage = () => {
     return (
       <div
         className="flex items-center justify-center min-h-[320px]"
-        style={{ color: token.colorPrimary }}
+        style={{ color: '#00D9FF' }}
       >
         <Spin size="large" />
       </div>
@@ -179,26 +194,42 @@ const DashboardPage = () => {
   return (
     <div className="animate-fade-in-up">
       <UsageProgressCards />
-      <h2 style={{ marginBottom: 24, color: token.colorTextHeading }}>
-        欢迎回来，{user?.display_name || user?.username}
+      
+      {/* 欢迎标题 - 新设计 */}
+      <h2 
+        style={{ 
+          marginBottom: 24, 
+          color: '#fff',
+          fontSize: 24,
+          fontWeight: 600,
+        }}
+      >
+        欢迎回来，
+        <span style={{ 
+          background: 'linear-gradient(135deg, #00D9FF 0%, #9D4EDD 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>
+          {user?.display_name || user?.username}
+        </span>
       </h2>
 
-      {/* 统计卡片 — 使用 stat-card 类 */}
+      {/* 统计卡片 — 新设计 */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <StatIcon
-                icon={<ThunderboltOutlined style={{ fontSize: 20 }} />}
-                gradient="linear-gradient(135deg, #2B7CB3 0%, #4BA3D4 100%)"
+                icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
+                gradient="linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)"
               />
               <Statistic
-                title="今日 Token 用量"
+                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>今日 Token 用量</span>}
                 value={overview?.today.total_tokens || 0}
                 formatter={(val) => formatNumber(Number(val))}
-                valueStyle={{ color: token.colorTextHeading }}
+                valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
                 suffix={
-                  <ArrowUpOutlined style={{ fontSize: 12, color: token.colorSuccess, marginLeft: 4 }} />
+                  <ArrowUpOutlined style={{ fontSize: 12, color: '#00F5D4', marginLeft: 4 }} />
                 }
               />
             </div>
@@ -206,15 +237,15 @@ const DashboardPage = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <StatIcon
-                icon={<MessageOutlined style={{ fontSize: 20 }} />}
-                gradient="linear-gradient(135deg, #722ed1 0%, #b37feb 100%)"
+                icon={<MessageOutlined style={{ fontSize: 22 }} />}
+                gradient="linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%)"
               />
               <Statistic
-                title="今日请求数"
+                title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>今日请求数</span>}
                 value={overview?.today.total_requests || 0}
-                valueStyle={{ color: token.colorTextHeading }}
+                valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
               />
             </div>
           </div>
@@ -223,30 +254,30 @@ const DashboardPage = () => {
           <>
             <Col xs={24} sm={12} lg={6}>
               <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <StatIcon
-                    icon={<TeamOutlined style={{ fontSize: 20 }} />}
-                    gradient="linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)"
+                    icon={<TeamOutlined style={{ fontSize: 22 }} />}
+                    gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                   />
                   <Statistic
-                    title="总用户数"
+                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>总用户数</span>}
                     value={overview?.total_users || 0}
-                    valueStyle={{ color: token.colorTextHeading }}
+                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
             </Col>
             <Col xs={24} sm={12} lg={6}>
               <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <StatIcon
-                    icon={<KeyOutlined style={{ fontSize: 20 }} />}
-                    gradient="linear-gradient(135deg, #faad14 0%, #ffc53d 100%)"
+                    icon={<KeyOutlined style={{ fontSize: 22 }} />}
+                    gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                   />
                   <Statistic
-                    title="活跃 API Key"
+                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>活跃 API Key</span>}
                     value={overview?.total_api_keys || 0}
-                    valueStyle={{ color: token.colorTextHeading }}
+                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
@@ -257,31 +288,31 @@ const DashboardPage = () => {
           <>
             <Col xs={24} sm={12} lg={6}>
               <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <StatIcon
-                    icon={<ThunderboltOutlined style={{ fontSize: 20 }} />}
-                    gradient="linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)"
+                    icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
+                    gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                   />
                   <Statistic
-                    title="本月 Token 用量"
+                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>本月 Token 用量</span>}
                     value={overview?.this_month.total_tokens || 0}
                     formatter={(val) => formatNumber(Number(val))}
-                    valueStyle={{ color: token.colorTextHeading }}
+                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
             </Col>
             <Col xs={24} sm={12} lg={6}>
               <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <StatIcon
-                    icon={<MessageOutlined style={{ fontSize: 20 }} />}
-                    gradient="linear-gradient(135deg, #faad14 0%, #ffc53d 100%)"
+                    icon={<MessageOutlined style={{ fontSize: 22 }} />}
+                    gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                   />
                   <Statistic
-                    title="本月请求数"
+                    title={<span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: 13 }}>本月请求数</span>}
                     value={overview?.this_month.total_requests || 0}
-                    valueStyle={{ color: token.colorTextHeading }}
+                    valueStyle={{ color: '#fff', fontSize: 24, fontWeight: 700 }}
                   />
                 </div>
               </div>
@@ -290,41 +321,70 @@ const DashboardPage = () => {
         )}
       </Row>
 
-      {/* 图表区域 — 玻璃态卡片 */}
+      {/* 图表区域 — 玻璃态卡片 - 新设计 */}
       <div
-        className="glass-card animate-fade-in-up mt-4 p-6"
-        style={{ marginTop: 16, animationDelay: '0.25s' }}
+        className="glass-card animate-fade-in-up mt-6 p-6"
+        style={{ marginTop: 24, animationDelay: '0.25s' }}
       >
-        <h3 style={{ marginBottom: 20, color: token.colorTextHeading }}>近 30 天用量趋势</h3>
+        <h3 style={{ 
+          marginBottom: 20, 
+          color: '#fff',
+          fontSize: 18,
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <span style={{
+            width: 4,
+            height: 20,
+            background: 'linear-gradient(180deg, #00D9FF 0%, #9D4EDD 100%)',
+            borderRadius: 2,
+          }} />
+          近 30 天用量趋势
+        </h3>
         {usageData.length > 0 ? (
           <div
             ref={chartRef}
             style={{
               height: 360,
               width: '100%',
-              background: 'var(--glass-bg)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              border: '1px solid var(--glass-border)',
+              background: 'transparent',
               borderRadius: 12,
             }}
           />
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="暂无用量数据"
+            description={<span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>暂无用量数据</span>}
             style={{ padding: 40 }}
           />
         )}
       </div>
 
-      {/* 公告区域 — 玻璃态卡片 */}
+      {/* 公告区域 — 玻璃态卡片 - 新设计 */}
       {announcements.length > 0 && (
         <div
-          className="glass-card animate-fade-in-up mt-4 p-6"
-          style={{ marginTop: 16, animationDelay: '0.3s' }}
+          className="glass-card animate-fade-in-up mt-6 p-6"
+          style={{ marginTop: 24, animationDelay: '0.3s' }}
         >
-          <h3 style={{ marginBottom: 20, color: token.colorTextHeading }}>系统公告</h3>
+          <h3 style={{ 
+            marginBottom: 20, 
+            color: '#fff',
+            fontSize: 18,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <span style={{
+              width: 4,
+              height: 20,
+              background: 'linear-gradient(180deg, #FFBE0B 0%, #FF6B6B 100%)',
+              borderRadius: 2,
+            }} />
+            系统公告
+          </h3>
           <div>
             {announcements.slice(0, 5).map((ann, index) => (
               <div
@@ -332,15 +392,17 @@ const DashboardPage = () => {
                 style={{
                   paddingBottom: 16,
                   marginBottom: index < 4 ? 16 : 0,
-                  borderBottom: index < 4 ? '1px solid var(--glass-border)' : 'none',
+                  borderBottom: index < 4 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none',
                 }}
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  {ann.pinned && <Tag color="red">置顶</Tag>}
-                  <strong style={{ color: token.colorTextHeading }}>{ann.title}</strong>
+                  {ann.pinned && (
+                    <Tag color="error" style={{ borderRadius: 4, border: 'none' }}>置顶</Tag>
+                  )}
+                  <strong style={{ color: '#fff', fontSize: 15 }}>{ann.title}</strong>
                   <span
                     style={{
-                      color: token.colorTextTertiary,
+                      color: 'rgba(255, 255, 255, 0.4)',
                       fontSize: 12,
                       marginLeft: 'auto',
                     }}
@@ -350,9 +412,10 @@ const DashboardPage = () => {
                 </div>
                 <div
                   style={{
-                    color: token.colorTextSecondary,
-                    fontSize: 13,
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    fontSize: 14,
                     marginTop: 8,
+                    lineHeight: 1.6,
                   }}
                 >
                   {ann.content.length > 120 ? ann.content.slice(0, 120) + '...' : ann.content}

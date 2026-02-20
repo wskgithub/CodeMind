@@ -1,27 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, Space, Tag, message, Select, TreeSelect, theme } from 'antd';
+import { Table, Button, Modal, Form, Input, Space, Tag, message, Select, TreeSelect } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, ApartmentOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { DeptTree, UserDetail } from '@/types';
 import departmentService, { type CreateDepartmentParams } from '@/services/departmentService';
 import userService from '@/services/userService';
 
-/** 页面标题图标 — 渐变圆形背景 */
+/** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
   <span
-    className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+    className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0"
     style={{
-      background: 'linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%)',
+      background: 'linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)',
       color: '#fff',
+      fontSize: 22,
+      boxShadow: '0 4px 16px rgba(0, 245, 212, 0.25)',
     }}
   >
     {icon}
   </span>
 );
 
-/** 部门管理页面 — Glassmorphism 风格 */
+/** 部门管理页面 — 与首页/登录页新设计风格统一 */
 const DepartmentsPage: React.FC = () => {
-  const { token } = theme.useToken();
   const [departments, setDepartments] = useState<DeptTree[]>([]);
   const [users, setUsers] = useState<UserDetail[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,10 +43,9 @@ const DepartmentsPage: React.FC = () => {
     }
   }, []);
 
-  // 加载用户列表（用于选择部门经理）
+  // 加载用户列表
   const loadUsers = useCallback(async () => {
     try {
-      // 后端限制 page_size 最大为 100，这里分批加载
       const allUsers: UserDetail[] = [];
       let page = 1;
       const pageSize = 100;
@@ -54,19 +54,10 @@ const DepartmentsPage: React.FC = () => {
         const resp = await userService.list({ page, page_size: pageSize });
         const users = resp.data.data.list || [];
         allUsers.push(...users);
-
-        // 如果返回的数据少于 pageSize，说明已经是最后一页
-        if (users.length < pageSize) {
-          break;
-        }
+        if (users.length < pageSize) break;
         page++;
-
-        // 安全限制：最多加载 10 页（1000 个用户）
-        if (page > 10) {
-          break;
-        }
+        if (page > 10) break;
       }
-
       setUsers(allUsers);
     } catch {
       // 错误已在拦截器中处理
@@ -121,6 +112,9 @@ const DepartmentsPage: React.FC = () => {
       content: `确定要删除部门 "${record.name}" 吗？请确保部门下无用户和子部门。`,
       okText: '删除',
       okType: 'danger',
+      okButtonProps: {
+        style: { background: '#FF6B6B', borderColor: '#FF6B6B' },
+      },
       onOk: async () => {
         await departmentService.delete(record.id);
         message.success('删除成功');
@@ -143,23 +137,61 @@ const DepartmentsPage: React.FC = () => {
     }));
   };
 
-  // 表格列
+  // 表格列 - 新设计
   const columns: ColumnsType<DeptTree> = [
-    { title: '部门名称', dataIndex: 'name', key: 'name' },
-    { title: '描述', dataIndex: 'description', key: 'description', render: (v) => v || '-' },
+    { 
+      title: '部门名称', 
+      dataIndex: 'name', 
+      key: 'name',
+      render: (text) => <span style={{ color: '#fff', fontWeight: 500 }}>{text}</span>,
+    },
+    { 
+      title: '描述', 
+      dataIndex: 'description', 
+      key: 'description', 
+      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{v || '-'}</span>,
+    },
     {
       title: '部门经理',
       key: 'manager',
-      render: (_, r) => r.manager?.display_name || '-',
+      render: (_, r) => (
+        <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+          {r.manager?.display_name || '-'}
+        </span>
+      ),
     },
-    { title: '用户数', dataIndex: 'user_count', key: 'user_count', width: 100 },
+    { 
+      title: '用户数', 
+      dataIndex: 'user_count', 
+      key: 'user_count', 
+      width: 100,
+      render: (v) => <span style={{ color: '#00D9FF', fontWeight: 600 }}>{v}</span>,
+    },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       width: 80,
       render: (v: number) =>
-        v === 1 ? <Tag color="success">启用</Tag> : <Tag color="error">禁用</Tag>,
+        v === 1 ? (
+          <Tag style={{ 
+            color: '#00F5D4', 
+            background: 'rgba(0, 245, 212, 0.15)',
+            border: '1px solid rgba(0, 245, 212, 0.3)',
+            borderRadius: 6,
+          }}>
+            启用
+          </Tag>
+        ) : (
+          <Tag style={{ 
+            color: '#FF6B6B', 
+            background: 'rgba(255, 107, 107, 0.15)',
+            border: '1px solid rgba(255, 107, 107, 0.3)',
+            borderRadius: 6,
+          }}>
+            禁用
+          </Tag>
+        ),
     },
     {
       title: '操作',
@@ -167,10 +199,22 @@ const DepartmentsPage: React.FC = () => {
       width: 180,
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+          <Button 
+            type="link" 
+            size="small" 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(record)}
+            style={{ color: '#00D9FF' }}
+          >
             编辑
           </Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
+          <Button 
+            type="link" 
+            size="small" 
+            danger 
+            icon={<DeleteOutlined />} 
+            onClick={() => handleDelete(record)}
+          >
             删除
           </Button>
         </Space>
@@ -179,93 +223,149 @@ const DepartmentsPage: React.FC = () => {
   ];
 
   return (
-    <div
-      className="animate-fade-in-up"
-      style={{
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: 16,
-        boxShadow: 'var(--glass-shadow)',
-        padding: 24,
-      }}
-    >
-      {/* 页面头部 */}
-      <div style={{ marginBottom: 24 }}>
-        <div className="flex items-center gap-3 mb-2">
-          <PageIcon icon={<ApartmentOutlined style={{ fontSize: 20 }} />} />
-          <h2 style={{ margin: 0, color: token.colorTextHeading }}>部门管理</h2>
-        </div>
-        <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 14 }}>
-          管理组织架构，支持树形结构、上级部门选择及部门经理配置。
-        </p>
-        <div style={{ marginTop: 16 }}>
-          <Space wrap>
-            <Button icon={<ReloadOutlined />} onClick={loadDepartments}>刷新</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+    <div className="page-bg">
+      <div className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1 }}>
+        
+        {/* 页面头部 - 新设计 */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+            <PageIcon icon={<ApartmentOutlined />} />
+            <div>
+              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+                部门管理
+              </h2>
+              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+                管理组织架构，支持树形结构、上级部门选择及部门经理配置
+              </p>
+            </div>
+          </div>
+          <div style={{ marginTop: 20, display: 'flex', gap: 12 }}>
+            <Button 
+              icon={<ReloadOutlined />} 
+              onClick={loadDepartments}
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                color: 'rgba(255, 255, 255, 0.8)',
+              }}
+            >
+              刷新
+            </Button>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={handleCreate}
+              style={{
+                background: 'linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)',
+                border: 'none',
+                boxShadow: '0 4px 16px rgba(0, 245, 212, 0.25)',
+              }}
+            >
               创建部门
             </Button>
-          </Space>
+          </div>
         </div>
-      </div>
 
-      {/* 树形表格 — 交由全局 CSS 处理行悬停 */}
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={departments}
-        loading={loading}
-        pagination={false}
-        childrenColumnName="children"
-      />
+        {/* 树形表格 — 玻璃态卡片 - 新设计 */}
+        <div className="glass-card animate-fade-in-up" style={{ padding: 24 }}>
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={departments}
+            loading={loading}
+            pagination={false}
+            childrenColumnName="children"
+          />
+        </div>
 
-      {/* 创建/编辑弹窗 */}
-      <Modal
-        title={editingDept ? '编辑部门' : '创建部门'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-        destroyOnClose
-      >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="name" label="部门名称" rules={[{ required: true, message: '请输入部门名称' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="部门描述">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          {!editingDept && (
-            <Form.Item name="parent_id" label="上级部门">
-              <TreeSelect
-                placeholder="选择上级部门（留空表示顶级部门）"
-                allowClear
-                treeData={convertToTreeData(departments)}
-                treeDefaultExpandAll
+        {/* 创建/编辑弹窗 - 新设计 */}
+        <Modal
+          title={
+            <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+              {editingDept ? '编辑部门' : '创建部门'}
+            </span>
+          }
+          open={modalOpen}
+          onCancel={() => setModalOpen(false)}
+          footer={null}
+          destroyOnClose
+        >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            <Form.Item 
+              name="name" 
+              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>部门名称</span>} 
+              rules={[{ required: true, message: '请输入部门名称' }]}
+            >
+              <Input 
+                style={{ 
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: '#fff',
+                }}
               />
             </Form.Item>
-          )}
-          <Form.Item name="manager_id" label="部门经理">
-            <Select
-              placeholder="选择部门经理（可选）"
-              allowClear
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label?.toString() ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={users.map((u) => ({
-                label: `${u.display_name} (${u.username})`,
-                value: u.id,
-              }))}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              {editingDept ? '保存' : '创建'}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
+            <Form.Item 
+              name="description" 
+              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>部门描述</span>}
+            >
+              <Input.TextArea 
+                rows={3}
+                style={{ 
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderColor: 'rgba(255, 255, 255, 0.1)',
+                  color: '#fff',
+                }}
+              />
+            </Form.Item>
+            {!editingDept && (
+              <Form.Item 
+                name="parent_id" 
+                label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>上级部门</span>}
+              >
+                <TreeSelect
+                  placeholder="选择上级部门（留空表示顶级部门）"
+                  allowClear
+                  treeData={convertToTreeData(departments)}
+                  treeDefaultExpandAll
+                />
+              </Form.Item>
+            )}
+            <Form.Item 
+              name="manager_id" 
+              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>部门经理</span>}
+            >
+              <Select
+                placeholder="选择部门经理（可选）"
+                allowClear
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label?.toString() ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={users.map((u) => ({
+                  label: `${u.display_name} (${u.username})`,
+                  value: u.id,
+                }))}
+              />
+            </Form.Item>
+            <Form.Item>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                block
+                style={{
+                  height: 44,
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)',
+                  border: 'none',
+                  boxShadow: '0 4px 16px rgba(0, 245, 212, 0.25)',
+                }}
+              >
+                {editingDept ? '保存' : '创建'}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
     </div>
   );
 };

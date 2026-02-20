@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Tabs, Table, Button, Form, Input, Select, message, Modal, Switch, Popconfirm, Tag, Space, theme } from 'antd';
+import { Tabs, Table, Button, Form, Input, Select, message, Modal, Switch, Popconfirm, Tag, Space } from 'antd';
 import {
   SettingOutlined,
   NotificationOutlined,
@@ -23,92 +23,88 @@ import type { SystemConfig, Announcement, AuditLog } from '@/types';
 
 const { TextArea } = Input;
 
-/** 页面标题图标 — 渐变圆形背景 */
+/** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
   <span
-    className="flex items-center justify-center w-10 h-10 rounded-full shrink-0"
+    className="flex items-center justify-center w-12 h-12 rounded-2xl shrink-0"
     style={{
-      background: 'linear-gradient(135deg, #722ed1 0%, #b37feb 100%)',
+      background: 'linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)',
       color: '#fff',
+      fontSize: 22,
+      boxShadow: '0 4px 16px rgba(0, 217, 255, 0.25)',
     }}
   >
     {icon}
   </span>
 );
 
-/** 系统管理页面 — Glassmorphism 风格，包含配置 / 公告 / 审计日志 */
+/** 系统管理页面 — 与首页/登录页新设计风格统一 */
 const SystemPage = () => {
-  const { token } = theme.useToken();
-
   return (
-    <div
-      className="animate-fade-in-up"
-      style={{
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: 16,
-        boxShadow: 'var(--glass-shadow)',
-        padding: 24,
-      }}
-    >
-      {/* 页面头部 */}
-      <div style={{ marginBottom: 24 }}>
-        <div className="flex items-center gap-3 mb-2">
-          <PageIcon icon={<ControlOutlined style={{ fontSize: 20 }} />} />
-          <h2 style={{ margin: 0, color: token.colorTextHeading }}>系统管理</h2>
+    <div className="page-bg">
+      <div className="animate-fade-in-up" style={{ position: 'relative', zIndex: 1 }}>
+        
+        {/* 页面头部 - 新设计 */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+            <PageIcon icon={<ControlOutlined />} />
+            <div>
+              <h2 style={{ margin: 0, color: '#fff', fontSize: 24, fontWeight: 600 }}>
+                系统管理
+              </h2>
+              <p style={{ margin: 0, color: 'rgba(255, 255, 255, 0.5)', fontSize: 14, marginTop: 4 }}>
+                系统配置、公告管理与审计日志查看
+              </p>
+            </div>
+          </div>
         </div>
-        <p style={{ margin: 0, color: token.colorTextSecondary, fontSize: 14 }}>
-          系统配置、公告管理与审计日志查看。
-        </p>
-      </div>
 
-      {/* 标签页 */}
-      <Tabs
-        items={[
-          {
-            key: 'configs',
-            label: (
-              <span>
-                <SettingOutlined /> 系统配置
-              </span>
-            ),
-            children: <ConfigsTab />,
-          },
-          {
-            key: 'announcements',
-            label: (
-              <span>
-                <NotificationOutlined /> 公告管理
-              </span>
-            ),
-            children: <AnnouncementsTab />,
-          },
-          {
-            key: 'audit',
-            label: (
-              <span>
-                <AuditOutlined /> 审计日志
-              </span>
-            ),
-            children: <AuditLogsTab />,
-          },
-        ]}
-      />
+        {/* 标签页 - 新设计 */}
+        <div className="glass-card animate-fade-in-up" style={{ padding: 24 }}>
+          <Tabs
+            items={[
+              {
+                key: 'configs',
+                label: (
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                    <SettingOutlined /> 系统配置
+                  </span>
+                ),
+                children: <ConfigsTab />,
+              },
+              {
+                key: 'announcements',
+                label: (
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                    <NotificationOutlined /> 公告管理
+                  </span>
+                ),
+                children: <AnnouncementsTab />,
+              },
+              {
+                key: 'audit',
+                label: (
+                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                    <AuditOutlined /> 审计日志
+                  </span>
+                ),
+                children: <AuditLogsTab />,
+              },
+            ]}
+          />
+        </div>
+      </div>
     </div>
   );
 };
 
-/** 系统配置标签页 */
+/** 系统配置标签页 - 新设计 */
 const ConfigsTab = () => {
-  const { token } = theme.useToken();
   const [configs, setConfigs] = useState<SystemConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
 
-  // 配置项中文标题映射（仅展示系统级配置，LLM 相关已由节点管理页独立维护）
   const configLabels: Record<string, { label: string; description?: string }> = {
     'system.default_concurrency': { label: '默认并发数', description: '用户默认的最大并发请求数' },
     'system.force_change_password': { label: '强制修改密码', description: '用户首次登录是否强制修改密码（true/false）' },
@@ -164,9 +160,9 @@ const ConfigsTab = () => {
     <div>
       <Form form={form} layout="vertical" style={{ maxWidth: 800 }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: token.colorTextTertiary }}>加载中...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>加载中...</div>
         ) : configs.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: token.colorTextTertiary }}>暂无配置项</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255, 255, 255, 0.5)' }}>暂无配置项</div>
         ) : (
           configs.map((c) => {
             const config = configLabels[c.config_key] || { label: c.config_key };
@@ -174,8 +170,8 @@ const ConfigsTab = () => {
               <Form.Item
                 key={c.config_key}
                 name={c.config_key}
-                label={config.label}
-                extra={config.description || c.description}
+                label={<span style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: 500 }}>{config.label}</span>}
+                extra={<span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>{config.description || c.description}</span>}
               >
                 {c.config_key === 'system.force_change_password' ? (
                   <Select
@@ -189,9 +185,21 @@ const ConfigsTab = () => {
                   <TextArea
                     rows={3}
                     placeholder={`当前值: ${c.config_value}`}
+                    style={{ 
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff',
+                    }}
                   />
                 ) : (
-                  <Input placeholder={`当前值: ${c.config_value}`} />
+                  <Input 
+                    placeholder={`当前值: ${c.config_value}`}
+                    style={{ 
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      color: '#fff',
+                    }}
+                  />
                 )}
               </Form.Item>
             );
@@ -199,7 +207,19 @@ const ConfigsTab = () => {
         )}
         {configs.length > 0 && (
           <Form.Item>
-            <Button type="primary" onClick={handleSave} loading={saving}>
+            <Button 
+              type="primary" 
+              onClick={handleSave} 
+              loading={saving}
+              style={{
+                background: 'linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)',
+                border: 'none',
+                boxShadow: '0 4px 16px rgba(0, 217, 255, 0.25)',
+                height: 44,
+                borderRadius: 12,
+                padding: '0 32px',
+              }}
+            >
               保存配置
             </Button>
           </Form.Item>
@@ -209,7 +229,7 @@ const ConfigsTab = () => {
   );
 };
 
-/** 公告管理标签页 */
+/** 公告管理标签页 - 新设计 */
 const AnnouncementsTab = () => {
   const [list, setList] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -282,6 +302,7 @@ const AnnouncementsTab = () => {
     }
   };
 
+  // 表格列 - 新设计
   const columns: ColumnsType<Announcement> = [
     {
       title: '标题',
@@ -289,8 +310,17 @@ const AnnouncementsTab = () => {
       key: 'title',
       render: (val: string, record) => (
         <Space>
-          {record.pinned && <Tag color="red">置顶</Tag>}
-          {val}
+          {record.pinned && (
+            <Tag style={{ 
+              color: '#FF6B6B', 
+              background: 'rgba(255, 107, 107, 0.15)',
+              border: '1px solid rgba(255, 107, 107, 0.3)',
+              borderRadius: 6,
+            }}>
+              置顶
+            </Tag>
+          )}
+          <span style={{ color: '#fff' }}>{val}</span>
         </Space>
       ),
     },
@@ -300,14 +330,32 @@ const AnnouncementsTab = () => {
       key: 'status',
       width: 80,
       render: (v: number) =>
-        v === 1 ? <Tag color="green">已发布</Tag> : <Tag color="default">草稿</Tag>,
+        v === 1 ? (
+          <Tag style={{ 
+            color: '#00F5D4', 
+            background: 'rgba(0, 245, 212, 0.15)',
+            border: '1px solid rgba(0, 245, 212, 0.3)',
+            borderRadius: 6,
+          }}>
+            已发布
+          </Tag>
+        ) : (
+          <Tag style={{ 
+            color: 'rgba(255, 255, 255, 0.5)', 
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 6,
+          }}>
+            草稿
+          </Tag>
+        ),
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
       width: 120,
-      render: (v: string) => v?.slice(0, 10),
+      render: (v: string) => <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{v?.slice(0, 10)}</span>,
     },
     {
       title: '操作',
@@ -315,7 +363,13 @@ const AnnouncementsTab = () => {
       width: 150,
       render: (_, record) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)}>
+          <Button 
+            type="link" 
+            icon={<EditOutlined />} 
+            size="small" 
+            onClick={() => handleEdit(record)}
+            style={{ color: '#00D9FF' }}
+          >
             编辑
           </Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
@@ -331,32 +385,91 @@ const AnnouncementsTab = () => {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />} 
+          onClick={handleCreate}
+          style={{
+            background: 'linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)',
+            border: 'none',
+            boxShadow: '0 4px 16px rgba(0, 217, 255, 0.25)',
+          }}
+        >
           发布公告
         </Button>
       </div>
-      <Table dataSource={list} columns={columns} rowKey="id" loading={loading} pagination={false} />
+      <Table 
+        dataSource={list} 
+        columns={columns} 
+        rowKey="id" 
+        loading={loading} 
+        pagination={false} 
+      />
 
       <Modal
-        title={editingId ? '编辑公告' : '发布公告'}
+        title={
+          <span style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>
+            {editingId ? '编辑公告' : '发布公告'}
+          </span>
+        }
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={() => setModalOpen(false)}
         confirmLoading={submitting}
         width={600}
+        okButtonProps={{
+          style: {
+            background: 'linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)',
+            border: 'none',
+            boxShadow: '0 4px 16px rgba(0, 217, 255, 0.25)',
+          },
+        }}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}>
-            <Input maxLength={200} />
+          <Form.Item 
+            name="title" 
+            label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>标题</span>} 
+            rules={[{ required: true, message: '请输入标题' }]}
+          >
+            <Input 
+              maxLength={200}
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+              }}
+            />
           </Form.Item>
-          <Form.Item name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]}>
-            <TextArea rows={6} />
+          <Form.Item 
+            name="content" 
+            label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>内容</span>} 
+            rules={[{ required: true, message: '请输入内容' }]}
+          >
+            <TextArea 
+              rows={6}
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#fff',
+              }}
+            />
           </Form.Item>
           <Space>
-            <Form.Item name="pinned" label="置顶" valuePropName="checked">
-              <Switch />
+            <Form.Item 
+              name="pinned" 
+              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>置顶</span>} 
+              valuePropName="checked"
+            >
+              <Switch 
+                checkedChildren="是" 
+                unCheckedChildren="否"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              />
             </Form.Item>
-            <Form.Item name="status" label="发布状态">
+            <Form.Item 
+              name="status" 
+              label={<span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>发布状态</span>}
+            >
               <Select
                 options={[
                   { label: '草稿', value: 0 },
@@ -372,9 +485,8 @@ const AnnouncementsTab = () => {
   );
 };
 
-/** 审计日志标签页 */
+/** 审计日志标签页 - 新设计 */
 const AuditLogsTab = () => {
-  const { token } = theme.useToken();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -420,46 +532,58 @@ const AuditLogsTab = () => {
     delete_announcement: '删除公告',
   };
 
+  // 表格列 - 新设计
   const columns: ColumnsType<AuditLog> = [
     {
       title: '时间',
       dataIndex: 'created_at',
       key: 'created_at',
       width: 170,
-      render: (v: string) => v?.replace('T', ' ').slice(0, 19),
+      render: (v: string) => <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'monospace' }}>{v?.replace('T', ' ').slice(0, 19)}</span>,
     },
     {
       title: '操作人',
       dataIndex: 'operator',
       key: 'operator',
       width: 120,
-      render: (op: AuditLog['operator']) => op?.display_name || op?.username || '-',
+      render: (op: AuditLog['operator']) => <span style={{ color: '#fff' }}>{op?.display_name || op?.username || '-'}</span>,
     },
     {
       title: '操作',
       dataIndex: 'action',
       key: 'action',
       width: 120,
-      render: (v: string) => <Tag>{actionLabels[v] || v}</Tag>,
+      render: (v: string) => (
+        <Tag style={{ 
+          color: '#00D9FF', 
+          background: 'rgba(0, 217, 255, 0.15)',
+          border: '1px solid rgba(0, 217, 255, 0.3)',
+          borderRadius: 6,
+        }}>
+          {actionLabels[v] || v}
+        </Tag>
+      ),
     },
     {
       title: '目标类型',
       dataIndex: 'target_type',
       key: 'target_type',
       width: 100,
+      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{v}</span>,
     },
     {
       title: '目标 ID',
       dataIndex: 'target_id',
       key: 'target_id',
       width: 80,
-      render: (v: number) => v || '-',
+      render: (v: number) => <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{v || '-'}</span>,
     },
     {
       title: 'IP',
       dataIndex: 'client_ip',
       key: 'client_ip',
       width: 130,
+      render: (v) => <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontFamily: 'monospace' }}>{v}</span>,
     },
     {
       title: '详情',
@@ -467,7 +591,7 @@ const AuditLogsTab = () => {
       key: 'detail',
       ellipsis: true,
       render: (v: Record<string, unknown>) =>
-        v ? <span style={{ fontSize: 12, color: token.colorTextTertiary }}>{JSON.stringify(v)}</span> : '-',
+        v ? <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.4)', fontFamily: 'monospace' }}>{JSON.stringify(v)}</span> : '-',
     },
   ];
 

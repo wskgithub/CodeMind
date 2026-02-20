@@ -618,10 +618,8 @@ const LoginPage: React.FC = () => {
           margin-bottom: 24px !important;
         }
         
-        .login-form-item .ant-input-affix-wrapper,
-        .login-form-item .ant-input-affix-wrapper:hover,
-        .login-form-item .ant-input-affix-wrapper:focus,
-        .login-form-item .ant-input-affix-wrapper-focused {
+        /* 输入框外层容器 - 统一背景色 */
+        .login-form-item .ant-input-affix-wrapper {
           background: #0d1d2d !important;
           border: 1px solid rgba(255, 255, 255, 0.12) !important;
           border-radius: 12px !important;
@@ -632,15 +630,25 @@ const LoginPage: React.FC = () => {
           transition: all 0.3s ease !important;
         }
         
+        /* hover状态 - 外层容器和内部输入框保持相同背景色 */
         .login-form-item .ant-input-affix-wrapper:hover {
+          background: #0d1d2d !important;
           border-color: rgba(0, 217, 255, 0.5) !important;
           box-shadow: 
             inset 0 1px 0 rgba(255, 255, 255, 0.08),
             0 4px 24px rgba(0, 217, 255, 0.15) !important;
         }
         
+        /* hover时内部输入框保持与外层一致 */
+        .login-form-item .ant-input-affix-wrapper:hover .ant-input {
+          background: #0d1d2d !important;
+          background-color: #0d1d2d !important;
+        }
+        
+        /* focus状态 - 统一背景色 */
         .login-form-item .ant-input-affix-wrapper:focus,
         .login-form-item .ant-input-affix-wrapper-focused {
+          background: #0d1d2d !important;
           border-color: #00D9FF !important;
           box-shadow: 
             inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -648,19 +656,11 @@ const LoginPage: React.FC = () => {
             0 4px 24px rgba(0, 217, 255, 0.25) !important;
         }
         
-        /* 确保所有状态下 input 内部背景一致 */
-        .login-form-item .ant-input,
-        .login-form-item .ant-input-affix-wrapper .ant-input,
-        .login-form-item .ant-input-affix-wrapper:hover .ant-input,
+        /* focus时内部输入框保持与外层一致 */
         .login-form-item .ant-input-affix-wrapper:focus .ant-input,
         .login-form-item .ant-input-affix-wrapper-focused .ant-input {
           background: #0d1d2d !important;
           background-color: #0d1d2d !important;
-          color: #ffffff !important;
-          font-size: 16px !important;
-          font-weight: 400 !important;
-          border: none !important;
-          box-shadow: none !important;
         }
         
         .login-input-icon {
@@ -674,6 +674,7 @@ const LoginPage: React.FC = () => {
           color: #00D9FF !important;
         }
         
+        /* 内部输入框基础样式 - 与外层容器统一背景色 */
         .login-form-item .ant-input {
           background: #0d1d2d !important;
           background-color: #0d1d2d !important;
@@ -699,28 +700,20 @@ const LoginPage: React.FC = () => {
           color: rgba(255, 255, 255, 0.8) !important;
         }
         
-        /* 覆盖浏览器自动填充 - 终极方案 */
+        /* 覆盖浏览器自动填充 - 最强覆盖 */
         .login-form-item .ant-input-affix-wrapper input.ant-input,
-        .login-form-item .ant-input-affix-wrapper input.ant-input:-webkit-autofill,
-        .login-form-item .ant-input-affix-wrapper input.ant-input:-webkit-autofill:hover,
-        .login-form-item .ant-input-affix-wrapper input.ant-input:-webkit-autofill:focus,
-        .login-form-item .ant-input-affix-wrapper input.ant-input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px #0d1d2d inset !important;
-          box-shadow: 0 0 0 1000px #0d1d2d inset !important;
+        input.ant-input:-webkit-autofill,
+        input.ant-input:-webkit-autofill:hover,
+        input.ant-input:-webkit-autofill:focus,
+        input.ant-input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 100px #0d1d2d inset !important;
+          box-shadow: 0 0 0 100px #0d1d2d inset !important;
           background: #0d1d2d !important;
           background-color: #0d1d2d !important;
           background-image: none !important;
           -webkit-text-fill-color: #ffffff !important;
-          -webkit-background-clip: padding-box !important;
           caret-color: #ffffff !important;
           color: #ffffff !important;
-        }
-        
-        /* 禁用所有状态下的背景变化 */
-        .login-form-item .ant-input-affix-wrapper *,
-        .login-form-item .ant-input-affix-wrapper *:hover,
-        .login-form-item .ant-input-affix-wrapper *:focus {
-          background-color: #0d1d2d !important;
         }
       `}</style>
     </div>

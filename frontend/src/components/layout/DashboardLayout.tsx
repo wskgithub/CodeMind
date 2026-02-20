@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Avatar, Dropdown, Button, theme } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Button } from 'antd';
 import {
   DashboardOutlined,
   KeyOutlined,
@@ -11,8 +11,6 @@ import {
   MenuUnfoldOutlined,
   LogoutOutlined,
   SafetyOutlined,
-  SunOutlined,
-  MoonOutlined,
   ApiOutlined,
   CloudServerOutlined,
   MonitorOutlined,
@@ -25,13 +23,12 @@ import useAppStore from '@/store/appStore';
 
 const { Header, Sider, Content } = Layout;
 
-/** 管理后台布局 — Glassmorphism 风格 */
+/** 管理后台布局 — 与首页/登录页新设计风格统一 */
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { sidebarCollapsed, toggleSidebar, darkMode, toggleDarkMode } = useAppStore();
-  const { token: themeToken } = theme.useToken();
+  const { sidebarCollapsed, toggleSidebar } = useAppStore();
 
   const isSuperAdmin = user?.role === 'super_admin';
   const isDeptManager = user?.role === 'dept_manager';
@@ -140,42 +137,58 @@ const DashboardLayout: React.FC = () => {
   const selectedKey = location.pathname;
 
   return (
-    <Layout style={{ minHeight: '100vh', background: darkMode ? '#0f0f13' : '#f0f4f8' }}>
-      {/* 背景装饰光圈 */}
+    <Layout style={{ minHeight: '100vh', background: '#050d14' }}>
+      {/* 背景装饰光圈 - 新设计 */}
       <div
         style={{
           position: 'fixed',
-          top: -200,
-          right: -200,
-          width: 600,
-          height: 600,
-          background: 'var(--orb-primary)',
+          top: -150,
+          right: -150,
+          width: 500,
+          height: 500,
+          background: 'radial-gradient(circle, rgba(0, 217, 255, 0.1) 0%, transparent 70%)',
           borderRadius: '50%',
           pointerEvents: 'none',
           zIndex: 0,
+          filter: 'blur(60px)',
         }}
       />
       <div
         style={{
           position: 'fixed',
-          bottom: -150,
-          left: -150,
-          width: 500,
-          height: 500,
-          background: 'var(--orb-accent)',
+          bottom: -100,
+          left: -100,
+          width: 400,
+          height: 400,
+          background: 'radial-gradient(circle, rgba(157, 78, 221, 0.08) 0%, transparent 70%)',
           borderRadius: '50%',
           pointerEvents: 'none',
           zIndex: 0,
+          filter: 'blur(60px)',
+        }}
+      />
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '30%',
+          width: 300,
+          height: 300,
+          background: 'radial-gradient(circle, rgba(0, 245, 212, 0.05) 0%, transparent 70%)',
+          borderRadius: '50%',
+          pointerEvents: 'none',
+          zIndex: 0,
+          filter: 'blur(50px)',
         }}
       />
 
-      {/* 玻璃效果侧边栏 */}
+      {/* 玻璃效果侧边栏 - 新设计 */}
       <Sider
         trigger={null}
         collapsible
         collapsed={sidebarCollapsed}
-        width={220}
-        collapsedWidth={72}
+        width={240}
+        collapsedWidth={80}
         className="glass-sidebar"
         style={{
           overflow: 'auto',
@@ -185,54 +198,91 @@ const DashboardLayout: React.FC = () => {
           top: 0,
           bottom: 0,
           zIndex: 20,
-          background: 'var(--sidebar-bg)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRight: '1px solid var(--sidebar-border)',
+          background: 'rgba(10, 22, 40, 0.95)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(0, 217, 255, 0.08)',
         }}
       >
-        {/* Logo */}
+        {/* Logo - 新设计 */}
         <div
           style={{
-            height: 64,
+            height: 72,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            borderBottom: '1px solid var(--glass-border)',
+            borderBottom: '1px solid rgba(0, 217, 255, 0.08)',
             transition: 'all 0.3s',
           }}
           onClick={() => navigate('/dashboard')}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img
-              src="/logo-ring.svg"
-              alt="CodeMind"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                boxShadow: '0 4px 12px rgba(43, 124, 179, 0.3)',
-              }}
-            />
-            {!sidebarCollapsed && (
+          {!sidebarCollapsed ? (
+            <div style={{ position: 'relative' }}>
+              {/* 发光背景效果 */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: 120,
+                  height: 40,
+                  background: 'radial-gradient(ellipse, rgba(0, 217, 255, 0.15) 0%, transparent 70%)',
+                  filter: 'blur(8px)',
+                  pointerEvents: 'none',
+                }}
+              />
               <span
                 style={{
-                  fontSize: 16,
-                  fontWeight: 700,
-                  background: 'var(--gradient-primary)',
+                  fontSize: 24,
+                  fontWeight: 900,
+                  background: 'linear-gradient(135deg, #ffffff 0%, #00D9FF 30%, #9D4EDD 70%, #00F5D4 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                   whiteSpace: 'nowrap',
+                  letterSpacing: 1,
+                  position: 'relative',
+                  textShadow: '0 0 30px rgba(0, 217, 255, 0.3)',
                 }}
               >
-                CodeMind
+                {'<'}CodeMind{'/>'}
               </span>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.15) 0%, rgba(157, 78, 221, 0.15) 100%)',
+                border: '1.5px solid rgba(0, 217, 255, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 20px rgba(0, 217, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #00D9FF 0%, #9D4EDD 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  letterSpacing: -1,
+                }}
+              >
+                CM
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* 导航菜单 */}
+        {/* 导航菜单 - 新设计 */}
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
@@ -241,38 +291,39 @@ const DashboardLayout: React.FC = () => {
           style={{
             borderRight: 0,
             background: 'transparent',
-            padding: '8px 0',
+            padding: '12px 0',
           }}
+          theme="dark"
         />
       </Sider>
 
       {/* 右侧内容区 */}
       <Layout
         style={{
-          marginLeft: sidebarCollapsed ? 72 : 220,
+          marginLeft: sidebarCollapsed ? 80 : 240,
           transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           background: 'transparent',
           position: 'relative',
           zIndex: 1,
         }}
       >
-        {/* 玻璃效果顶栏 */}
+        {/* 玻璃效果顶栏 - 新设计 */}
         <Header
           className="glass-header"
           style={{
             padding: '0 24px',
-            background: 'var(--header-bg)',
-            backdropFilter: 'blur(var(--header-blur))',
-            WebkitBackdropFilter: 'blur(var(--header-blur))',
-            borderBottom: '1px solid var(--glass-border)',
+            background: 'rgba(5, 13, 20, 0.85)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(0, 217, 255, 0.06)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             position: 'sticky',
             top: 0,
             zIndex: 15,
-            height: 64,
-            lineHeight: '64px',
+            height: 72,
+            lineHeight: '72px',
           }}
         >
           <Button
@@ -280,62 +331,51 @@ const DashboardLayout: React.FC = () => {
             icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={toggleSidebar}
             style={{
-              fontSize: 16,
-              width: 40,
-              height: 40,
-              borderRadius: 10,
+              fontSize: 18,
+              width: 44,
+              height: 44,
+              borderRadius: 12,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              color: 'rgba(255, 255, 255, 0.7)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
             }}
           />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {/* 暗色模式切换 */}
-            <Button
-              type="text"
-              icon={darkMode ? <SunOutlined /> : <MoonOutlined />}
-              onClick={toggleDarkMode}
-              style={{
-                fontSize: 16,
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title={darkMode ? '切换到亮色模式' : '切换到暗色模式'}
-            />
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 8,
+                  gap: 12,
                   cursor: 'pointer',
-                  padding: '6px 12px',
-                  borderRadius: 12,
+                  padding: '8px 16px',
+                  borderRadius: 14,
                   transition: 'all 0.2s',
-                  background: 'transparent',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--gradient-card-hover)';
+                  e.currentTarget.style.background = 'rgba(0, 217, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(0, 217, 255, 0.2)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
                 }}
               >
                 <Avatar
-                  size={34}
+                  size={36}
                   style={{
-                    background: 'var(--gradient-primary)',
-                    boxShadow: '0 2px 8px rgba(43, 124, 179, 0.25)',
+                    background: 'linear-gradient(135deg, #00D9FF 0%, #9D4EDD 100%)',
+                    boxShadow: '0 2px 12px rgba(0, 217, 255, 0.3)',
                   }}
                   icon={<UserOutlined />}
                 />
-                <span style={{ color: themeToken.colorText, fontSize: 14, fontWeight: 500 }}>
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: 14, fontWeight: 500 }}>
                   {user?.display_name || user?.username}
                 </span>
               </div>
