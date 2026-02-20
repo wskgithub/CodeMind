@@ -2,7 +2,7 @@
 
 > **目标平台**: Ubuntu 22.04 LTS (x86_64)
 > **部署方式**: Docker 容器化部署
-> **适用版本**: v0.2.0+
+> **适用版本**: v0.3.0+
 
 ---
 
@@ -172,14 +172,14 @@ bash scripts/package.sh
 
 ```
 dist/
-├── codemind-v0.2.0.tar.gz          # 部署包
-└── codemind-v0.2.0.tar.gz.sha256   # 校验文件
+├── codemind-v0.3.0.tar.gz          # 部署包
+└── codemind-v0.3.0.tar.gz.sha256   # 校验文件
 ```
 
 ### 3.4 压缩包内容
 
 ```
-codemind-v0.2.0/
+codemind-v0.3.0/
 ├── frontend/                # 前端 (Dockerfile + 静态文件)
 │   ├── Dockerfile
 │   └── dist/
@@ -213,7 +213,7 @@ codemind-v0.2.0/
 
 ```bash
 # 从本地上传（在开发机器上执行）
-scp dist/codemind-v0.2.0.tar.gz user@your-server-ip:/tmp/
+scp dist/codemind-v0.3.0.tar.gz user@your-server-ip:/tmp/
 ```
 
 ### 4.2 在服务器上解压
@@ -221,8 +221,8 @@ scp dist/codemind-v0.2.0.tar.gz user@your-server-ip:/tmp/
 ```bash
 # SSH 登录服务器后执行
 cd /tmp
-tar -xzf codemind-v0.2.0.tar.gz
-cd codemind-v0.2.0
+tar -xzf codemind-v0.3.0.tar.gz
+cd codemind-v0.3.0
 ```
 
 ### 4.3 执行一键部署
@@ -293,8 +293,8 @@ docker compose ps
 
 ```
 NAME                IMAGE                          STATUS                  PORTS
-codemind-backend    codemind-backend:0.2.0        Up (healthy)
-codemind-frontend   codemind-frontend:0.2.0       Up           0.0.0.0:18080->80/tcp
+codemind-backend    codemind-backend:0.3.0        Up (healthy)
+codemind-frontend   codemind-frontend:0.3.0       Up           0.0.0.0:18080->80/tcp
 codemind-postgres   postgres:16-alpine             Up (healthy) 0.0.0.0:15432->5432/tcp
 codemind-redis      redis:7-alpine                 Up (healthy) 0.0.0.0:16379->6379/tcp
 ```
@@ -575,8 +575,8 @@ cd /opt/codemind
 
 # 1. 解压备份
 cd backups
-tar -xzf codemind-backup-v0.2.0-20260220_030000.tar.gz
-cd codemind-backup-v0.2.0-20260220_030000
+tar -xzf codemind-backup-v0.3.0-20260220_030000.tar.gz
+cd codemind-backup-v0.3.0-20260220_030000
 
 # 2. 确保 PostgreSQL 正在运行
 cd /opt/codemind
@@ -589,7 +589,7 @@ sleep 10
 docker compose exec -T postgres pg_restore \
     -U codemind -d codemind \
     --clean --if-exists \
-    < /opt/codemind/backups/codemind-backup-v0.2.0-20260220_030000/database.dump
+    < /opt/codemind/backups/codemind-backup-v0.3.0-20260220_030000/database.dump
 
 # 5. 重启所有服务
 docker compose restart
@@ -684,7 +684,7 @@ docker compose down -v
 sudo rm -rf /opt/codemind
 
 # 重新执行部署
-cd /tmp/codemind-v0.2.0
+cd /tmp/codemind-v0.3.0
 sudo bash scripts/deploy.sh
 ```
 

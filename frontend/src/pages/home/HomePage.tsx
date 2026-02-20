@@ -502,7 +502,7 @@ const HomePage: React.FC = () => {
             }}
           >
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00D9FF', animation: 'pulse 2s infinite' }} />
-            企业级 AI 编码平台 v0.2.0
+            企业级 AI 编码平台 v0.3.0
           </div>
 
           {/* 主标题 */}
@@ -986,7 +986,7 @@ const HomePage: React.FC = () => {
           CodeMind
         </div>
         <p style={{ fontSize: 14, color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)', margin: 0 }}>
-          度影智能编码服务 v0.2.0
+          度影智能编码服务 v0.3.0
         </p>
         <p style={{ fontSize: 13, color: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.35)', marginTop: 8 }}>
           © {new Date().getFullYear()} RayShape. All Rights Reserved.
