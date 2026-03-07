@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"codemind/internal/model"
@@ -16,14 +18,22 @@ import (
 // LLMProxyService LLM 代理业务逻辑
 // 集成负载均衡器和基于周期的限额系统
 type LLMProxyService struct {
-	providerManager *llm.ProviderManager
-	loadBalancer    *llm.LoadBalancer
-	usageRepo       *repository.UsageRepository
-	limitRepo       *repository.RateLimitRepository
-	keyRepo         *repository.APIKeyRepository
-	limitService    *LimitService
-	rdb             *redis.Client
-	logger          *zap.Logger
+	providerManager  *llm.ProviderManager
+	loadBalancer     *llm.LoadBalancer
+	usageRepo        *repository.UsageRepository
+	limitRepo        *repository.RateLimitRepository
+	keyRepo          *repository.APIKeyRepository
+	trainingDataRepo *repository.TrainingDataRepository
+	sysConfigRepo    *repository.SystemRepository
+	limitService     *LimitService
+	rdb              *redis.Client
+	logger           *zap.Logger
+
+	// 训练数据采集开关缓存
+	trainingEnabled     bool
+	trainingEnabledAt   time.Time
+	trainingEnabledOnce sync.Once
+	trainingEnabledMu   sync.RWMutex
 }
 
 // NewLLMProxyService 创建 LLM 代理服务
@@ -33,19 +43,23 @@ func NewLLMProxyService(
 	usageRepo *repository.UsageRepository,
 	limitRepo *repository.RateLimitRepository,
 	keyRepo *repository.APIKeyRepository,
+	trainingDataRepo *repository.TrainingDataRepository,
+	sysConfigRepo *repository.SystemRepository,
 	limitService *LimitService,
 	rdb *redis.Client,
 	logger *zap.Logger,
 ) *LLMProxyService {
 	return &LLMProxyService{
-		providerManager: providerManager,
-		loadBalancer:    loadBalancer,
-		usageRepo:       usageRepo,
-		limitRepo:       limitRepo,
-		keyRepo:         keyRepo,
-		limitService:    limitService,
-		rdb:             rdb,
-		logger:          logger,
+		providerManager:  providerManager,
+		loadBalancer:     loadBalancer,
+		usageRepo:        usageRepo,
+		limitRepo:        limitRepo,
+		keyRepo:          keyRepo,
+		trainingDataRepo: trainingDataRepo,
+		sysConfigRepo:    sysConfigRepo,
+		limitService:     limitService,
+		rdb:              rdb,
+		logger:           logger,
 	}
 }
 
@@ -201,4 +215,79 @@ func (s *LLMProxyService) RecordRequestLog(
 	if err := s.usageRepo.CreateRequestLog(log); err != nil {
 		s.logger.Error("写入请求日志失败", zap.Error(err))
 	}
+}
+
+// RecordTrainingData 记录 LLM 请求/响应用于模型训练（异步调用）
+// 内部检查系统配置开关，关闭时直接跳过
+func (s *LLMProxyService) RecordTrainingData(
+	userID, keyID int64,
+	requestType, modelName string,
+	isStream bool,
+	requestBody, responseBody json.RawMessage,
+	usage *llm.Usage,
+	statusCode, durationMs int,
+	clientIP string,
+) {
+	if !s.isTrainingDataEnabled() {
+		return
+	}
+
+	var promptTokens, completionTokens, totalTokens int
+	if usage != nil {
+		promptTokens = usage.PromptTokens
+		completionTokens = usage.CompletionTokens
+		totalTokens = usage.TotalTokens
+	}
+
+	record := &model.LLMTrainingData{
+		UserID:           userID,
+		APIKeyID:         keyID,
+		RequestType:      requestType,
+		Model:            modelName,
+		IsStream:         isStream,
+		RequestBody:      requestBody,
+		ResponseBody:     responseBody,
+		PromptTokens:     promptTokens,
+		CompletionTokens: completionTokens,
+		TotalTokens:      totalTokens,
+		DurationMs:       &durationMs,
+		StatusCode:       statusCode,
+		ClientIP:         &clientIP,
+	}
+
+	if err := s.trainingDataRepo.Create(record); err != nil {
+		s.logger.Error("写入训练数据失败", zap.Error(err), zap.Int64("user_id", userID))
+	}
+}
+
+// isTrainingDataEnabled 检查训练数据采集是否开启（带 60 秒缓存）
+func (s *LLMProxyService) isTrainingDataEnabled() bool {
+	const cacheTTL = 60 * time.Second
+
+	s.trainingEnabledMu.RLock()
+	if !s.trainingEnabledAt.IsZero() && time.Since(s.trainingEnabledAt) < cacheTTL {
+		enabled := s.trainingEnabled
+		s.trainingEnabledMu.RUnlock()
+		return enabled
+	}
+	s.trainingEnabledMu.RUnlock()
+
+	s.trainingEnabledMu.Lock()
+	defer s.trainingEnabledMu.Unlock()
+
+	// 双重检查
+	if !s.trainingEnabledAt.IsZero() && time.Since(s.trainingEnabledAt) < cacheTTL {
+		return s.trainingEnabled
+	}
+
+	enabled := true // 默认开启
+	if s.sysConfigRepo != nil {
+		cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingDataCollection)
+		if err == nil {
+			enabled = cfg.ConfigValue == "true"
+		}
+	}
+	s.trainingEnabled = enabled
+	s.trainingEnabledAt = time.Now()
+	return enabled
 }

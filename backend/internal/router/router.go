@@ -14,19 +14,20 @@ import (
 
 // Handlers 所有 Handler 集合
 type Handlers struct {
-	Auth       *handler.AuthHandler
-	User       *handler.UserHandler
-	Department *handler.DepartmentHandler
-	APIKey     *handler.APIKeyHandler
-	LLMProxy   *handler.LLMProxyHandler
-	Stats      *handler.StatsHandler
-	Limit      *handler.LimitHandler
-	System     *handler.SystemHandler
-	MCPAdmin   *handler.MCPAdminHandler
-	MCPGateway *handler.MCPGatewayHandler
-	LLMBackend *handler.LLMBackendHandler
-	Monitor    *handler.MonitorHandler
-	Document   *handler.DocumentHandler
+	Auth         *handler.AuthHandler
+	User         *handler.UserHandler
+	Department   *handler.DepartmentHandler
+	APIKey       *handler.APIKeyHandler
+	LLMProxy     *handler.LLMProxyHandler
+	Stats        *handler.StatsHandler
+	Limit        *handler.LimitHandler
+	System       *handler.SystemHandler
+	MCPAdmin     *handler.MCPAdminHandler
+	MCPGateway   *handler.MCPGatewayHandler
+	LLMBackend   *handler.LLMBackendHandler
+	Monitor      *handler.MonitorHandler
+	Document     *handler.DocumentHandler
+	TrainingData *handler.TrainingDataHandler
 }
 
 // Setup 初始化路由
@@ -213,6 +214,17 @@ func Setup(
 			docsAdmin.PUT("/:id", handlers.Document.UpdateDocument)
 			docsAdmin.DELETE("/:id", handlers.Document.DeleteDocument)
 			docsAdmin.POST("/initialize", handlers.Document.InitializeDocuments)
+		}
+
+		// 训练数据管理（仅超级管理员）
+		trainingData := authenticated.Group("/training-data")
+		trainingData.Use(middleware.RequireAdmin())
+		{
+			trainingData.GET("", handlers.TrainingData.List)
+			trainingData.GET("/stats", handlers.TrainingData.GetStats)
+			trainingData.GET("/:id", handlers.TrainingData.GetDetail)
+			trainingData.PUT("/:id/exclude", handlers.TrainingData.UpdateExcluded)
+			trainingData.POST("/export", handlers.TrainingData.Export)
 		}
 	}
 

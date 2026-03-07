@@ -277,6 +277,54 @@ func (q *AuditLogQuery) GetPageSize() int {
 }
 
 // ──────────────────────────────────
+// 训练数据管理请求
+// ──────────────────────────────────
+
+// TrainingDataQuery 训练数据列表查询参数
+type TrainingDataQuery struct {
+	Page        int    `form:"page" binding:"omitempty,min=1"`
+	PageSize    int    `form:"page_size" binding:"omitempty,min=1,max=100"`
+	Model       string `form:"model"`
+	RequestType string `form:"request_type" binding:"omitempty,oneof=chat_completion completion embedding responses anthropic_messages"`
+	UserID      *int64 `form:"user_id"`
+	StartDate   string `form:"start_date"`
+	EndDate     string `form:"end_date"`
+	IsExcluded  *bool  `form:"is_excluded"`
+}
+
+// GetPage 获取页码
+func (q *TrainingDataQuery) GetPage() int {
+	if q.Page <= 0 {
+		return 1
+	}
+	return q.Page
+}
+
+// GetPageSize 获取每页数量
+func (q *TrainingDataQuery) GetPageSize() int {
+	if q.PageSize <= 0 {
+		return 20
+	}
+	if q.PageSize > 100 {
+		return 100
+	}
+	return q.PageSize
+}
+
+// TrainingDataExcludeRequest 排除/恢复训练数据请求
+type TrainingDataExcludeRequest struct {
+	Excluded bool `json:"excluded"`
+}
+
+// TrainingDataExportQuery 训练数据导出查询参数
+type TrainingDataExportQuery struct {
+	Model       string `form:"model"`
+	RequestType string `form:"request_type" binding:"omitempty,oneof=chat_completion completion embedding responses anthropic_messages"`
+	StartDate   string `form:"start_date"`
+	EndDate     string `form:"end_date"`
+}
+
+// ──────────────────────────────────
 // MCP 服务管理请求
 // ──────────────────────────────────
 

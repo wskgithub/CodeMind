@@ -109,6 +109,7 @@ func main() {
 	backendRepo := repository.NewLLMBackendRepository(db)
 	monitorRepo := repository.NewMonitorRepository(db)
 	docRepo := repository.NewDocumentRepository(db)
+	trainingDataRepo := repository.NewTrainingDataRepository(db)
 
 	// ──────────────────────────────────
 	// 7. 初始化负载均衡器
@@ -123,7 +124,7 @@ func main() {
 	deptService := service.NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, logger)
 	limitService := service.NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
-	llmProxyService := service.NewLLMProxyService(providerManager, loadBalancer, usageRepo, limitRepo, apiKeyRepo, limitService, rdb, logger)
+	llmProxyService := service.NewLLMProxyService(providerManager, loadBalancer, usageRepo, limitRepo, apiKeyRepo, trainingDataRepo, sysConfigRepo, limitService, rdb, logger)
 	statsService := service.NewStatsService(usageRepo, userRepo, deptRepo, apiKeyRepo, logger)
 	systemService := service.NewSystemService(sysConfigRepo, auditRepo, annRepo, logger)
 	mcpProxy := mcpPkg.NewProxy(logger)
@@ -131,6 +132,7 @@ func main() {
 	llmBackendService := service.NewLLMBackendService(backendRepo, auditRepo, loadBalancer, logger)
 	monitorService := service.NewMonitorService(monitorRepo, usageRepo, rdb, logger)
 	docService := service.NewDocumentService(docRepo, logger)
+	trainingDataService := service.NewTrainingDataService(trainingDataRepo, logger)
 
 	// 从数据库加载 LLM 后端节点到负载均衡器
 	llmBackendService.RefreshLoadBalancer()
@@ -150,8 +152,9 @@ func main() {
 		MCPAdmin:   handler.NewMCPAdminHandler(mcpService, logger),
 		MCPGateway: handler.NewMCPGatewayHandler(mcpService, logger),
 		LLMBackend: handler.NewLLMBackendHandler(llmBackendService),
-		Monitor:    handler.NewMonitorHandler(monitorService, logger),
-		Document:   handler.NewDocumentHandler(docService),
+		Monitor:      handler.NewMonitorHandler(monitorService, logger),
+		Document:     handler.NewDocumentHandler(docService),
+		TrainingData: handler.NewTrainingDataHandler(trainingDataService, logger),
 	}
 
 	// ──────────────────────────────────

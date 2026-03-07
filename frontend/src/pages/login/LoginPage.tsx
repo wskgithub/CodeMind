@@ -604,17 +604,6 @@ const LoginPage: React.FC = () => {
           </Form>
         </ConfigProvider>
 
-        {/* 底部提示 */}
-        <div
-          style={{
-            textAlign: 'center',
-            marginTop: 28,
-            fontSize: 12,
-            color: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.4)',
-          }}
-        >
-          默认管理员：admin / Admin@123456
-        </div>
       </div>
 
       {/* 全局样式 */}

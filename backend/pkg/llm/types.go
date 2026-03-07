@@ -349,6 +349,20 @@ type ErrorDetail struct {
 }
 
 // ──────────────────────────────────
+// 流式响应聚合结果
+// ──────────────────────────────────
+
+// StreamResult 流式响应的聚合结果
+// pipe 函数在转发 SSE 流的同时收集内容，最终返回此结构体
+type StreamResult struct {
+	Usage        *Usage
+	Content      string // 拼接后的完整文本内容
+	ResponseID   string // 响应 ID（来自第一个 chunk）
+	Model        string // 实际使用的模型名称
+	FinishReason string // 终止原因（stop / length 等）
+}
+
+// ──────────────────────────────────
 // 辅助类型与方法
 // ──────────────────────────────────
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"codemind/internal/middleware"
@@ -121,6 +122,7 @@ func (h *LLMProxyHandler) handleNonStreamChatRaw(
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -144,17 +146,18 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Status(http.StatusOK)
 
-	var totalUsage *llm.Usage
+	var streamResult *llm.StreamResult
 
 	if provider.Format() == llm.FormatAnthropic {
-		totalUsage = h.pipeAnthropicStreamToOpenAI(c, body, modelName)
+		streamResult = h.pipeAnthropicStreamToOpenAI(c, body, modelName)
 	} else {
-		totalUsage = h.pipeOpenAIStream(c, body)
+		streamResult = h.pipeOpenAIStream(c, body)
 	}
 
 	durationMs := int(time.Since(startTime).Milliseconds())
-	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", totalUsage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", streamResult.Usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP())
 }
 
 // ──────────────────────────────────
@@ -228,6 +231,7 @@ func (h *LLMProxyHandler) handleNonStreamCompletionRaw(
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -253,7 +257,8 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 	c.Status(http.StatusOK)
 
 	// Completions 流直接透传原始 SSE 数据
-	var totalUsage *llm.Usage
+	result := &llm.StreamResult{}
+	var contentBuilder strings.Builder
 	reader := llm.NewStreamReader(body)
 	defer reader.Close()
 
@@ -272,14 +277,25 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 		fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
 		c.Writer.Flush()
 
-		if chunk != nil && chunk.Usage != nil {
-			totalUsage = chunk.Usage
+		if chunk != nil {
+			if result.ResponseID == "" {
+				result.ResponseID = chunk.ID
+				result.Model = chunk.Model
+			}
+			if len(chunk.Choices) > 0 && chunk.Choices[0].FinishReason != nil {
+				result.FinishReason = *chunk.Choices[0].FinishReason
+			}
+			if chunk.Usage != nil {
+				result.Usage = chunk.Usage
+			}
 		}
 	}
+	result.Content = contentBuilder.String()
 
 	durationMs := int(time.Since(startTime).Milliseconds())
-	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", totalUsage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", result.Usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, true, rawBody, llm.AssembleCompletionResponse(result), result.Usage, 200, durationMs, c.ClientIP())
 }
 
 // ──────────────────────────────────
@@ -382,6 +398,8 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 		go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "embedding", usage, durationMs)
 	}
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "embedding", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	// Embedding 响应体包含大量浮点向量，对训练无意义，仅记录请求体
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "embedding", modelName, false, rawBody, nil, usage, 200, durationMs, c.ClientIP())
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -471,6 +489,7 @@ func (h *LLMProxyHandler) handleNonStreamResponses(
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -494,11 +513,12 @@ func (h *LLMProxyHandler) handleStreamResponses(
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Status(http.StatusOK)
 
-	totalUsage := h.pipeResponsesStream(c, body)
+	streamResult := h.pipeResponsesStream(c, body)
 
 	durationMs := int(time.Since(startTime).Milliseconds())
-	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", totalUsage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", streamResult.Usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, true, rawBody, nil, streamResult.Usage, 200, durationMs, c.ClientIP())
 }
 
 // ──────────────────────────────────
@@ -591,6 +611,7 @@ func (h *LLMProxyHandler) handleAnthropicNonStream(
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "anthropic_messages", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -614,29 +635,31 @@ func (h *LLMProxyHandler) handleAnthropicStream(
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 	c.Status(http.StatusOK)
 
-	var totalUsage *llm.Usage
+	var streamResult *llm.StreamResult
 
 	if provider.Format() == llm.FormatOpenAI {
-		totalUsage = h.pipeOpenAIStreamToAnthropic(c, body, modelName)
+		streamResult = h.pipeOpenAIStreamToAnthropic(c, body, modelName)
 	} else {
-		totalUsage = h.pipeAnthropicStream(c, body)
+		streamResult = h.pipeAnthropicStream(c, body)
 	}
 
 	durationMs := int(time.Since(startTime).Milliseconds())
-	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", totalUsage, durationMs)
+	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", streamResult.Usage, durationMs)
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "anthropic_messages", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP())
 }
 
 // ──────────────────────────────────
 // 流式数据管道
 // ──────────────────────────────────
 
-// pipeOpenAIStream 直接转发 OpenAI 格式流
-func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *llm.Usage {
+// pipeOpenAIStream 直接转发 OpenAI 格式流，同时收集完整响应内容
+func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *llm.StreamResult {
 	reader := llm.NewStreamReader(body)
 	defer reader.Close()
 
-	var totalUsage *llm.Usage
+	result := &llm.StreamResult{}
+	var contentBuilder strings.Builder
 
 	for {
 		rawLine, chunk, err := reader.ReadChunk()
@@ -653,20 +676,37 @@ func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *
 		fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
 		c.Writer.Flush()
 
-		if chunk != nil && chunk.Usage != nil {
-			totalUsage = chunk.Usage
+		if chunk != nil {
+			if result.ResponseID == "" {
+				result.ResponseID = chunk.ID
+				result.Model = chunk.Model
+			}
+			if len(chunk.Choices) > 0 {
+				delta := chunk.Choices[0].Delta
+				if delta != nil {
+					contentBuilder.WriteString(delta.ContentString())
+				}
+				if chunk.Choices[0].FinishReason != nil {
+					result.FinishReason = *chunk.Choices[0].FinishReason
+				}
+			}
+			if chunk.Usage != nil {
+				result.Usage = chunk.Usage
+			}
 		}
 	}
 
-	return totalUsage
+	result.Content = contentBuilder.String()
+	return result
 }
 
-// pipeAnthropicStream 直接转发 Anthropic 格式流
-func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser) *llm.Usage {
+// pipeAnthropicStream 直接转发 Anthropic 格式流，同时收集完整响应内容
+func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser) *llm.StreamResult {
 	reader := llm.NewAnthropicStreamReader(body)
 	defer reader.Close()
 
-	var totalUsage *llm.Usage
+	result := &llm.StreamResult{}
+	var contentBuilder strings.Builder
 
 	for {
 		eventType, rawLines, event, err := reader.ReadEvent()
@@ -684,20 +724,39 @@ func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser
 		}
 		c.Writer.Flush()
 
-		if eventType == llm.AnthropicEventMessageDelta && event != nil && event.Usage != nil {
-			totalUsage = event.Usage.ToUsage()
+		if event != nil {
+			switch eventType {
+			case llm.AnthropicEventMessageStart:
+				if event.Message != nil {
+					result.ResponseID = event.Message.ID
+					result.Model = event.Message.Model
+				}
+			case llm.AnthropicEventContentBlockDelta:
+				if event.Delta != nil {
+					contentBuilder.WriteString(event.Delta.Text)
+				}
+			case llm.AnthropicEventMessageDelta:
+				if event.Delta != nil && event.Delta.StopReason != nil {
+					result.FinishReason = *event.Delta.StopReason
+				}
+				if event.Usage != nil {
+					result.Usage = event.Usage.ToUsage()
+				}
+			}
 		}
 	}
 
-	return totalUsage
+	result.Content = contentBuilder.String()
+	return result
 }
 
-// pipeAnthropicStreamToOpenAI 将 Anthropic 流转换为 OpenAI 格式输出
-func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.ReadCloser, model string) *llm.Usage {
+// pipeAnthropicStreamToOpenAI 将 Anthropic 流转换为 OpenAI 格式输出，同时收集完整响应内容
+func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.ReadCloser, model string) *llm.StreamResult {
 	reader := llm.NewAnthropicStreamReader(body)
 	defer reader.Close()
 
-	var totalUsage *llm.Usage
+	result := &llm.StreamResult{}
+	var contentBuilder strings.Builder
 	state := &llm.AnthropicToOpenAIState{}
 
 	for {
@@ -718,20 +777,39 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 			c.Writer.Flush()
 		}
 
-		if eventType == llm.AnthropicEventMessageDelta && event != nil && event.Usage != nil {
-			totalUsage = event.Usage.ToUsage()
+		if event != nil {
+			switch eventType {
+			case llm.AnthropicEventMessageStart:
+				if event.Message != nil {
+					result.ResponseID = event.Message.ID
+					result.Model = event.Message.Model
+				}
+			case llm.AnthropicEventContentBlockDelta:
+				if event.Delta != nil {
+					contentBuilder.WriteString(event.Delta.Text)
+				}
+			case llm.AnthropicEventMessageDelta:
+				if event.Delta != nil && event.Delta.StopReason != nil {
+					result.FinishReason = *event.Delta.StopReason
+				}
+				if event.Usage != nil {
+					result.Usage = event.Usage.ToUsage()
+				}
+			}
 		}
 	}
 
-	return totalUsage
+	result.Content = contentBuilder.String()
+	return result
 }
 
-// pipeOpenAIStreamToAnthropic 将 OpenAI 流转换为 Anthropic 格式输出
-func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.ReadCloser, model string) *llm.Usage {
+// pipeOpenAIStreamToAnthropic 将 OpenAI 流转换为 Anthropic 格式输出，同时收集完整响应内容
+func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.ReadCloser, model string) *llm.StreamResult {
 	reader := llm.NewStreamReader(body)
 	defer reader.Close()
 
-	var totalUsage *llm.Usage
+	result := &llm.StreamResult{}
+	var contentBuilder strings.Builder
 	isFirst := true
 	state := &llm.OpenAIToAnthropicState{}
 
@@ -753,23 +831,38 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 			}
 			isFirst = false
 
+			if result.ResponseID == "" {
+				result.ResponseID = chunk.ID
+				result.Model = chunk.Model
+			}
+			if len(chunk.Choices) > 0 {
+				delta := chunk.Choices[0].Delta
+				if delta != nil {
+					contentBuilder.WriteString(delta.ContentString())
+				}
+				if chunk.Choices[0].FinishReason != nil {
+					result.FinishReason = *chunk.Choices[0].FinishReason
+				}
+			}
 			if chunk.Usage != nil {
-				totalUsage = chunk.Usage
+				result.Usage = chunk.Usage
 			}
 		}
 	}
 
-	return totalUsage
+	result.Content = contentBuilder.String()
+	return result
 }
 
-// pipeResponsesStream 转发 Responses API 的 SSE 命名事件流
+// pipeResponsesStream 转发 Responses API 的 SSE 命名事件流，同时收集完整响应内容
 // Responses API 使用 event: xxx\ndata: {...}\n\n 格式，
 // 从 response.completed 事件中提取最终 usage
-func (h *LLMProxyHandler) pipeResponsesStream(c *gin.Context, body io.ReadCloser) *llm.Usage {
+func (h *LLMProxyHandler) pipeResponsesStream(c *gin.Context, body io.ReadCloser) *llm.StreamResult {
 	reader := llm.NewResponsesStreamReader(body)
 	defer reader.Close()
 
-	var totalUsage *llm.Usage
+	result := &llm.StreamResult{}
+	var contentBuilder strings.Builder
 
 	for {
 		eventType, rawLines, dataPayload, err := reader.ReadEvent()
@@ -787,14 +880,38 @@ func (h *LLMProxyHandler) pipeResponsesStream(c *gin.Context, body io.ReadCloser
 		}
 		c.Writer.Flush()
 
-		if eventType == llm.ResponsesEventCompleted && len(dataPayload) > 0 {
-			if usage := llm.ExtractUsageFromResponsesEvent(dataPayload); usage != nil {
-				totalUsage = usage
+		switch eventType {
+		case llm.ResponsesEventOutputTextDelta:
+			if len(dataPayload) > 0 {
+				var delta struct {
+					Delta string `json:"delta"`
+				}
+				if json.Unmarshal(dataPayload, &delta) == nil {
+					contentBuilder.WriteString(delta.Delta)
+				}
 			}
+		case llm.ResponsesEventCompleted:
+			if len(dataPayload) > 0 {
+				if usage := llm.ExtractUsageFromResponsesEvent(dataPayload); usage != nil {
+					result.Usage = usage
+				}
+				var completed struct {
+					Response struct {
+						ID    string `json:"id"`
+						Model string `json:"model"`
+					} `json:"response"`
+				}
+				if json.Unmarshal(dataPayload, &completed) == nil {
+					result.ResponseID = completed.Response.ID
+					result.Model = completed.Response.Model
+				}
+			}
+			result.FinishReason = "stop"
 		}
 	}
 
-	return totalUsage
+	result.Content = contentBuilder.String()
+	return result
 }
 
 // ──────────────────────────────────

@@ -23,6 +23,7 @@ const (
 	ConfigLLMModels          = "llm.models"
 	ConfigLLMDefaultModel    = "llm.default_model"
 	ConfigMaxKeysPerUser     = "system.max_keys_per_user"
-	ConfigDefaultConcurrency = "system.default_concurrency"
-	ConfigForceChangePwd     = "system.force_change_password"
+	ConfigDefaultConcurrency     = "system.default_concurrency"
+	ConfigForceChangePwd         = "system.force_change_password"
+	ConfigTrainingDataCollection = "system.training_data_collection"
 )

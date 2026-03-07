@@ -222,3 +222,36 @@ CREATE INDEX idx_audit_logs_action      ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at  ON audit_logs(created_at);
 
 COMMENT ON TABLE audit_logs IS 'Operation audit trail';
+
+-- ──────────────────────────────────
+-- Table: llm_training_data
+-- ──────────────────────────────────
+CREATE TABLE llm_training_data (
+    id                  BIGSERIAL       PRIMARY KEY,
+    user_id             BIGINT          NOT NULL REFERENCES users(id),
+    api_key_id          BIGINT          NOT NULL REFERENCES api_keys(id),
+    request_type        VARCHAR(30)     NOT NULL,
+    model               VARCHAR(100)    NOT NULL,
+    is_stream           BOOLEAN         NOT NULL DEFAULT FALSE,
+    request_body        JSONB           NOT NULL,
+    response_body       JSONB,
+    prompt_tokens       INTEGER         NOT NULL DEFAULT 0,
+    completion_tokens   INTEGER         NOT NULL DEFAULT 0,
+    total_tokens        INTEGER         NOT NULL DEFAULT 0,
+    duration_ms         INTEGER,
+    status_code         INTEGER         NOT NULL DEFAULT 200,
+    client_ip           VARCHAR(45),
+    is_excluded         BOOLEAN         NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_training_data_user_created ON llm_training_data(user_id, created_at);
+CREATE INDEX idx_training_data_model        ON llm_training_data(model);
+CREATE INDEX idx_training_data_type         ON llm_training_data(request_type);
+CREATE INDEX idx_training_data_created      ON llm_training_data(created_at);
+CREATE INDEX idx_training_data_excluded     ON llm_training_data(is_excluded) WHERE is_excluded = FALSE;
+
+COMMENT ON TABLE  llm_training_data             IS 'LLM 请求/响应记录，用于模型训练数据采集';
+COMMENT ON COLUMN llm_training_data.request_body  IS '完整请求体 JSON';
+COMMENT ON COLUMN llm_training_data.response_body IS '完整响应体 JSON（流式为组装后格式；Embedding 为 NULL）';
+COMMENT ON COLUMN llm_training_data.is_excluded   IS '是否已从训练集中排除';

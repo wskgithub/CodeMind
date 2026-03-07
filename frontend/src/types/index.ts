@@ -454,3 +454,40 @@ export interface DashboardSummary {
   total_nodes: number;
   updated_at: string;
 }
+
+// ──────────────────────────────────
+// 训练数据
+// ──────────────────────────────────
+
+/** 训练数据列表项 */
+export interface TrainingDataItem {
+  id: number;
+  user_id: number;
+  username: string;
+  request_type: string;
+  model: string;
+  is_stream: boolean;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  duration_ms: number | null;
+  status_code: number;
+  is_excluded: boolean;
+  created_at: string;
+}
+
+/** 训练数据详情（含完整请求/响应体） */
+export interface TrainingDataDetail extends TrainingDataItem {
+  api_key_id: number;
+  request_body: Record<string, unknown>;
+  response_body: Record<string, unknown> | null;
+  client_ip: string | null;
+}
+
+/** 训练数据统计 */
+export interface TrainingDataStats {
+  total_count: number;
+  today_count: number;
+  excluded_count: number;
+  model_distribution: { model: string; count: number }[];
+}

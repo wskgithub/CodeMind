@@ -18,6 +18,7 @@ import MonitorPage from '@/pages/admin/monitor/MonitorPage';
 import DocsPage from '@/pages/docs/DocsPage';
 import DocsAdminPage from '@/pages/admin/docs/DocsAdminPage';
 import DocsEditPage from '@/pages/admin/docs/DocsEditPage';
+import TrainingDataPage from '@/pages/admin/training/TrainingDataPage';
 
 /** 应用路由配置 */
 const router = createBrowserRouter([
@@ -78,6 +79,7 @@ const router = createBrowserRouter([
       { path: 'docs', element: <DocsAdminPage /> },
       { path: 'docs/create', element: <DocsEditPage /> },
       { path: 'docs/edit/:id', element: <DocsEditPage /> },
+      { path: 'training', element: <TrainingDataPage /> },
     ],
   },
   // 文档页面（需要登录）

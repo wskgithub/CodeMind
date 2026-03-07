@@ -16,6 +16,7 @@ import {
   MonitorOutlined,
   BookOutlined,
   FileTextOutlined,
+  DatabaseOutlined,
   MoonOutlined,
   SunOutlined,
 } from '@ant-design/icons';
@@ -104,6 +105,11 @@ const DashboardLayout: React.FC = () => {
             key: '/admin/docs',
             icon: <FileTextOutlined />,
             label: '文档管理',
+          },
+          {
+            key: '/admin/training',
+            icon: <DatabaseOutlined />,
+            label: '训练数据',
           },
         ]
       : []),
