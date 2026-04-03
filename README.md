@@ -1,4 +1,4 @@
-# 度影智能编码服务 | RayShape Intelligent Coding Hub
+# CodeMind
 
 > 企业级 AI 编码服务管理平台，基于本地部署的 LLM 模型为团队提供安全、可控、高效的 AI 编码辅助服务。
 
@@ -110,4 +110,4 @@ Version history: see [CHANGELOG](CHANGELOG.md)
 
 This project is proprietary software for internal use only.
 
-Copyright © 2026 RayShape. All rights reserved.
+Copyright © 2026 CodeMind. All rights reserved.

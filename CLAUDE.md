@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CodeMind (度影智能编码服务) is an enterprise-level AI coding service management platform. It acts as a middleware layer that proxies requests to locally deployed LLM models, providing user management, resource control, and usage statistics.
+CodeMind is an enterprise-level AI coding service management platform. It acts as a middleware layer that proxies requests to locally deployed LLM models, providing user management, resource control, and usage statistics.
 
 **Tech Stack:**
 - **Frontend**: React 18 + TypeScript + Vite + Ant Design 5 + TailwindCSS

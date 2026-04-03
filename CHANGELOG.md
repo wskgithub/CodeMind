@@ -1,6 +1,6 @@
 # Changelog
 
-本文件记录 CodeMind（度影智能编码服务）各版本的变更内容。
+本文件记录 CodeMind 各版本的变更内容。
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
@@ -67,7 +67,7 @@
 - **Docker**：多阶段构建 Dockerfile
 
 #### 前端 (React 18 + TypeScript)
-- **品牌主题**：RayShape 品牌配色方案落地，Ant Design 5 主题定制
+- **品牌主题**：品牌配色方案落地，Ant Design 5 主题定制
 - **暗色模式**：一键切换亮/暗色主题
 - **首页**：Canvas 粒子连线动效、全屏 Hero 区域、功能展示卡片（滚动动画）、数字亮点
 - **登录页**：Ant Design 表单，渐变背景

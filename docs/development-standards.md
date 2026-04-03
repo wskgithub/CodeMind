@@ -18,7 +18,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| 项目名称 | CodeMind (度影智能编码服务) |
+| 项目名称 | CodeMind |
 | 项目代号 | CodeMind |
 | 仓库地址 | `[待补充]` |
 | 文档地址 | `docs/development-plan.md` |

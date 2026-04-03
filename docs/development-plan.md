@@ -1,6 +1,6 @@
-# 度影智能编码服务 — 开发计划文档
+# CodeMind — 开发计划文档
 
-# RayShape Intelligent Coding Hub — Development Plan
+# CodeMind — Development Plan
 
 ---
 
@@ -50,8 +50,8 @@
 
 | 项目 | 名称 |
 |------|------|
-| 中文名 | 度影智能编码服务 |
-| 英文名 | RayShape Intelligent Coding Hub |
+| 中文名 | CodeMind |
+| 英文名 | CodeMind |
 | 项目代号 | CodeMind |
 | 仓库名 | CodeMind |
 
@@ -2401,7 +2401,7 @@ Closes #12
 
 ### 15.1 品牌配色方案
 
-基于 RayShape Logo 提取的配色方案：
+基于 Logo 提取的配色方案：
 
 | 色彩角色 | 色值 | 用途 |
 |----------|------|------|
