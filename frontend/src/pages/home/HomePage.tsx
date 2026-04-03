@@ -986,10 +986,10 @@ const HomePage: React.FC = () => {
           CodeMind
         </div>
         <p style={{ fontSize: 14, color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)', margin: 0 }}>
-          度影智能编码服务 v0.3.0
+          CodeMind v0.3.0
         </p>
         <p style={{ fontSize: 13, color: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.35)', marginTop: 8 }}>
-          © {new Date().getFullYear()} RayShape. All Rights Reserved.
+          © {new Date().getFullYear()} CodeMind. All Rights Reserved.
         </p>
       </footer>
 
