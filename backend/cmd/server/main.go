@@ -71,7 +71,7 @@ func main() {
 	logger.Info("数据库连接成功")
 
 	// 自动迁移：确保新增字段和表结构存在，对已有表只做增量变更不删除数据
-	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}, &monitor.SystemMetric{}, &monitor.LLMNodeMetric{}, &model.Document{}); err != nil {
+	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}, &monitor.SystemMetric{}, &monitor.LLMNodeMetric{}, &model.Document{}, &model.LLMTrainingData{}); err != nil {
 		logger.Warn("AutoMigrate 失败", zap.Error(err))
 	}
 	// 修复旧数据：为 period_hours=0 的限额记录补充正确的周期小时数
