@@ -2764,6 +2764,53 @@ func (s *RepositoryTestSuite) TestUserRepository_SoftDelete() {
 	assert.True(s.T(), found.DeletedAt.Valid)
 }
 
+func (s *RepositoryTestSuite) TestUserRepository_RecreateAfterDelete() {
+	repo := NewUserRepository(s.db)
+
+	// 创建用户
+	user1 := &model.User{
+		Username:     "recreate",
+		PasswordHash: "hash1",
+		DisplayName:  "User 1",
+		Role:         model.RoleUser,
+		Status:       model.StatusEnabled,
+	}
+	err := repo.Create(user1)
+	assert.NoError(s.T(), err)
+	id1 := user1.ID
+
+	// 软删除用户
+	err = repo.Delete(id1)
+	assert.NoError(s.T(), err)
+
+	// 验证已软删除
+	exists, _ := repo.ExistsUsername("recreate")
+	assert.False(s.T(), exists)
+	existsDeleted, _ := repo.ExistsUsernameIncludingDeleted("recreate")
+	assert.True(s.T(), existsDeleted)
+
+	// 硬删除已软删除的用户（释放用户名）
+	err = repo.HardDeleteSoftDeletedUser("recreate")
+	assert.NoError(s.T(), err)
+
+	// 验证已彻底删除
+	existsDeleted, _ = repo.ExistsUsernameIncludingDeleted("recreate")
+	assert.False(s.T(), existsDeleted)
+
+	// 可以重新创建同名用户
+	user2 := &model.User{
+		Username:     "recreate",
+		PasswordHash: "hash2",
+		DisplayName:  "User 2",
+		Role:         model.RoleUser,
+		Status:       model.StatusEnabled,
+	}
+	err = repo.Create(user2)
+	assert.NoError(s.T(), err)
+	assert.NotZero(s.T(), user2.ID)
+	assert.NotEqual(s.T(), id1, user2.ID) // 新用户应该有不同ID
+}
+
 func (s *RepositoryTestSuite) TestDepartmentRepository_DeleteAndVerify() {
 	repo := NewDepartmentRepository(s.db)
 

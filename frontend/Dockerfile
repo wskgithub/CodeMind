@@ -22,10 +22,7 @@ RUN npm run build
 # ──────────────────────────────────
 FROM nginx:1.27-alpine
 
-# 复制 Nginx 配置
-COPY --from=builder /build/../deploy/docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
-
-# 复制构建产物
+# Nginx 配置通过 docker-compose volumes 注入，不在镜像中硬编码
 COPY --from=builder /build/dist /usr/share/nginx/html
 
 EXPOSE 80

@@ -374,7 +374,11 @@ const DashboardLayout: React.FC = () => {
               />
             </Tooltip>
             
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <Dropdown
+              menu={{ items: userMenuItems, style: { borderRadius: 0 } }}
+              placement="bottomRight"
+              overlayInnerStyle={{ padding: '8px 12px', borderRadius: 0 }}
+            >
               <div
                 style={{
                   display: 'flex',

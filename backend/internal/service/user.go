@@ -58,6 +58,18 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 		return nil, errcode.ErrUsernameExists
 	}
 
+	// 检查是否有已软删除的同名用户，如果有则硬删除以释放用户名
+	existsIncludingDeleted, err := s.userRepo.ExistsUsernameIncludingDeleted(req.Username)
+	if err != nil {
+		return nil, errcode.ErrDatabase
+	}
+	if existsIncludingDeleted {
+		if err := s.userRepo.HardDeleteSoftDeletedUser(req.Username); err != nil {
+			s.logger.Error("硬删除已软删除用户失败", zap.Error(err), zap.String("username", req.Username))
+			return nil, errcode.ErrDatabase
+		}
+	}
+
 	// 检查邮箱是否已存在
 	if req.Email != "" {
 		emailExists, err := s.userRepo.ExistsEmail(req.Email)
@@ -66,6 +78,18 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 		}
 		if emailExists {
 			return nil, errcode.ErrEmailExists
+		}
+
+		// 检查是否有已软删除的相同邮箱用户，如果有则硬删除以释放邮箱
+		emailExistsIncludingDeleted, err := s.userRepo.ExistsEmailIncludingDeleted(req.Email)
+		if err != nil {
+			return nil, errcode.ErrDatabase
+		}
+		if emailExistsIncludingDeleted {
+			if err := s.userRepo.HardDeleteSoftDeletedUserByEmail(req.Email); err != nil {
+				s.logger.Error("硬删除已软删除用户失败", zap.Error(err), zap.String("email", req.Email))
+				return nil, errcode.ErrDatabase
+			}
 		}
 	}
 

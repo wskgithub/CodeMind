@@ -244,6 +244,13 @@ const DocsPage: React.FC = () => {
               )}
             </div>
 
+            <Alert
+              message="当前技术预览阶段，经测试 Roo Code 具有最佳兼容性，请优先使用 Roo Code 接入平台"
+              type="warning"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+
             {error && (
               <Alert
                 message="错误"

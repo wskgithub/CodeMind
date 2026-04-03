@@ -138,14 +138,26 @@ func (r *UserRepository) CountAll() (int64, error) {
 	return count, err
 }
 
-// ExistsUsername 检查用户名是否已存在
+// ExistsUsername 检查用户名是否已存在（排除软删除）
 func (r *UserRepository) ExistsUsername(username string) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.User{}).Where("username = ?", username).Count(&count).Error
 	return count > 0, err
 }
 
-// ExistsEmail 检查邮箱是否已存在
+// ExistsUsernameIncludingDeleted 检查用户名是否已存在（包含软删除）
+func (r *UserRepository) ExistsUsernameIncludingDeleted(username string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.User{}).Unscoped().Where("username = ?", username).Count(&count).Error
+	return count > 0, err
+}
+
+// HardDeleteSoftDeletedUser 硬删除已软删除的同名用户
+func (r *UserRepository) HardDeleteSoftDeletedUser(username string) error {
+	return r.db.Unscoped().Where("username = ? AND deleted_at IS NOT NULL", username).Delete(&model.User{}).Error
+}
+
+// ExistsEmail 检查邮箱是否已存在（排除软删除）
 func (r *UserRepository) ExistsEmail(email string, excludeUserID ...int64) (bool, error) {
 	var count int64
 	query := r.db.Model(&model.User{}).Where("email = ?", email)
@@ -154,6 +166,18 @@ func (r *UserRepository) ExistsEmail(email string, excludeUserID ...int64) (bool
 	}
 	err := query.Count(&count).Error
 	return count > 0, err
+}
+
+// ExistsEmailIncludingDeleted 检查邮箱是否已存在（包含软删除）
+func (r *UserRepository) ExistsEmailIncludingDeleted(email string) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.User{}).Unscoped().Where("email = ?", email).Count(&count).Error
+	return count > 0, err
+}
+
+// HardDeleteSoftDeletedUserByEmail 硬删除已软删除的相同邮箱用户
+func (r *UserRepository) HardDeleteSoftDeletedUserByEmail(email string) error {
+	return r.db.Unscoped().Where("email = ? AND deleted_at IS NOT NULL", email).Delete(&model.User{}).Error
 }
 
 // IncrementLoginFailCount 增加登录失败次数并返回更新后的用户
