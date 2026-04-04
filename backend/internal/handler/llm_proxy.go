@@ -931,16 +931,12 @@ func (h *LLMProxyHandler) handleLLMError(
 	if llmErr, ok := err.(*llm.LLMError); ok {
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
-		if len(llmErr.Body) > 0 {
-			c.Data(statusCode, "application/json", llmErr.Body)
-			go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
-			return
-		}
 	} else {
 		statusCode = http.StatusBadGateway
 		errMsg = "LLM 服务不可用"
 	}
 
+	// 不透传上游原始错误体，统一返回标准格式，避免泄露后端实现细节
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
 	h.sendOpenAIError(c, statusCode, "server_error", errMsg)
 }
@@ -958,16 +954,6 @@ func (h *LLMProxyHandler) handleLLMErrorAnthropic(
 	if llmErr, ok := err.(*llm.LLMError); ok {
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
-		if len(llmErr.Body) > 0 {
-			var anthropicErr llm.AnthropicErrorResponse
-			if json.Unmarshal(llmErr.Body, &anthropicErr) == nil {
-				c.JSON(statusCode, anthropicErr)
-			} else {
-				c.Data(statusCode, "application/json", llmErr.Body)
-			}
-			go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
-			return
-		}
 	} else {
 		statusCode = http.StatusBadGateway
 		errMsg = "LLM 服务不可用"
@@ -990,11 +976,6 @@ func (h *LLMProxyHandler) handleLLMErrorResponses(
 	if llmErr, ok := err.(*llm.LLMError); ok {
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
-		if len(llmErr.Body) > 0 {
-			c.Data(statusCode, "application/json", llmErr.Body)
-			go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
-			return
-		}
 	} else {
 		statusCode = http.StatusBadGateway
 		errMsg = "LLM 服务不可用"

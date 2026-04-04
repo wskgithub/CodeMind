@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"strconv"
 
 	"codemind/internal/middleware"
@@ -101,13 +100,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	// 使用 context.Background() 避免请求取消导致黑名单写入失败
 	if err := h.authService.Logout(claims); err != nil {
-		_ = err // 登出失败不阻塞，Token 会自然过期
+		response.InternalError(c)
+		return
 	}
-
-	// 避免 lint 报告 context 未使用
-	_ = context.Background()
 
 	response.Success(c, nil)
 }
@@ -168,7 +164,8 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.ChangePassword(userID, &req, c.ClientIP()); err != nil {
+	claims := middleware.GetClaims(c)
+	if err := h.authService.ChangePassword(userID, &req, claims, c.ClientIP()); err != nil {
 		if e, ok := err.(*errcode.ErrCode); ok {
 			response.Error(c, e)
 			return

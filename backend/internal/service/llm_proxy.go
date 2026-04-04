@@ -105,8 +105,9 @@ func (s *LLMProxyService) AcquireConcurrency(ctx context.Context, userID int64, 
 	key := fmt.Sprintf("codemind:concurrency:%d", userID)
 	current, err := s.rdb.Incr(ctx, key).Result()
 	if err != nil {
-		s.logger.Error("Redis INCR 失败", zap.Error(err))
-		return true, nil
+		// 安全策略：Redis 故障时拒绝请求（fail-closed），防止绕过并发限制
+		s.logger.Error("Redis INCR 失败，拒绝请求", zap.Error(err))
+		return false, fmt.Errorf("并发控制服务暂不可用")
 	}
 
 	s.rdb.Expire(ctx, key, 5*time.Minute)

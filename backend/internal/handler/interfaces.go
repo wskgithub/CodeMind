@@ -24,7 +24,7 @@ type AuthService interface {
 	Logout(claims *jwtPkg.Claims) error
 	GetProfile(userID int64) (*dto.UserDetail, error)
 	UpdateProfile(userID int64, req *dto.UpdateProfileRequest) error
-	ChangePassword(userID int64, req *dto.ChangePasswordRequest, clientIP string) error
+	ChangePassword(userID int64, req *dto.ChangePasswordRequest, claims *jwtPkg.Claims, clientIP string) error
 	GetLoginLockStatusByUsername(username string) (*dto.LoginLockStatusResponse, error)
 }
 

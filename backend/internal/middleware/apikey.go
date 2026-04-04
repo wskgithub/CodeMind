@@ -60,23 +60,6 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerF
 		// 从 Header 提取 API Key（兼容 OpenAI 和 Anthropic 两种认证方式）
 		apiKey := extractAPIKey(c)
 		
-		// 调试日志：记录收到的请求头（生产环境应移除）
-		if logger != nil {
-			authHeader := c.GetHeader("Authorization")
-			xApiKey := c.GetHeader("x-api-key")
-			logger.Debug("API Key 认证请求",
-				zap.String("path", c.Request.URL.Path),
-				zap.String("authorization_header", authHeader),
-				zap.String("x_api_key_header", xApiKey),
-				zap.String("extracted_key_prefix", func() string {
-					if len(apiKey) > 10 {
-						return apiKey[:10] + "..."
-					}
-					return apiKey
-				}()),
-			)
-		}
-		
 		if apiKey == "" || !strings.HasPrefix(apiKey, "cm-") {
 			if logger != nil {
 				logger.Warn("API Key 格式无效",

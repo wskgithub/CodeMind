@@ -15,12 +15,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // ==================== Test Helpers ====================
+
+// testJWTSecret 路由测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+const testJWTSecret = "test-secret-key-for-unit-testing-minimum-32-chars"
 
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -46,7 +50,8 @@ func setupTestGin() *gin.Engine {
 func setupTestRouter(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Client, *gorm.DB, *jwt.Manager) {
 	db := setupTestDB(t)
 	mr, rdb := setupTestRedis(t)
-	jwtManager := jwt.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	logger := zaptest.NewLogger(t)
 
 	// 创建必要的表用于 API Key 认证测试
@@ -70,7 +75,8 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Cl
 	// 使用空的 handlers 结构体测试路由注册和中间件
 	// 注意：这会导致 handler 路由返回 500，但可以用来验证路由存在和中间件
 	handlers := &Handlers{} // 空 handlers
-	Setup(engine, handlers, jwtManager, db, rdb, logger)
+	// corsOrigins 为 nil 时 CORS 为 AllowAllOrigins，响应头 Access-Control-Allow-Origin 为 *
+	Setup(engine, handlers, jwtManager, db, rdb, logger, nil)
 
 	return engine, mr, rdb, db, jwtManager
 }
@@ -78,7 +84,8 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Cl
 func setupTestRouterWithMonitor(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Client, *gorm.DB, *jwt.Manager) {
 	db := setupTestDB(t)
 	mr, rdb := setupTestRedis(t)
-	jwtManager := jwt.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	logger := zaptest.NewLogger(t)
 
 	db.Exec(`CREATE TABLE api_keys (
@@ -100,7 +107,7 @@ func setupTestRouterWithMonitor(t *testing.T) (*gin.Engine, *miniredis.Miniredis
 	engine := setupTestGin()
 	// 使用空的 handlers 结构体，但 Monitor 为 nil
 	handlers := &Handlers{}
-	Setup(engine, handlers, jwtManager, db, rdb, logger)
+	Setup(engine, handlers, jwtManager, db, rdb, logger, nil)
 
 	return engine, mr, rdb, db, jwtManager
 }

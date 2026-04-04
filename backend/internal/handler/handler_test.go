@@ -53,8 +53,8 @@ func (m *MockAuthService) UpdateProfile(userID int64, req *dto.UpdateProfileRequ
 	return args.Error(0)
 }
 
-func (m *MockAuthService) ChangePassword(userID int64, req *dto.ChangePasswordRequest, clientIP string) error {
-	args := m.Called(userID, req, clientIP)
+func (m *MockAuthService) ChangePassword(userID int64, req *dto.ChangePasswordRequest, claims *jwtPkg.Claims, clientIP string) error {
+	args := m.Called(userID, req, claims, clientIP)
 	return args.Error(0)
 }
 
@@ -585,7 +585,7 @@ func TestAuthHandler_ChangePassword_Success(t *testing.T) {
 	_, mockAuthService, _, _, _, _, _ := setupTest()
 	handler := NewAuthHandler(mockAuthService)
 
-	mockAuthService.On("ChangePassword", int64(1), mock.AnythingOfType("*dto.ChangePasswordRequest"), mock.Anything).Return(nil)
+	mockAuthService.On("ChangePassword", int64(1), mock.AnythingOfType("*dto.ChangePasswordRequest"), mock.Anything, mock.Anything).Return(nil)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -627,7 +627,7 @@ func TestAuthHandler_ChangePassword_WrongOldPassword(t *testing.T) {
 	_, mockAuthService, _, _, _, _, _ := setupTest()
 	handler := NewAuthHandler(mockAuthService)
 
-	mockAuthService.On("ChangePassword", int64(1), mock.AnythingOfType("*dto.ChangePasswordRequest"), mock.Anything).Return(errcode.ErrOldPasswordWrong)
+	mockAuthService.On("ChangePassword", int64(1), mock.AnythingOfType("*dto.ChangePasswordRequest"), mock.Anything, mock.Anything).Return(errcode.ErrOldPasswordWrong)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

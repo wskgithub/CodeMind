@@ -46,10 +46,10 @@ func JWTAuth(jwtManager *jwtPkg.Manager) gin.HandlerFunc {
 			return
 		}
 
-		// 解析 Token
+		// 解析 Token（错误详情不暴露给客户端，仅返回统一错误码）
 		claims, err := jwtManager.ParseToken(tokenString)
 		if err != nil {
-			response.Error(c, errcode.ErrTokenInvalid.WithMessage(err.Error()))
+			response.Error(c, errcode.ErrTokenInvalid)
 			c.Abort()
 			return
 		}

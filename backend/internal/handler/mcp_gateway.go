@@ -112,8 +112,8 @@ func (h *MCPGatewayHandler) HandleMessage(c *gin.Context) {
 	// 处理请求
 	resp, err := h.handleMCPRequest(c, &request)
 	if err != nil {
-		errResp := mcpPkg.NewErrorResponse(request.ID, mcpPkg.ErrCodeInternalError, err.Error())
-		// 通过 SSE 通道返回响应
+		h.logger.Error("MCP 请求处理失败", zap.Error(err), zap.String("method", request.Method))
+		errResp := mcpPkg.NewErrorResponse(request.ID, mcpPkg.ErrCodeInternalError, "内部处理错误")
 		_ = session.SendMessage(errResp)
 		c.Status(http.StatusAccepted)
 		return
@@ -153,7 +153,8 @@ func (h *MCPGatewayHandler) HandleStreamableHTTP(c *gin.Context) {
 
 	resp, err := h.handleMCPRequest(c, &request)
 	if err != nil {
-		errResp := mcpPkg.NewErrorResponse(request.ID, mcpPkg.ErrCodeInternalError, err.Error())
+		h.logger.Error("MCP Streamable HTTP 请求处理失败", zap.Error(err), zap.String("method", request.Method))
+		errResp := mcpPkg.NewErrorResponse(request.ID, mcpPkg.ErrCodeInternalError, "内部处理错误")
 		c.JSON(http.StatusOK, errResp)
 		return
 	}

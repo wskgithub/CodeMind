@@ -61,12 +61,16 @@ type LoginResult struct {
 	FailCount     int
 }
 
+// dummyPasswordHash 用于用户不存在时执行等耗时的 bcrypt 比较，防止时序侧信道枚举用户名
+var dummyPasswordHash, _ = crypto.HashPassword("codemind-timing-safe-dummy")
+
 // Login 用户登录
 func (s *AuthService) Login(req *dto.LoginRequest, clientIP string) (*dto.LoginResponse, error) {
 	// 1. 查找用户
 	user, err := s.userRepo.FindByUsername(req.Username)
 	if err != nil {
-		// 用户名不存在，返回通用错误（不暴露用户名是否存在）
+		// 用户不存在时也执行一次 bcrypt 比较，消除与「密码错误」之间的时序差异
+		crypto.CheckPassword(req.Password, dummyPasswordHash)
 		return nil, errcode.ErrInvalidCredentials
 	}
 
@@ -301,7 +305,8 @@ func (s *AuthService) UpdateProfile(userID int64, req *dto.UpdateProfileRequest)
 }
 
 // ChangePassword 修改密码
-func (s *AuthService) ChangePassword(userID int64, req *dto.ChangePasswordRequest, clientIP string) error {
+// claims 为当前会话的 JWT 声明，改密成功后将该 Token 加入黑名单以强制重新登录
+func (s *AuthService) ChangePassword(userID int64, req *dto.ChangePasswordRequest, claims *jwtPkg.Claims, clientIP string) error {
 	// 验证新密码强度
 	if ok, msg := validator.ValidatePassword(req.NewPassword); !ok {
 		return errcode.ErrInvalidParams.WithMessage(msg)
@@ -330,6 +335,13 @@ func (s *AuthService) ChangePassword(userID int64, req *dto.ChangePasswordReques
 		"password_hash": hash,
 	}); err != nil {
 		return errcode.ErrDatabase
+	}
+
+	// 将当前 Token 加入黑名单，强制用户使用新密码重新登录
+	if claims != nil {
+		if err := s.jwtManager.Blacklist(context.Background(), claims.ID, claims.ExpiresAt.Time); err != nil {
+			s.logger.Error("改密后将 Token 加入黑名单失败", zap.Error(err))
+		}
 	}
 
 	// 记录审计日志

@@ -38,12 +38,13 @@ func Setup(
 	db *gorm.DB,
 	rdb *redis.Client,
 	logger *zap.Logger,
+	corsOrigins []string,
 ) {
 	// ──────────────────────────────────
 	// 全局中间件
 	// ──────────────────────────────────
 	engine.Use(middleware.Recovery(logger))
-	engine.Use(middleware.CORS())
+	engine.Use(middleware.CORS(corsOrigins))
 	engine.Use(middleware.Logger(logger))
 	
 	// 请求性能监控中间件（如果提供了 Monitor Handler）

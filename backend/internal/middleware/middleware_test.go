@@ -20,11 +20,15 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+const testJWTSecret = "01234567890123456789012345678901"
 
 // setupTestRedis 创建测试用的 Redis 实例
 func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
@@ -63,7 +67,7 @@ func (m *MockMonitorStats) RecordRequestMetrics(statusCode int, responseTimeMs f
 
 func TestCORS(t *testing.T) {
 	router := setupTestGin()
-	router.Use(CORS())
+	router.Use(CORS(nil)) // nil 表示允许所有来源（与生产未配置白名单时行为一致）
 	router.GET("/test", func(c *gin.Context) {
 		c.String(200, "OK")
 	})
@@ -228,7 +232,8 @@ func TestJWTAuth(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	jwtManager := jwt.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	router := setupTestGin()
 	router.Use(JWTAuth(jwtManager))
 	router.GET("/protected", func(c *gin.Context) {
@@ -1158,7 +1163,8 @@ func TestJWTAuthExpiredToken(t *testing.T) {
 	defer mr.Close()
 
 	// 创建 JWT Manager，设置很短的过期时间
-	jwtManager := jwt.NewManager("test-secret", 0, rdb) // 0 小时过期
+	jwtManager, err := jwt.NewManager(testJWTSecret, 0, rdb) // 0 小时过期
+	require.NoError(t, err)
 	router := setupTestGin()
 	router.Use(JWTAuth(jwtManager))
 	router.GET("/protected", func(c *gin.Context) {
@@ -1185,7 +1191,8 @@ func TestJWTAuthMultipleSpaces(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	jwtManager := jwt.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	router := setupTestGin()
 	router.Use(JWTAuth(jwtManager))
 	router.GET("/protected", func(c *gin.Context) {
@@ -1266,7 +1273,8 @@ func TestMiddlewareChain(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	jwtManager := jwt.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 
 	// 创建一个完整的中间件链
 	router := setupTestGin()

@@ -18,10 +18,14 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+const testJWTSecret = "01234567890123456789012345678901"
 
 // ==================== Mock Repository Types ====================
 
@@ -471,7 +475,8 @@ func TestAuthService_Login_Success(t *testing.T) {
 	defer mr.Close()
 	
 	rdb := setupRedisClient(mr)
-	jwtManager := jwtPkg.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	
 	// Create auth service with mocked dependencies
 	// We need to use the actual repository types, so we'll need to adapt our approach
@@ -586,7 +591,8 @@ func TestAuthService_WithSQLite(t *testing.T) {
 	rdb := setupRedisClient(mr)
 	
 	// Setup JWT manager
-	jwtManager := jwtPkg.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	logger := setupLogger()
 	
 	// Create service
@@ -895,8 +901,12 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
 	
+	mr := setupMiniredis(t)
+	defer mr.Close()
+	rdb := setupRedisClient(mr)
+	
 	// Create service
-	keyService := NewAPIKeyService(keyRepo, auditRepo, logger)
+	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger)
 	
 	// Test create API key
 	t.Run("Create_Success", func(t *testing.T) {
@@ -1214,7 +1224,8 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	jwtManager := jwtPkg.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	logger := setupLogger()
 	
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
@@ -1305,7 +1316,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			OldPassword: "WrongOldPass123",
 			NewPassword: "NewPass123",
 		}
-		err := authService.ChangePassword(user.ID, req, "127.0.0.1")
+		err := authService.ChangePassword(user.ID, req, nil, "127.0.0.1")
 		assert.Equal(t, errcode.ErrOldPasswordWrong, err)
 	})
 	
@@ -1325,7 +1336,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			OldPassword: "TestPass123",
 			NewPassword: "weak",
 		}
-		err := authService.ChangePassword(user.ID, req, "127.0.0.1")
+		err := authService.ChangePassword(user.ID, req, nil, "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
 	
@@ -1945,7 +1956,8 @@ func TestCalculateLockDuration(t *testing.T) {
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	jwtManager := jwtPkg.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	logger := setupLogger()
 	
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
@@ -2000,7 +2012,8 @@ func TestLoginLockStatus(t *testing.T) {
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	jwtManager := jwtPkg.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
+	require.NoError(t, err)
 	logger := setupLogger()
 	
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
@@ -2058,7 +2071,11 @@ func TestAPIKeyLimit(t *testing.T) {
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
 	
-	keyService := NewAPIKeyService(keyRepo, auditRepo, logger)
+	mr := setupMiniredis(t)
+	defer mr.Close()
+	rdb := setupRedisClient(mr)
+	
+	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger)
 	
 	// Note: This test assumes config.Get() returns a valid config
 	// In a real scenario, you'd need to initialize the config properly
@@ -2367,11 +2384,17 @@ func BenchmarkLogin(b *testing.B) {
 	userRepo := repository.NewUserRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	
-	mr := miniredis.RunT(&testing.T{})
+	mr, err := miniredis.Run()
+	if err != nil {
+		b.Fatal(err)
+	}
 	defer mr.Close()
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	
-	jwtManager := jwtPkg.NewManager("test-secret", 24, rdb)
+	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
+	if err != nil {
+		b.Fatal(err)
+	}
 	logger, _ := zap.NewDevelopment()
 	
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)

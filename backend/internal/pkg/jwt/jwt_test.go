@@ -13,30 +13,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// testJWTSecret 单元测试用 JWT 密钥（至少 32 字符，满足 NewManager 校验）
+const testJWTSecret = "test-secret-key-for-unit-testing-minimum-32-chars"
+
 // setupTestManager 创建测试用的 JWT Manager 和 miniredis
 func setupTestManager(t *testing.T, expireHours int) (*Manager, *miniredis.Miniredis) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{
 		Addr: mr.Addr(),
 	})
-	manager := NewManager("test-secret-key", expireHours, rdb)
+	manager, err := NewManager(testJWTSecret, expireHours, rdb)
+	require.NoError(t, err)
 	return manager, mr
 }
 
 func TestNewManager(t *testing.T) {
-	mr := miniredis.RunT(t)
-	defer mr.Close()
+	t.Run("合法密钥创建成功", func(t *testing.T) {
+		mr := miniredis.RunT(t)
+		defer mr.Close()
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mr.Addr(),
+		rdb := redis.NewClient(&redis.Options{
+			Addr: mr.Addr(),
+		})
+
+		manager, err := NewManager(testJWTSecret, 24, rdb)
+
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+		assert.Equal(t, []byte(testJWTSecret), manager.secret)
+		assert.Equal(t, 24, manager.expireHours)
+		assert.Equal(t, rdb, manager.rdb)
 	})
 
-	manager := NewManager("my-secret", 24, rdb)
+	t.Run("短密钥被拒绝", func(t *testing.T) {
+		mr := miniredis.RunT(t)
+		defer mr.Close()
 
-	assert.NotNil(t, manager)
-	assert.Equal(t, []byte("my-secret"), manager.secret)
-	assert.Equal(t, 24, manager.expireHours)
-	assert.Equal(t, rdb, manager.rdb)
+		rdb := redis.NewClient(&redis.Options{
+			Addr: mr.Addr(),
+		})
+
+		manager, err := NewManager("my-secret", 24, rdb)
+
+		assert.Error(t, err)
+		assert.Nil(t, manager)
+	})
 }
 
 func TestGenerateToken(t *testing.T) {
@@ -327,9 +348,9 @@ func TestIsBlacklisted_RedisError(t *testing.T) {
 	// 关闭 Redis 连接以模拟错误
 	mr.Close()
 
-	// Redis 错误时不阻塞，降级放行
+	// Redis 错误时 fail-closed，拒绝放行
 	result := manager.IsBlacklisted(context.Background(), "any-token")
-	assert.False(t, result)
+	assert.True(t, result)
 }
 
 func TestIntegration_FullLifecycle(t *testing.T) {
@@ -401,7 +422,10 @@ func BenchmarkGenerateToken(b *testing.B) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: mr.Addr(),
 	})
-	manager := NewManager("test-secret-key", 24, rdb)
+	manager, err := NewManager(testJWTSecret, 24, rdb)
+	if err != nil {
+		b.Fatal(err)
+	}
 	deptID := int64(100)
 
 	b.ResetTimer()
@@ -420,7 +444,10 @@ func BenchmarkParseToken(b *testing.B) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: mr.Addr(),
 	})
-	manager := NewManager("test-secret-key", 24, rdb)
+	manager, err := NewManager(testJWTSecret, 24, rdb)
+	if err != nil {
+		b.Fatal(err)
+	}
 	deptID := int64(100)
 
 	tokenString, _, err := manager.GenerateToken(1, "admin", "admin", &deptID)

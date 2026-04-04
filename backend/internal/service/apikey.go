@@ -1,7 +1,9 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 
 	"codemind/internal/config"
 	"codemind/internal/model"
@@ -10,6 +12,7 @@ import (
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
 
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -17,6 +20,7 @@ import (
 type APIKeyService struct {
 	keyRepo   *repository.APIKeyRepository
 	auditRepo *repository.AuditRepository
+	rdb       *redis.Client
 	logger    *zap.Logger
 }
 
@@ -24,11 +28,13 @@ type APIKeyService struct {
 func NewAPIKeyService(
 	keyRepo *repository.APIKeyRepository,
 	auditRepo *repository.AuditRepository,
+	rdb *redis.Client,
 	logger *zap.Logger,
 ) *APIKeyService {
 	return &APIKeyService{
 		keyRepo:   keyRepo,
 		auditRepo: auditRepo,
+		rdb:       rdb,
 		logger:    logger,
 	}
 }
@@ -124,6 +130,9 @@ func (s *APIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64
 		return errcode.ErrDatabase
 	}
 
+	// 清除 Redis 中该 Key 的认证缓存，确保状态变更立即生效
+	s.invalidateKeyCache(key.KeyHash)
+
 	action := model.AuditActionEnableKey
 	if status == model.StatusDisabled {
 		action = model.AuditActionDisableKey
@@ -149,10 +158,24 @@ func (s *APIKeyService) Delete(keyID int64, operatorID int64, operatorRole strin
 		return errcode.ErrDatabase
 	}
 
+	// 清除 Redis 中该 Key 的认证缓存
+	s.invalidateKeyCache(key.KeyHash)
+
 	s.recordAudit(operatorID, model.AuditActionDeleteKey, model.AuditTargetAPIKey, &keyID,
 		map[string]string{"name": key.Name, "prefix": key.KeyPrefix}, clientIP)
 
 	return nil
+}
+
+// invalidateKeyCache 清除 Redis 中指定 API Key 的认证缓存
+func (s *APIKeyService) invalidateKeyCache(keyHash string) {
+	if s.rdb == nil || keyHash == "" {
+		return
+	}
+	cacheKey := fmt.Sprintf("codemind:apikey:%s", keyHash)
+	if err := s.rdb.Del(context.Background(), cacheKey).Err(); err != nil {
+		s.logger.Error("清除 API Key 缓存失败", zap.String("key_hash_prefix", keyHash[:16]+"..."), zap.Error(err))
+	}
 }
 
 // recordAudit 记录审计日志

@@ -23,9 +23,10 @@ type Config struct {
 
 // ServerConfig HTTP 服务器配置
 type ServerConfig struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-	Mode string `mapstructure:"mode"` // debug | release | test
+	Host           string   `mapstructure:"host"`
+	Port           int      `mapstructure:"port"`
+	Mode           string   `mapstructure:"mode"` // debug | release | production | test
+	CORSOrigins    []string `mapstructure:"cors_origins"`
 }
 
 // DatabaseConfig 数据库配置
@@ -35,6 +36,7 @@ type DatabaseConfig struct {
 	Name               string `mapstructure:"name"`
 	User               string `mapstructure:"user"`
 	Password           string `mapstructure:"password"`
+	SSLMode            string `mapstructure:"sslmode"`
 	MaxOpenConns       int    `mapstructure:"max_open_conns"`
 	MaxIdleConns       int    `mapstructure:"max_idle_conns"`
 	ConnMaxLifetimeMin int    `mapstructure:"conn_max_lifetime_minutes"`
@@ -42,9 +44,13 @@ type DatabaseConfig struct {
 
 // DSN 返回 PostgreSQL 连接字符串
 func (d *DatabaseConfig) DSN() string {
+	sslmode := d.SSLMode
+	if sslmode == "" {
+		sslmode = "disable"
+	}
 	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable TimeZone=Asia/Shanghai",
-		d.Host, d.Port, d.User, d.Password, d.Name,
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=Asia/Shanghai",
+		d.Host, d.Port, d.User, d.Password, d.Name, sslmode,
 	)
 }
 
@@ -243,6 +249,7 @@ func bindEnvVars(v *viper.Viper) {
 		"database.name":     "DB_NAME",
 		"database.user":     "DB_USER",
 		"database.password": "DB_PASSWORD",
+		"database.sslmode":  "DB_SSLMODE",
 		"redis.host":        "REDIS_HOST",
 		"redis.port":        "REDIS_PORT",
 		"redis.password":    "REDIS_PASSWORD",

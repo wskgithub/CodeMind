@@ -89,7 +89,10 @@ func main() {
 	// ──────────────────────────────────
 	// 5. 初始化基础设施
 	// ──────────────────────────────────
-	jwtManager := jwtPkg.NewManager(cfg.JWT.Secret, cfg.JWT.ExpireHours, rdb)
+	jwtManager, err := jwtPkg.NewManager(cfg.JWT.Secret, cfg.JWT.ExpireHours, rdb)
+	if err != nil {
+		logger.Fatal("JWT 管理器初始化失败", zap.Error(err))
+	}
 
 	// LLM Provider 管理器（支持多 Provider 和模型路由）
 	providerManager := initProviderManager(cfg, logger)
@@ -122,7 +125,7 @@ func main() {
 	authService := service.NewAuthService(userRepo, auditRepo, jwtManager, logger)
 	userService := service.NewUserService(userRepo, deptRepo, auditRepo, logger)
 	deptService := service.NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
-	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, logger)
+	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, rdb, logger)
 	limitService := service.NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
 	trainingDataBuffer := service.NewTrainingDataBuffer(trainingDataRepo, logger)
 	trainingDataArchiver := service.NewTrainingDataArchiver(trainingDataRepo, logger, "")
@@ -163,12 +166,15 @@ func main() {
 	// ──────────────────────────────────
 	// 10. 初始化 HTTP 引擎
 	// ──────────────────────────────────
-	if cfg.Server.Mode == "release" {
+	switch cfg.Server.Mode {
+	case "release", "production":
 		gin.SetMode(gin.ReleaseMode)
+	case "test":
+		gin.SetMode(gin.TestMode)
 	}
 
 	engine := gin.New()
-	router.Setup(engine, handlers, jwtManager, db, rdb, logger)
+	router.Setup(engine, handlers, jwtManager, db, rdb, logger, cfg.Server.CORSOrigins)
 
 	// ──────────────────────────────────
 	// 11. 启动 HTTP 服务（优雅关停）
@@ -220,6 +226,8 @@ func initDatabase(cfg *config.Config, logger *zap.Logger) (*gorm.DB, error) {
 	switch cfg.Server.Mode {
 	case "debug":
 		logLevel = gormLogger.Info
+	case "release", "production":
+		logLevel = gormLogger.Error
 	default:
 		logLevel = gormLogger.Warn
 	}
@@ -279,7 +287,7 @@ func initProviderManager(cfg *config.Config, logger *zap.Logger) *llm.ProviderMa
 		logger.Info("模型路由规则已加载", zap.Int("rules", len(cfg.LLM.ModelRouting)))
 	}
 
-	logger.Info(manager.DebugRoutes())
+	logger.Debug(manager.DebugRoutes())
 	return manager
 }
 

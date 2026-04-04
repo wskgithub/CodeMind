@@ -10,6 +10,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const minSecretLength = 32
+
 // Claims 自定义 JWT 声明
 type Claims struct {
 	UserID       int64  `json:"user_id"`
@@ -26,13 +28,16 @@ type Manager struct {
 	rdb         *redis.Client
 }
 
-// NewManager 创建 JWT 管理器
-func NewManager(secret string, expireHours int, rdb *redis.Client) *Manager {
+// NewManager 创建 JWT 管理器，密钥长度不足时返回错误以阻止服务启动
+func NewManager(secret string, expireHours int, rdb *redis.Client) (*Manager, error) {
+	if len(secret) < minSecretLength {
+		return nil, fmt.Errorf("JWT 密钥长度不足：至少需要 %d 个字符，当前 %d 个", minSecretLength, len(secret))
+	}
 	return &Manager{
 		secret:      []byte(secret),
 		expireHours: expireHours,
 		rdb:         rdb,
-	}
+	}, nil
 }
 
 // GenerateToken 生成 JWT Token
@@ -66,7 +71,8 @@ func (m *Manager) GenerateToken(userID int64, username, role string, deptID *int
 // ParseToken 解析并验证 JWT Token
 func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		// 严格钉死 HS256，拒绝其他 HMAC 变体（如 HS384/HS512）
+		if token.Method != jwt.SigningMethodHS256 {
 			return nil, fmt.Errorf("非预期的签名算法: %v", token.Header["alg"])
 		}
 		return m.secret, nil
@@ -102,11 +108,12 @@ func (m *Manager) Blacklist(ctx context.Context, jti string, expiration time.Tim
 }
 
 // IsBlacklisted 检查 Token 是否在黑名单中
+// 安全策略：Redis 故障时拒绝访问（fail-closed），防止已注销 Token 被继续使用
 func (m *Manager) IsBlacklisted(ctx context.Context, jti string) bool {
 	key := fmt.Sprintf("codemind:jwt:blacklist:%s", jti)
 	result, err := m.rdb.Exists(ctx, key).Result()
 	if err != nil {
-		return false // Redis 错误时不阻塞，降级放行
+		return true
 	}
 	return result > 0
 }
