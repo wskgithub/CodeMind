@@ -118,7 +118,7 @@ const StarfieldCanvas: React.FC = () => {
     window.addEventListener('resize', resize);
 
     const count = Math.min(Math.floor((window.innerWidth * window.innerHeight) / 8000), 150);
-    const particles: { x: number; y: number; vx: number; vy: number; r: number; a: number; pulse: number }[] = [];
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; a: number; pulse: number; fadeIn: number }[] = [];
 
     for (let i = 0; i < count; i++) {
       particles.push({
@@ -129,6 +129,7 @@ const StarfieldCanvas: React.FC = () => {
         r: Math.random() * 2 + 0.5,
         a: Math.random() * 0.5 + 0.3,
         pulse: Math.random() * Math.PI * 2,
+        fadeIn: 0,
       });
     }
 
@@ -142,7 +143,8 @@ const StarfieldCanvas: React.FC = () => {
         p.x += p.vx;
         p.y += p.vy;
         p.pulse += 0.02;
-        
+        if (p.fadeIn < 1) p.fadeIn += 0.015;
+
         if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
         if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
       }
@@ -209,21 +211,22 @@ const StarfieldCanvas: React.FC = () => {
         }
       }
 
-      // 绘制粒子 - 带脉动效果
+      // 绘制粒子 - 带脉动效果与首帧淡入
       for (const p of particles) {
         const pulseFactor = 1 + Math.sin(p.pulse) * 0.2;
+        const curA = p.a * p.fadeIn;
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3 * pulseFactor);
-        gradient.addColorStop(0, `rgba(0, 217, 255, ${p.a})`);
-        gradient.addColorStop(0.5, `rgba(157, 78, 221, ${p.a * 0.5})`);
+        gradient.addColorStop(0, `rgba(0, 217, 255, ${curA})`);
+        gradient.addColorStop(0.5, `rgba(157, 78, 221, ${curA * 0.5})`);
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r * 3 * pulseFactor, 0, Math.PI * 2);
         ctx.fillStyle = gradient;
         ctx.fill();
-        
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${p.a + 0.3})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(curA + 0.3, 1)})`;
         ctx.fill();
       }
 
@@ -526,7 +529,7 @@ const HomePage: React.FC = () => {
             }}
           >
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00D9FF', animation: 'pulse 2s infinite' }} />
-            企业级 AI 编码平台 v0.3.0
+            企业级 AI 编码平台 v{__APP_VERSION__}
           </div>
 
           {/* 主标题 */}
@@ -1010,119 +1013,13 @@ const HomePage: React.FC = () => {
           CodeMind
         </div>
         <p style={{ fontSize: 14, color: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.4)', margin: 0 }}>
-          CodeMind v0.3.0
+          CodeMind v{__APP_VERSION__}
         </p>
         <p style={{ fontSize: 13, color: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.35)', marginTop: 8 }}>
           © {new Date().getFullYear()} CodeMind. All Rights Reserved.
         </p>
       </footer>
 
-      {/* ═══ 全局样式 ═══ */}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-30px) scale(1.05); }
-        }
-        
-        @keyframes floatCode {
-          0%, 100% { transform: perspective(1000px) rotateY(-15deg) rotateX(5deg) translateY(0); }
-          50% { transform: perspective(1000px) rotateY(-15deg) rotateX(5deg) translateY(-15px); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.2); }
-        }
-        
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(8px); }
-        }
-        
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        
-        @keyframes gridMove {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(60px); }
-        }
-        
-        .feature-card.animate-in,
-        .stat-card.animate-in {
-          opacity: 1 !important;
-          transform: translateY(0) !important;
-        }
-        
-        .tool-tag.animate-in {
-          opacity: 1 !important;
-          transform: scale(1) !important;
-        }
-        
-        .feature-card:hover {
-          transform: translateY(-4px) !important;
-          border-color: rgba(255, 255, 255, 0.15) !important;
-        }
-        
-        .feature-card:hover .card-glow {
-          opacity: 1 !important;
-        }
-        
-        .feature-card:hover .feature-icon {
-          transform: scale(1.1) rotate(-5deg);
-        }
-        
-        .stat-card:hover {
-          transform: translateY(-4px) !important;
-          border-color: rgba(0, 217, 255, 0.2) !important;
-          background: rgba(255, 255, 255, 0.04) !important;
-        }
-        
-        .tool-tag:hover {
-          background: rgba(0, 217, 255, 0.08) !important;
-          border-color: rgba(0, 217, 255, 0.2) !important;
-          color: rgba(255, 255, 255, 0.9) !important;
-        }
-        
-        .cta-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 20px 40px rgba(0, 217, 255, 0.3) !important;
-        }
-        
-        .cta-secondary:hover {
-          background: rgba(255, 255, 255, 0.08) !important;
-          border-color: 'rgba(255, 255, 255, 0.4)' !important;
-        }
-      `}</style>
     </div>
   );
 };

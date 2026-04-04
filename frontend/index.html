@@ -7,6 +7,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CodeMind</title>
+    <script>
+      (function () {
+        try {
+          const item = localStorage.getItem('codemind-app-storage');
+          const state = item ? JSON.parse(item) : {};
+          const theme = state?.state?.themeMode || 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
