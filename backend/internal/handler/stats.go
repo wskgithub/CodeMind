@@ -90,6 +90,28 @@ func (h *StatsHandler) Ranking(c *gin.Context) {
 	response.Success(c, items)
 }
 
+// KeyUsageSummary 获取 Key 用量汇总
+// GET /api/v1/stats/key-usage
+func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
+	var query dto.KeyUsageQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.BadRequest(c, "查询参数格式错误: "+err.Error())
+		return
+	}
+
+	userID := middleware.GetUserID(c)
+	role := middleware.GetUserRole(c)
+	deptID := middleware.GetDepartmentID(c)
+
+	data, err := h.statsService.GetKeyUsageSummary(&query, role, userID, deptID)
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	response.Success(c, data)
+}
+
 // ExportCSV 导出租用量报表为 CSV
 // GET /api/v1/stats/export/csv
 func (h *StatsHandler) ExportCSV(c *gin.Context) {

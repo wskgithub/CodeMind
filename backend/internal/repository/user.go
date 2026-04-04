@@ -131,6 +131,30 @@ func (r *UserRepository) CountByDepartment(deptID int64) (int64, error) {
 	return count, err
 }
 
+// CountByDepartmentBatch 批量统计所有部门的用户数（消除 N+1 查询）
+// 返回 map[部门ID] → 用户数
+func (r *UserRepository) CountByDepartmentBatch() (map[int64]int, error) {
+	type DeptCount struct {
+		DepartmentID int64 `gorm:"column:department_id"`
+		Count        int   `gorm:"column:count"`
+	}
+	var rows []DeptCount
+	err := r.db.Model(&model.User{}).
+		Select("department_id, COUNT(*) as count").
+		Where("department_id IS NOT NULL AND deleted_at IS NULL").
+		Group("department_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[int64]int, len(rows))
+	for _, r := range rows {
+		result[r.DepartmentID] = r.Count
+	}
+	return result, nil
+}
+
 // CountAll 统计所有用户数
 func (r *UserRepository) CountAll() (int64, error) {
 	var count int64

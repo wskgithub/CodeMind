@@ -13,8 +13,7 @@ import '@/assets/styles/docs.css';
 const { Sider, Content } = Layout;
 const { Title } = Typography;
 
-// 自定义代码块渲染 - 根据主题切换代码主题
-const CodeBlock: React.FC<{ language: string; value: string; isDark: boolean }> = ({ 
+const CodeBlock = React.memo<{ language: string; value: string; isDark: boolean }>(({ 
   language, 
   value,
   isDark,
@@ -34,13 +33,13 @@ const CodeBlock: React.FC<{ language: string; value: string; isDark: boolean }> 
       {value}
     </SyntaxHighlighter>
   );
-};
+});
 
 const DocsPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuthStore();
-  const { themeMode } = useAppStore();
+  const user = useAuthStore((s) => s.user);
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Table, Button, Modal, Form, Input, Space, Tag, message, Select, TreeSelect } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, ApartmentOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -24,7 +24,7 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** 部门管理页面 — 与首页/登录页新设计风格统一 */
 const DepartmentsPage: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
 
   const [departments, setDepartments] = useState<DeptTree[]>([]);
@@ -141,8 +141,7 @@ const DepartmentsPage: React.FC = () => {
     }));
   };
 
-  // 表格列 - 新设计
-  const columns: ColumnsType<DeptTree> = [
+  const columns: ColumnsType<DeptTree> = useMemo(() => [
     { 
       title: '部门名称', 
       dataIndex: 'name', 
@@ -224,7 +223,7 @@ const DepartmentsPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], [isDark]);
 
   return (
     <div className="page-bg">

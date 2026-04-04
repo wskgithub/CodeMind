@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, Space, Tag, message,
 } from 'antd';
@@ -318,8 +318,7 @@ const UsersPage: React.FC = () => {
     return result;
   };
 
-  // 表格列 - 新设计
-  const columns: ColumnsType<UserDetail> = [
+  const columns: ColumnsType<UserDetail> = useMemo(() => [
     { 
       title: <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>用户名</span>, 
       dataIndex: 'username', 
@@ -420,7 +419,7 @@ const UsersPage: React.FC = () => {
         );
       },
     },
-  ];
+  ], [isDark, isSuperAdmin]);
 
   return (
     <div className="page-bg">

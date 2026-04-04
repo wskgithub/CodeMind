@@ -164,6 +164,16 @@ type RankingItem struct {
 	RequestCount int64 `json:"request_count"`
 }
 
+// KeyUsageItem API Key 用量统计项
+type KeyUsageItem struct {
+	ID               int64  `json:"id"`
+	Name             string `json:"name"`
+	PromptTokens     int64  `json:"prompt_tokens"`
+	CompletionTokens int64  `json:"completion_tokens"`
+	TotalTokens      int64  `json:"total_tokens"`
+	RequestCount     int64  `json:"request_count"`
+}
+
 // ──────────────────────────────────
 // 限额相关响应
 // ──────────────────────────────────

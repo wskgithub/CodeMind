@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Avatar, Dropdown, Button, Tooltip } from 'antd';
 import {
@@ -30,15 +31,19 @@ const { Header, Sider, Content } = Layout;
 const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthStore();
-  const { sidebarCollapsed, toggleSidebar, themeMode, toggleTheme } = useAppStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const themeMode = useAppStore((s) => s.themeMode);
+  const toggleTheme = useAppStore((s) => s.toggleTheme);
 
   const isSuperAdmin = user?.role === 'super_admin';
   const isDeptManager = user?.role === 'dept_manager';
   const isAdmin = isSuperAdmin || isDeptManager;
 
   // 侧边栏菜单项
-  const menuItems: MenuProps['items'] = [
+  const menuItems: MenuProps['items'] = useMemo(() => [
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
@@ -113,10 +118,10 @@ const DashboardLayout: React.FC = () => {
           },
         ]
       : []),
-  ];
+  ], [isAdmin, isSuperAdmin]);
 
   // 用户下拉菜单
-  const userMenuItems: MenuProps['items'] = [
+  const userMenuItems: MenuProps['items'] = useMemo(() => [
     {
       key: 'profile',
       icon: <UserOutlined />,
@@ -140,7 +145,7 @@ const DashboardLayout: React.FC = () => {
         navigate('/login');
       },
     },
-  ];
+  ], [navigate, logout]);
 
   const selectedKey = location.pathname;
 
@@ -377,7 +382,7 @@ const DashboardLayout: React.FC = () => {
             <Dropdown
               menu={{ items: userMenuItems, style: { borderRadius: 0 } }}
               placement="bottomRight"
-              overlayInnerStyle={{ padding: '8px 12px', borderRadius: 0 }}
+              overlayStyle={{ padding: '8px 12px', borderRadius: 0 }}
             >
               <div
                 style={{

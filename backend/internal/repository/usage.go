@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"time"
 
 	"codemind/internal/model"
@@ -43,6 +42,30 @@ func (r *UsageRepository) UpsertDaily(userID int64, date time.Time, promptTokens
 			"completion_tokens": gorm.Expr("token_usage_daily.completion_tokens + ?", completionTokens),
 			"total_tokens":      gorm.Expr("token_usage_daily.total_tokens + ?", totalTokens),
 			"request_count":     gorm.Expr("token_usage_daily.request_count + 1"),
+			"updated_at":        gorm.Expr("NOW()"),
+		}),
+	}).Create(&daily).Error
+}
+
+// UpsertDailyKey 更新或插入 Key 级每日汇总（使用 UPSERT）
+func (r *UsageRepository) UpsertDailyKey(keyID, userID int64, date time.Time, promptTokens, completionTokens, totalTokens int) error {
+	daily := model.TokenUsageDailyKey{
+		APIKeyID:         keyID,
+		UserID:           userID,
+		UsageDate:        date,
+		PromptTokens:     int64(promptTokens),
+		CompletionTokens: int64(completionTokens),
+		TotalTokens:      int64(totalTokens),
+		RequestCount:     1,
+	}
+
+	return r.db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "api_key_id"}, {Name: "usage_date"}},
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"prompt_tokens":     gorm.Expr("token_usage_daily_key.prompt_tokens + ?", promptTokens),
+			"completion_tokens": gorm.Expr("token_usage_daily_key.completion_tokens + ?", completionTokens),
+			"total_tokens":      gorm.Expr("token_usage_daily_key.total_tokens + ?", totalTokens),
+			"request_count":     gorm.Expr("token_usage_daily_key.request_count + 1"),
 			"updated_at":        gorm.Expr("NOW()"),
 		}),
 	}).Create(&daily).Error
@@ -215,36 +238,33 @@ func (r *UsageRepository) GetDeptRanking(startDate, endDate time.Time, limit int
 }
 
 // GetPeriodUsage 获取指定周期的用户用量总计
+// 使用参数化查询防止 SQL 注入
 func (r *UsageRepository) GetPeriodUsage(userID int64, period string, periodKey string) (int64, error) {
 	var total int64
 
-	var dateFilter string
+	query := r.db.Table("token_usage_daily").
+		Select("COALESCE(SUM(total_tokens), 0)").
+		Where("user_id = ?", userID)
+
 	switch period {
-	case "daily":
-		dateFilter = fmt.Sprintf("usage_date = '%s'", periodKey)
 	case "monthly":
-		dateFilter = fmt.Sprintf("DATE_TRUNC('month', usage_date) = DATE_TRUNC('month', '%s'::date)", periodKey)
+		query = query.Where("DATE_TRUNC('month', usage_date) = DATE_TRUNC('month', ?::date)", periodKey)
 	default:
-		dateFilter = fmt.Sprintf("usage_date = '%s'", periodKey)
+		query = query.Where("usage_date = ?::date", periodKey)
 	}
 
-	err := r.db.Table("token_usage_daily").
-		Select("COALESCE(SUM(total_tokens), 0)").
-		Where("user_id = ?", userID).
-		Where(dateFilter).
-		Scan(&total).Error
+	err := query.Scan(&total).Error
 	return total, err
 }
 
 // GetKeyUsageStats 获取指定 Key 的用量统计
-// 使用 Asia/Shanghai 时区提取日期，确保与每日汇总表一致
+// 直接查询 token_usage_daily_key 汇总表，避免扫描原始明细表
 func (r *UsageRepository) GetKeyUsageStats(keyID int64, startDate, endDate time.Time) ([]DailyStatRow, error) {
 	var rows []DailyStatRow
 
-	err := r.db.Table("token_usage").
-		Select("(created_at AT TIME ZONE 'Asia/Shanghai')::date as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, COUNT(*) as request_count").
-		Where("api_key_id = ? AND created_at BETWEEN ? AND ?", keyID, startDate, endDate).
-		Group("(created_at AT TIME ZONE 'Asia/Shanghai')::date").
+	err := r.db.Table("token_usage_daily_key").
+		Select("usage_date, prompt_tokens, completion_tokens, total_tokens, request_count").
+		Where("api_key_id = ? AND usage_date BETWEEN ? AND ?", keyID, startDate, endDate).
 		Order("usage_date ASC").
 		Scan(&rows).Error
 	return rows, err
@@ -300,7 +320,73 @@ type RankingRow struct {
 	RequestCount int64  `gorm:"column:request_count"`
 }
 
+// GetKeyUsageSummary 获取每个 Key 的用量汇总（基于 Key 级每日汇总表）
+func (r *UsageRepository) GetKeyUsageSummary(userID *int64, deptID *int64, startDate, endDate time.Time) ([]KeyUsageRow, error) {
+	var rows []KeyUsageRow
+
+	query := r.db.Table("token_usage_daily_key d").
+		Select("d.api_key_id as id, k.name, SUM(d.prompt_tokens) as prompt_tokens, SUM(d.completion_tokens) as completion_tokens, SUM(d.total_tokens) as total_tokens, SUM(d.request_count) as request_count").
+		Joins("JOIN api_keys k ON k.id = d.api_key_id").
+		Where("d.usage_date BETWEEN ? AND ?", startDate, endDate)
+
+	if userID != nil {
+		query = query.Where("d.user_id = ?", *userID)
+	}
+	if deptID != nil {
+		query = query.Where("d.user_id IN (SELECT id FROM users WHERE department_id = ? AND deleted_at IS NULL)", *deptID)
+	}
+
+	err := query.Group("d.api_key_id, k.name").
+		Order("total_tokens DESC").
+		Scan(&rows).Error
+	return rows, err
+}
+
+// KeyUsageRow Key 用量查询结果行
+type KeyUsageRow struct {
+	ID               int64  `gorm:"column:id"`
+	Name             string `gorm:"column:name"`
+	PromptTokens     int64  `gorm:"column:prompt_tokens"`
+	CompletionTokens int64  `gorm:"column:completion_tokens"`
+	TotalTokens      int64  `gorm:"column:total_tokens"`
+	RequestCount     int64  `gorm:"column:request_count"`
+}
+
 // CreateRequestLog 记录请求日志
 func (r *UsageRepository) CreateRequestLog(log *model.RequestLog) error {
 	return r.db.Create(log).Error
+}
+
+// ──────────────────────────────────
+// 数据保留清理
+// ──────────────────────────────────
+
+// DeleteOldUsageRecords 分批删除超过保留期的 token_usage 明细记录
+// token_usage 数据已聚合到 token_usage_daily，明细仅用于排查
+func (r *UsageRepository) DeleteOldUsageRecords(before time.Time, batchSize int) (int64, error) {
+	return r.batchDeleteByCreatedAt("token_usage", before, batchSize)
+}
+
+// DeleteOldRequestLogs 分批删除超过保留期的请求日志
+func (r *UsageRepository) DeleteOldRequestLogs(before time.Time, batchSize int) (int64, error) {
+	return r.batchDeleteByCreatedAt("request_logs", before, batchSize)
+}
+
+// batchDeleteByCreatedAt 通用分批删除（按 created_at 字段）
+func (r *UsageRepository) batchDeleteByCreatedAt(table string, before time.Time, batchSize int) (int64, error) {
+	var totalDeleted int64
+	for {
+		result := r.db.Exec(
+			"DELETE FROM "+table+" WHERE id IN (SELECT id FROM "+table+" WHERE created_at < ? LIMIT ?)",
+			before, batchSize,
+		)
+		if result.Error != nil {
+			return totalDeleted, result.Error
+		}
+		totalDeleted += result.RowsAffected
+		if result.RowsAffected < int64(batchSize) {
+			break
+		}
+	}
+	return totalDeleted, nil
 }

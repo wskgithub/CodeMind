@@ -41,7 +41,7 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** 系统管理页面 — 与首页/登录页新设计风格统一 */
 const SystemPage = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   
   return (
@@ -108,7 +108,7 @@ const ConfigsTab = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form] = Form.useForm();
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
 
   const configLabels: Record<string, { label: string; description?: string }> = {
@@ -250,7 +250,7 @@ const AnnouncementsTab = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
 
   useEffect(() => {
@@ -512,7 +512,7 @@ const AuditLogsTab = () => {
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
 
   useEffect(() => {

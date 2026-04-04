@@ -38,8 +38,8 @@ const StatIcon = ({
 
 /** 仪表盘页面 — 与首页/登录页新设计风格统一 */
 const DashboardPage = () => {
-  const { user } = useAuthStore();
-  const { themeMode } = useAppStore();
+  const user = useAuthStore((s) => s.user);
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   const [overview, setOverview] = useState<StatsOverview | null>(null);
   const [usageData, setUsageData] = useState<UsageItem[]>([]);

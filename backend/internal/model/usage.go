@@ -42,6 +42,25 @@ func (TokenUsageDaily) TableName() string {
 	return "token_usage_daily"
 }
 
+// TokenUsageDailyKey Key 级每日用量汇总
+type TokenUsageDailyKey struct {
+	ID               int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	APIKeyID         int64     `gorm:"not null;uniqueIndex:idx_token_usage_daily_key_key_date" json:"api_key_id"`
+	UserID           int64     `gorm:"not null;index:idx_token_usage_daily_key_user_date" json:"user_id"`
+	UsageDate        time.Time `gorm:"type:date;not null;uniqueIndex:idx_token_usage_daily_key_key_date" json:"usage_date"`
+	PromptTokens     int64     `gorm:"not null;default:0" json:"prompt_tokens"`
+	CompletionTokens int64     `gorm:"not null;default:0" json:"completion_tokens"`
+	TotalTokens      int64     `gorm:"not null;default:0" json:"total_tokens"`
+	RequestCount     int       `gorm:"not null;default:0" json:"request_count"`
+	CreatedAt        time.Time `gorm:"not null;autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time `gorm:"not null;autoUpdateTime" json:"updated_at"`
+}
+
+// TableName 指定表名
+func (TokenUsageDailyKey) TableName() string {
+	return "token_usage_daily_key"
+}
+
 // RequestLog LLM 请求日志
 type RequestLog struct {
 	ID           int64     `gorm:"primaryKey;autoIncrement" json:"id"`

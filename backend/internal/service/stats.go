@@ -1,6 +1,7 @@
 package service
 
 import (
+	"sync"
 	"time"
 
 	"codemind/internal/model/dto"
@@ -38,46 +39,53 @@ func NewStatsService(
 }
 
 // GetOverview 获取用量总览
+// 所有独立查询并行执行，将总延迟从 N 次串行往返降低到 1 次
 func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*dto.StatsOverview, error) {
 	overview := &dto.StatsOverview{SystemStatus: "healthy"}
 
-	// 根据角色决定统计范围
 	var filterUserID *int64
 	if role == "user" {
 		filterUserID = userID
 	}
 
-	// 今日统计
-	todayTokens, _ := s.usageRepo.GetTodayTotalTokens(filterUserID)
-	todayRequests, _ := s.usageRepo.GetTodayRequestCount(filterUserID)
-	todayActive, _ := s.usageRepo.GetTodayActiveUsers()
+	var (
+		todayTokens, todayRequests, todayActive   int64
+		monthTokens, monthRequests, monthActive   int64
+		totalUsers, totalDepts, totalKeys         int64
+	)
+
+	var wg sync.WaitGroup
+	wg.Add(6)
+
+	go func() { defer wg.Done(); todayTokens, _ = s.usageRepo.GetTodayTotalTokens(filterUserID) }()
+	go func() { defer wg.Done(); todayRequests, _ = s.usageRepo.GetTodayRequestCount(filterUserID) }()
+	go func() { defer wg.Done(); todayActive, _ = s.usageRepo.GetTodayActiveUsers() }()
+	go func() { defer wg.Done(); monthTokens, _ = s.usageRepo.GetMonthTotalTokens(filterUserID) }()
+	go func() { defer wg.Done(); monthRequests, _ = s.usageRepo.GetMonthRequestCount(filterUserID) }()
+	go func() { defer wg.Done(); monthActive, _ = s.usageRepo.GetMonthActiveUsers() }()
+
+	if role != "user" {
+		wg.Add(3)
+		go func() { defer wg.Done(); totalUsers, _ = s.userRepo.CountAll() }()
+		go func() { defer wg.Done(); totalDepts, _ = s.deptRepo.CountAll() }()
+		go func() { defer wg.Done(); totalKeys, _ = s.keyRepo.CountAll() }()
+	}
+
+	wg.Wait()
 
 	overview.Today = dto.PeriodStats{
 		TotalTokens:   todayTokens,
 		TotalRequests: todayRequests,
 		ActiveUsers:   todayActive,
 	}
-
-	// 本月统计
-	monthTokens, _ := s.usageRepo.GetMonthTotalTokens(filterUserID)
-	monthRequests, _ := s.usageRepo.GetMonthRequestCount(filterUserID)
-	monthActive, _ := s.usageRepo.GetMonthActiveUsers()
-
 	overview.ThisMonth = dto.PeriodStats{
 		TotalTokens:   monthTokens,
 		TotalRequests: monthRequests,
 		ActiveUsers:   monthActive,
 	}
-
-	// 系统概况（管理员可见）
-	if role != "user" {
-		totalUsers, _ := s.userRepo.CountAll()
-		totalDepts, _ := s.deptRepo.CountAll()
-		totalKeys, _ := s.keyRepo.CountAll()
-		overview.TotalUsers = totalUsers
-		overview.TotalDepts = totalDepts
-		overview.TotalAPIKeys = totalKeys
-	}
+	overview.TotalUsers = totalUsers
+	overview.TotalDepts = totalDepts
+	overview.TotalAPIKeys = totalKeys
 
 	return overview, nil
 }
@@ -231,6 +239,45 @@ func (s *StatsService) getPeriodRange(now time.Time, period string) (time.Time, 
 	default:
 		return now.AddDate(0, 0, -30), now
 	}
+}
+
+// GetKeyUsageSummary 获取 Key 用量汇总
+func (s *StatsService) GetKeyUsageSummary(query *dto.KeyUsageQuery, operatorRole string, operatorID int64, operatorDeptID *int64) ([]dto.KeyUsageItem, error) {
+	// 确定查询范围
+	var userID *int64
+	var deptID *int64
+
+	switch operatorRole {
+	case "super_admin":
+		// 管理员可查看全部，不传 userID 限制
+	case "dept_manager":
+		deptID = operatorDeptID
+	default:
+		userID = &operatorID
+	}
+
+	// 解析日期范围（period 仅用于默认范围，此处传空字符串使用默认 30 天）
+	startDate, endDate := s.parseDateRange(query.StartDate, query.EndDate, "")
+
+	rows, err := s.usageRepo.GetKeyUsageSummary(userID, deptID, startDate, endDate)
+	if err != nil {
+		s.logger.Error("查询 Key 用量汇总失败", zap.Error(err))
+		return nil, errcode.ErrDatabase
+	}
+
+	items := make([]dto.KeyUsageItem, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, dto.KeyUsageItem{
+			ID:               row.ID,
+			Name:             row.Name,
+			PromptTokens:     row.PromptTokens,
+			CompletionTokens: row.CompletionTokens,
+			TotalTokens:      row.TotalTokens,
+			RequestCount:     row.RequestCount,
+		})
+	}
+
+	return items, nil
 }
 
 // ExportUsageStats 导出租用量统计数据

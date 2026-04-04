@@ -147,11 +147,9 @@ const StarfieldCanvas: React.FC = () => {
         if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
       }
 
-      // 绘制连线 - 带渐变效果
+      // 鼠标交互连线
       for (let i = 0; i < particles.length; i++) {
         const pi = particles[i]!;
-        
-        // 鼠标交互连线
         const dx = mouseRef.current.x - pi.x;
         const dy = mouseRef.current.y - pi.y;
         const mouseDist = Math.sqrt(dx * dx + dy * dy);
@@ -167,20 +165,46 @@ const StarfieldCanvas: React.FC = () => {
           ctx.lineTo(mouseRef.current.x, mouseRef.current.y);
           ctx.stroke();
         }
+      }
 
-        for (let j = i + 1; j < particles.length; j++) {
-          const pj = particles[j]!;
-          const dx = pi.x - pj.x;
-          const dy = pi.y - pj.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.25;
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(pi.x, pi.y);
-            ctx.lineTo(pj.x, pj.y);
-            ctx.stroke();
+      // 使用空间网格加速近邻搜索
+      const cellSize = maxDist;
+      const grid: Map<string, typeof particles> = new Map();
+      for (const p of particles) {
+        const cx = Math.floor(p.x / cellSize);
+        const cy = Math.floor(p.y / cellSize);
+        const key = `${cx},${cy}`;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key)!.push(p);
+      }
+      for (const [key, cell] of grid) {
+        const parts = key.split(',').map(Number);
+        const cx = parts[0]!;
+        const cy = parts[1]!;
+        for (let ddx = 0; ddx <= 1; ddx++) {
+          for (let ddy = -1; ddy <= 1; ddy++) {
+            if (ddx === 0 && ddy <= 0 && !(ddx === 0 && ddy === 0)) continue;
+            const neighborKey = `${cx + ddx},${cy + ddy}`;
+            const neighbor = grid.get(neighborKey);
+            if (!neighbor) continue;
+            const isSameCell = ddx === 0 && ddy === 0;
+            for (let i = 0; i < cell.length; i++) {
+              const startJ = isSameCell ? i + 1 : 0;
+              for (let j = startJ; j < neighbor.length; j++) {
+                const dx = cell[i]!.x - neighbor[j]!.x;
+                const dy = cell[i]!.y - neighbor[j]!.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < maxDist) {
+                  const alpha = (1 - dist / maxDist) * 0.25;
+                  ctx.beginPath();
+                  ctx.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
+                  ctx.lineWidth = 0.5;
+                  ctx.moveTo(cell[i]!.x, cell[i]!.y);
+                  ctx.lineTo(neighbor[j]!.x, neighbor[j]!.y);
+                  ctx.stroke();
+                }
+              }
+            }
           }
         }
       }

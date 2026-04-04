@@ -71,7 +71,7 @@ func main() {
 	logger.Info("数据库连接成功")
 
 	// 自动迁移：确保新增字段和表结构存在，对已有表只做增量变更不删除数据
-	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}, &monitor.SystemMetric{}, &monitor.LLMNodeMetric{}, &model.Document{}, &model.LLMTrainingData{}); err != nil {
+	if err := db.AutoMigrate(&model.LLMBackend{}, &model.RateLimit{}, &monitor.SystemMetric{}, &monitor.LLMNodeMetric{}, &model.Document{}, &model.LLMTrainingData{}, &model.TokenUsageDailyKey{}); err != nil {
 		logger.Warn("AutoMigrate 失败", zap.Error(err))
 	}
 	// 修复旧数据：为 period_hours=0 的限额记录补充正确的周期小时数
@@ -124,7 +124,10 @@ func main() {
 	deptService := service.NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
 	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, logger)
 	limitService := service.NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
-	llmProxyService := service.NewLLMProxyService(providerManager, loadBalancer, usageRepo, limitRepo, apiKeyRepo, trainingDataRepo, sysConfigRepo, limitService, rdb, logger)
+	trainingDataBuffer := service.NewTrainingDataBuffer(trainingDataRepo, logger)
+	trainingDataArchiver := service.NewTrainingDataArchiver(trainingDataRepo, logger, "")
+	dataRetentionCleaner := service.NewDataRetentionCleaner(usageRepo, logger, 0)
+	llmProxyService := service.NewLLMProxyService(providerManager, loadBalancer, usageRepo, limitRepo, apiKeyRepo, trainingDataBuffer, sysConfigRepo, limitService, rdb, logger)
 	statsService := service.NewStatsService(usageRepo, userRepo, deptRepo, apiKeyRepo, logger)
 	systemService := service.NewSystemService(sysConfigRepo, auditRepo, annRepo, logger)
 	mcpProxy := mcpPkg.NewProxy(logger)
@@ -201,6 +204,11 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Error("服务关停失败", zap.Error(err))
 	}
+
+	// 刷盘：确保缓冲区中残留的训练数据全部写入数据库
+	trainingDataBuffer.Close()
+	trainingDataArchiver.Close()
+	dataRetentionCleaner.Close()
 
 	logger.Info("服务已停止")
 }

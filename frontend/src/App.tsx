@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { ConfigProvider, App as AntApp, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -99,7 +99,7 @@ const getComponentTokens = (themeMode: ThemeMode) => {
 
 const App: React.FC = () => {
   const restore = useAuthStore((s) => s.restore);
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
 
   // 应用启动时恢复登录态
   useEffect(() => {
@@ -111,13 +111,16 @@ const App: React.FC = () => {
     document.documentElement.setAttribute('data-theme', themeMode);
   }, [themeMode]);
 
+  const themeTokens = useMemo(() => getThemeTokens(themeMode), [themeMode]);
+  const componentTokens = useMemo(() => getComponentTokens(themeMode), [themeMode]);
+
   return (
     <ConfigProvider
       locale={zhCN}
       theme={{
-        token: getThemeTokens(themeMode),
+        token: themeTokens,
         algorithm: themeMode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
-        components: getComponentTokens(themeMode),
+        components: componentTokens,
       }}
     >
       <AntApp>

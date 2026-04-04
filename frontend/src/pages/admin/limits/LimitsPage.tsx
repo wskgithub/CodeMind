@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Table, Button, Modal, Form, InputNumber, Select, message, Popconfirm, Tag, Space } from 'antd';
 import { PlusOutlined, DeleteOutlined, SafetyOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -23,7 +23,7 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** 限额管理页面 — 与首页/登录页新设计风格统一 */
 const LimitsPage = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   const [limits, setLimits] = useState<RateLimit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,8 +103,7 @@ const LimitsPage = () => {
     return `${hours} 小时`;
   };
 
-  // 表格列 - 新设计
-  const columns: ColumnsType<RateLimit> = [
+  const columns: ColumnsType<RateLimit> = useMemo(() => [
     {
       title: '目标类型',
       dataIndex: 'target_type',
@@ -214,7 +213,7 @@ const LimitsPage = () => {
         </Popconfirm>
       ),
     },
-  ];
+  ], [isDark, targetTypeLabel, periodLabel]);
 
   return (
     <div className="page-bg">

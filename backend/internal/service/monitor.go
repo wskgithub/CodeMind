@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
+	"sync"
 	"time"
 
 	"codemind/internal/model/monitor"
@@ -319,25 +321,17 @@ func (s *MonitorService) GetRequestMetrics(ctx context.Context, duration time.Du
 	return summary, nil
 }
 
-// calculatePercentile 计算百分位数（简单实现）
+// calculatePercentile 计算百分位数
+// 使用标准库 O(n log n) 排序替代原先 O(n²) 冒泡排序
 func calculatePercentile(values []float64, percentile float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	
-	// 复制数组以避免修改原数组
+
 	sorted := make([]float64, len(values))
 	copy(sorted, values)
-	
-	// 简单冒泡排序（数据量小时效率可接受）
-	for i := 0; i < len(sorted); i++ {
-		for j := i + 1; j < len(sorted); j++ {
-			if sorted[i] > sorted[j] {
-				sorted[i], sorted[j] = sorted[j], sorted[i]
-			}
-		}
-	}
-	
+	sort.Float64s(sorted)
+
 	index := int(float64(len(sorted)-1) * percentile)
 	return sorted[index]
 }
@@ -366,43 +360,51 @@ func (s *MonitorService) GetLLMNodeSummaries(ctx context.Context) ([]monitor.LLM
 }
 
 // GetDashboardSummary 获取仪表盘汇总数据
+// 所有独立查询并行执行，将延迟从串行累加降低到最长单次查询
 func (s *MonitorService) GetDashboardSummary(ctx context.Context) (*monitor.DashboardSummary, error) {
 	summary := &monitor.DashboardSummary{
 		UpdatedAt: time.Now(),
 	}
 
-	// 系统指标
-	sysMetrics, err := s.GetSystemMetricsSummary(ctx)
-	if err != nil {
-		s.logger.Error("获取系统指标失败", zap.Error(err))
-	} else {
-		summary.SystemStatus = sysMetrics
-	}
+	var wg sync.WaitGroup
+	wg.Add(5)
 
-	// 请求指标
-	reqMetrics, err := s.GetRequestMetrics(ctx, 5*time.Minute)
-	if err != nil {
-		s.logger.Error("获取请求指标失败", zap.Error(err))
-	} else {
-		summary.RequestMetrics = reqMetrics
-	}
+	go func() {
+		defer wg.Done()
+		if metrics, err := s.GetSystemMetricsSummary(ctx); err == nil {
+			summary.SystemStatus = metrics
+		}
+	}()
 
-	// LLM 节点
-	llmNodes, err := s.GetLLMNodeSummaries(ctx)
-	if err != nil {
-		s.logger.Error("获取 LLM 节点数据失败", zap.Error(err))
-	} else {
-		summary.LLMNodes = llmNodes
-	}
+	go func() {
+		defer wg.Done()
+		if metrics, err := s.GetRequestMetrics(ctx, 5*time.Minute); err == nil {
+			summary.RequestMetrics = metrics
+		}
+	}()
 
-	// 节点统计
-	if activeCount, err := s.monitorRepo.GetActiveNodeCount(ctx); err == nil {
-		summary.ActiveNodes = int(activeCount)
-	}
-	if totalCount, err := s.monitorRepo.GetTotalNodeCount(ctx); err == nil {
-		summary.TotalNodes = int(totalCount)
-	}
+	go func() {
+		defer wg.Done()
+		if nodes, err := s.GetLLMNodeSummaries(ctx); err == nil {
+			summary.LLMNodes = nodes
+		}
+	}()
 
+	go func() {
+		defer wg.Done()
+		if count, err := s.monitorRepo.GetActiveNodeCount(ctx); err == nil {
+			summary.ActiveNodes = int(count)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		if count, err := s.monitorRepo.GetTotalNodeCount(ctx); err == nil {
+			summary.TotalNodes = int(count)
+		}
+	}()
+
+	wg.Wait()
 	return summary, nil
 }
 

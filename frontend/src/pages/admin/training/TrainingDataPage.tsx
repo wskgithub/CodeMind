@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Table, Button, Select, Space, Tag, message, DatePicker, Drawer,
   Card, Statistic, Row, Col, Popconfirm, Tooltip,
@@ -54,7 +54,7 @@ const REQUEST_TYPE_COLORS: Record<string, string> = {
 };
 
 const TrainingDataPage: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<TrainingDataItem[]>([]);
@@ -99,12 +99,8 @@ const TrainingDataPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    Promise.all([fetchData(), fetchStats()]);
+  }, [fetchData, fetchStats]);
 
   const handleViewDetail = async (id: number) => {
     setDetailVisible(true);
@@ -149,7 +145,7 @@ const TrainingDataPage: React.FC = () => {
     }
   };
 
-  const columns: ColumnsType<TrainingDataItem> = [
+  const columns: ColumnsType<TrainingDataItem> = useMemo(() => [
     {
       title: 'ID',
       dataIndex: 'id',
@@ -244,7 +240,7 @@ const TrainingDataPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], []);
 
   return (
     <div className="page-bg animate-fade-in-up">

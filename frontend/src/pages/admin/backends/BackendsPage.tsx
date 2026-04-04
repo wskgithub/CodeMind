@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, InputNumber,
   Tag, Space, message, Popconfirm, Tooltip, Divider,
@@ -54,7 +54,7 @@ const BackendsPage: React.FC = () => {
   const [editing, setEditing] = useState<LLMBackend | null>(null);
   const [form] = Form.useForm();
   
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
 
   useEffect(() => { loadData(); }, []);
@@ -124,8 +124,7 @@ const BackendsPage: React.FC = () => {
     } catch { /* 错误已由拦截器处理 */ }
   };
 
-  // 表格列 - 新设计
-  const columns = [
+  const columns = useMemo(() => [
     {
       title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>节点</span>,
       dataIndex: 'name',
@@ -240,7 +239,7 @@ const BackendsPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], [isDark]);
 
   return (
     <div className="page-bg">

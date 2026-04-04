@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Card, Row, Col, Statistic, Table, Tag, Progress, Space,
   Typography, Alert, Spin, Badge, Tooltip, Segmented,
@@ -109,7 +109,7 @@ const SystemResourceCard: React.FC<{
 
 /** 监控仪表盘页面 — 与首页/登录页新设计风格统一 */
 const MonitorPage: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   
   // 颜色配置
@@ -174,8 +174,7 @@ const MonitorPage: React.FC = () => {
     autoRefresh ? refreshInterval * 1000 : null
   );
 
-  // LLM 节点表格列 - 新设计
-  const nodeColumns = [
+  const nodeColumns = useMemo(() => [
     {
       title: '节点',
       dataIndex: 'node_name',
@@ -312,10 +311,9 @@ const MonitorPage: React.FC = () => {
         </Tag>
       ),
     },
-  ];
+  ], [isDark, colors]);
 
-  // 磁盘使用表格列 - 新设计
-  const diskColumns = [
+  const diskColumns = useMemo(() => [
     {
       title: '挂载点',
       dataIndex: 'mount_point',
@@ -353,7 +351,7 @@ const MonitorPage: React.FC = () => {
         </Text>
       ),
     },
-  ];
+  ], [isDark, colors]);
 
   if (loading && !dashboard) {
     return (

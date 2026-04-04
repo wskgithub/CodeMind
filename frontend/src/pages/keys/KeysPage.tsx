@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Table, Button, Modal, Form, Input, Space, Tag, message, Typography, DatePicker } from 'antd';
 import { PlusOutlined, CopyOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined, KeyOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -26,7 +26,7 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
 
 /** API Key 管理页面 — 与首页/登录页新设计风格统一 */
 const KeysPage: React.FC = () => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,8 +95,7 @@ const KeysPage: React.FC = () => {
     });
   };
 
-  // 表格列定义 - 新设计
-  const columns: ColumnsType<APIKey> = [
+  const columns: ColumnsType<APIKey> = useMemo(() => [
     { 
       title: '名称', 
       dataIndex: 'name', 
@@ -176,7 +175,7 @@ const KeysPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], [isDark]);
 
   return (
     <div className="page-bg">

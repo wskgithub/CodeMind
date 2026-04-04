@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Table, Button, Modal, Form, Input, Select, Tag, Space,
   Tabs, Popconfirm, Switch, message, Tooltip, Badge,
@@ -167,8 +167,7 @@ const McpPage: React.FC = () => {
     setModalOpen(true);
   };
 
-  // 服务列表表格列 - 新设计
-  const serviceColumns: ColumnsType<MCPService> = [
+  const serviceColumns: ColumnsType<MCPService> = useMemo(() => [
     {
       title: '服务名称',
       dataIndex: 'display_name',
@@ -286,10 +285,9 @@ const McpPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], [isDark]);
 
-  // 访问规则表格列 - 新设计
-  const ruleColumns: ColumnsType<MCPAccessRule> = [
+  const ruleColumns: ColumnsType<MCPAccessRule> = useMemo(() => [
     { 
       title: '服务', 
       dataIndex: 'service_name', 
@@ -350,7 +348,7 @@ const McpPage: React.FC = () => {
         </Popconfirm>
       ),
     },
-  ];
+  ], [isDark]);
 
   const handleDeleteRule = async (id: number) => {
     try {

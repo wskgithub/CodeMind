@@ -182,11 +182,11 @@ func (s *DepartmentService) ListTree() ([]dto.DeptTree, error) {
 		return nil, errcode.ErrDatabase
 	}
 
-	// 查询每个部门的用户数
-	userCounts := make(map[int64]int)
-	for _, dept := range depts {
-		count, _ := s.userRepo.CountByDepartment(dept.ID)
-		userCounts[dept.ID] = int(count)
+	// 一次查询获取所有部门的用户数（消除 N+1）
+	userCounts, err := s.userRepo.CountByDepartmentBatch()
+	if err != nil {
+		s.logger.Warn("批量统计部门用户数失败", zap.Error(err))
+		userCounts = make(map[int64]int)
 	}
 
 	// 构建树形结构

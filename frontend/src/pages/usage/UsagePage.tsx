@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Select, DatePicker, Space, Table, Spin, Row, Col, Segmented, Button } from 'antd';
 import {
   BarChartOutlined,
@@ -9,10 +9,10 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
-import { getUsageStats, getRanking, exportUsageCSV } from '@/services/statsService';
+import { getUsageStats, getRanking, exportUsageCSV, getKeyUsageStats } from '@/services/statsService';
 import useAuthStore from '@/store/authStore';
 import useAppStore from '@/store/appStore';
-import type { UsageItem, RankingItem } from '@/types';
+import type { UsageItem, RankingItem, KeyUsageItem } from '@/types';
 import UsageProgressCards from '@/components/common/UsageProgressCards';
 
 const { RangePicker } = DatePicker;
@@ -56,11 +56,13 @@ const UsagePage = () => {
   const [period, setPeriod] = useState<string>('daily');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   const [usageData, setUsageData] = useState<UsageItem[]>([]);
+  const [keyUsageData, setKeyUsageData] = useState<KeyUsageItem[]>([]);
   const [ranking, setRanking] = useState<RankingItem[]>([]);
   const [rankType, setRankType] = useState<'user' | 'department'>('user');
   const [loading, setLoading] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadUsageData();
@@ -69,7 +71,17 @@ const UsagePage = () => {
   }, []);
 
   useEffect(() => {
-    loadUsageData();
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+    loadTimeoutRef.current = setTimeout(() => {
+      loadUsageData();
+    }, 300);
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
   }, [period, dateRange]);
 
   useEffect(() => {
@@ -103,8 +115,15 @@ const UsagePage = () => {
         params.start_date = dateRange[0].format('YYYY-MM-DD');
         params.end_date = dateRange[1].format('YYYY-MM-DD');
       }
-      const res = await getUsageStats(params);
-      setUsageData(res.data.data?.items || []);
+      const [usageRes, keyUsageRes] = await Promise.all([
+        getUsageStats(params),
+        getKeyUsageStats({
+          start_date: dateRange ? dateRange[0].format('YYYY-MM-DD') : undefined,
+          end_date: dateRange ? dateRange[1].format('YYYY-MM-DD') : undefined,
+        }),
+      ]);
+      setUsageData(usageRes.data.data?.items || []);
+      setKeyUsageData(keyUsageRes.data.data || []);
     } catch {
       // 拦截器处理
     } finally {
@@ -211,12 +230,12 @@ const UsagePage = () => {
   };
 
   // 汇总统计
-  const totalTokens = usageData.reduce((sum, d) => sum + (d.total_tokens || 0), 0);
-  const totalRequests = usageData.reduce((sum, d) => sum + (d.request_count || 0), 0);
-  const totalPrompt = usageData.reduce((sum, d) => sum + (d.prompt_tokens || 0), 0);
-  const totalCompletion = usageData.reduce((sum, d) => sum + (d.completion_tokens || 0), 0);
+  const totalTokens = useMemo(() => usageData.reduce((sum, d) => sum + (d.total_tokens || 0), 0), [usageData]);
+  const totalRequests = useMemo(() => usageData.reduce((sum, d) => sum + (d.request_count || 0), 0), [usageData]);
+  const totalPrompt = useMemo(() => usageData.reduce((sum, d) => sum + (d.prompt_tokens || 0), 0), [usageData]);
+  const totalCompletion = useMemo(() => usageData.reduce((sum, d) => sum + (d.completion_tokens || 0), 0), [usageData]);
 
-  const columns: ColumnsType<UsageItem> = [
+  const columns: ColumnsType<UsageItem> = useMemo(() => [
     { 
       title: '日期', 
       dataIndex: 'date', 
@@ -252,9 +271,9 @@ const UsagePage = () => {
       align: 'right',
       render: (v: number) => <span style={{ color: '#00F5D4' }}>{v.toLocaleString()}</span>,
     },
-  ];
+  ], [isDark]);
 
-  const rankColumns: ColumnsType<RankingItem> = [
+  const rankColumns: ColumnsType<RankingItem> = useMemo(() => [
     { 
       title: '排名', 
       dataIndex: 'rank', 
@@ -290,7 +309,44 @@ const UsagePage = () => {
       align: 'right',
       render: (v: number) => <span style={{ color: '#00F5D4' }}>{v.toLocaleString()}</span>,
     },
-  ];
+  ], [isDark]);
+
+  const keyUsageColumns: ColumnsType<KeyUsageItem> = useMemo(() => [
+    {
+      title: 'Key 名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text) => <span style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{text}</span>,
+    },
+    {
+      title: 'Prompt Tokens',
+      dataIndex: 'prompt_tokens',
+      key: 'prompt_tokens',
+      align: 'right',
+      render: (v: number) => <span style={{ color: '#00D9FF' }}>{v.toLocaleString()}</span>,
+    },
+    {
+      title: 'Completion Tokens',
+      dataIndex: 'completion_tokens',
+      key: 'completion_tokens',
+      align: 'right',
+      render: (v: number) => <span style={{ color: '#9D4EDD' }}>{v.toLocaleString()}</span>,
+    },
+    {
+      title: '总 Tokens',
+      dataIndex: 'total_tokens',
+      key: 'total_tokens',
+      align: 'right',
+      render: (v: number) => <strong style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{v.toLocaleString()}</strong>,
+    },
+    {
+      title: '请求次数',
+      dataIndex: 'request_count',
+      key: 'request_count',
+      align: 'right',
+      render: (v: number) => <span style={{ color: '#00F5D4' }}>{v.toLocaleString()}</span>,
+    },
+  ], [isDark]);
 
   const formatNum = (n: number) => {
     if (n >= 1000000) return `${(n / 1000000).toFixed(2)}M`;
@@ -455,6 +511,43 @@ const UsagePage = () => {
               </Button>
             )}
           </Space>
+        </div>
+
+        {/* Key 用量分布 — 玻璃态卡片 - 新设计 */}
+        <div
+          className="glass-card animate-fade-in-up p-6"
+          style={{ marginBottom: 24, animationDelay: '0.09s' }}
+        >
+          <h3 style={{ 
+            marginBottom: 20, 
+            color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)',
+            fontSize: 18,
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <span style={{
+              width: 4,
+              height: 20,
+              background: 'linear-gradient(180deg, #FFBE0B 0%, #FF6B6B 100%)',
+              borderRadius: 2,
+            }} />
+            Key 用量分布
+          </h3>
+          <Table
+            dataSource={keyUsageData}
+            columns={keyUsageColumns}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            scroll={{ y: 240 }}
+          />
+          {keyUsageData.length === 0 && !loading && (
+            <div style={{ textAlign: 'center', color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', paddingTop: 40 }}>
+              暂无数据
+            </div>
+          )}
         </div>
 
         {/* 图表 — 玻璃态容器 - 新设计 */}

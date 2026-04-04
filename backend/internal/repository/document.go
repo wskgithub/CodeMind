@@ -40,9 +40,11 @@ func (r *documentRepository) List() ([]model.DocumentListItem, error) {
 }
 
 // ListAll 获取所有文档（包括未发布，管理用）
+// 排除 content 大字段以降低传输和序列化开销
 func (r *documentRepository) ListAll() ([]model.Document, error) {
 	var docs []model.Document
-	result := r.db.Where("deleted_at IS NULL").
+	result := r.db.Select("id, slug, title, subtitle, icon, sort_order, is_published, created_at, updated_at, deleted_at").
+		Where("deleted_at IS NULL").
 		Order("sort_order ASC, id ASC").
 		Find(&docs)
 	return docs, result.Error

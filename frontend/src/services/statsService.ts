@@ -1,5 +1,5 @@
 import request from './request';
-import type { ApiResponse, StatsOverview, UsageResponse, RankingItem } from '@/types';
+import type { ApiResponse, StatsOverview, UsageResponse, RankingItem, KeyUsageItem } from '@/types';
 
 /** 获取用量总览 */
 export function getOverview() {
@@ -24,6 +24,14 @@ export function getRanking(params: {
   limit?: number;
 }) {
   return request.get<ApiResponse<RankingItem[]>>('/stats/ranking', { params });
+}
+
+/** 获取 Key 用量汇总 */
+export function getKeyUsageStats(params: {
+  start_date?: string;
+  end_date?: string;
+}) {
+  return request.get<ApiResponse<KeyUsageItem[]>>('/stats/key-usage', { params });
 }
 
 /** 导出租用量报表为 CSV */

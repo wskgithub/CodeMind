@@ -15,7 +15,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   requireAdmin = false,
   requireSuperAdmin = false,
 }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
   const location = useLocation();
 
   // 未登录，重定向到登录页

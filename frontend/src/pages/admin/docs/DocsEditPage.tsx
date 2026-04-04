@@ -57,7 +57,7 @@ const DocsEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const [form] = Form.useForm();
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   
   const [loading, setLoading] = useState(isEdit);

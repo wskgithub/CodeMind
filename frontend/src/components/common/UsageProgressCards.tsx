@@ -65,7 +65,7 @@ function getStrokeColor(percent: number, exceeded: boolean) {
 
 /** 单个限额进度卡片 - 新设计 */
 const LimitCard = ({ item }: { item: LimitProgressItem }) => {
-  const { themeMode } = useAppStore();
+  const themeMode = useAppStore((s) => s.themeMode);
   const isDark = themeMode === 'dark';
   const percent = Math.min(item.usage_percent, 100);
   const color = getProgressColor(percent, item.exceeded);

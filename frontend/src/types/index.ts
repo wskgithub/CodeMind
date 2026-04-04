@@ -173,6 +173,16 @@ export interface RankingItem {
   request_count: number;
 }
 
+/** Key 用量统计项 */
+export interface KeyUsageItem {
+  id: number;
+  name: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  request_count: number;
+}
+
 // ──────────────────────────────────
 // 限额相关类型
 // ──────────────────────────────────

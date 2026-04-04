@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"codemind/internal/model"
+	"codemind/internal/pkg/timezone"
 	"codemind/internal/repository"
 	"codemind/pkg/llm"
 
@@ -18,16 +19,16 @@ import (
 // LLMProxyService LLM 代理业务逻辑
 // 集成负载均衡器和基于周期的限额系统
 type LLMProxyService struct {
-	providerManager  *llm.ProviderManager
-	loadBalancer     *llm.LoadBalancer
-	usageRepo        *repository.UsageRepository
-	limitRepo        *repository.RateLimitRepository
-	keyRepo          *repository.APIKeyRepository
-	trainingDataRepo *repository.TrainingDataRepository
-	sysConfigRepo    *repository.SystemRepository
-	limitService     *LimitService
-	rdb              *redis.Client
-	logger           *zap.Logger
+	providerManager    *llm.ProviderManager
+	loadBalancer       *llm.LoadBalancer
+	usageRepo          *repository.UsageRepository
+	limitRepo          *repository.RateLimitRepository
+	keyRepo            *repository.APIKeyRepository
+	trainingDataBuffer *TrainingDataBuffer
+	sysConfigRepo      *repository.SystemRepository
+	limitService       *LimitService
+	rdb                *redis.Client
+	logger             *zap.Logger
 
 	// 训练数据采集开关缓存
 	trainingEnabled     bool
@@ -43,23 +44,23 @@ func NewLLMProxyService(
 	usageRepo *repository.UsageRepository,
 	limitRepo *repository.RateLimitRepository,
 	keyRepo *repository.APIKeyRepository,
-	trainingDataRepo *repository.TrainingDataRepository,
+	trainingDataBuffer *TrainingDataBuffer,
 	sysConfigRepo *repository.SystemRepository,
 	limitService *LimitService,
 	rdb *redis.Client,
 	logger *zap.Logger,
 ) *LLMProxyService {
 	return &LLMProxyService{
-		providerManager:  providerManager,
-		loadBalancer:     loadBalancer,
-		usageRepo:        usageRepo,
-		limitRepo:        limitRepo,
-		keyRepo:          keyRepo,
-		trainingDataRepo: trainingDataRepo,
-		sysConfigRepo:    sysConfigRepo,
-		limitService:     limitService,
-		rdb:              rdb,
-		logger:           logger,
+		providerManager:    providerManager,
+		loadBalancer:       loadBalancer,
+		usageRepo:          usageRepo,
+		limitRepo:          limitRepo,
+		keyRepo:            keyRepo,
+		trainingDataBuffer: trainingDataBuffer,
+		sysConfigRepo:      sysConfigRepo,
+		limitService:       limitService,
+		rdb:                rdb,
+		logger:             logger,
 	}
 }
 
@@ -138,7 +139,7 @@ func (s *LLMProxyService) CheckTokenQuota(ctx context.Context, userID int64, dep
 }
 
 // RecordUsage 记录请求用量（异步调用）
-// 同时更新：用量明细表、每日汇总表、周期限额计数器
+// 5 个写入操作彼此独立，并行执行以降低总延迟
 func (s *LLMProxyService) RecordUsage(
 	userID, keyID int64,
 	deptID *int64,
@@ -151,34 +152,53 @@ func (s *LLMProxyService) RecordUsage(
 	}
 
 	ctx := context.Background()
+	today := timezone.Today()
 
-	// 1. 写入明细表
-	record := &model.TokenUsage{
-		UserID:           userID,
-		APIKeyID:         keyID,
-		Model:            modelName,
-		PromptTokens:     usage.PromptTokens,
-		CompletionTokens: usage.CompletionTokens,
-		TotalTokens:      usage.TotalTokens,
-		RequestType:      requestType,
-		DurationMs:       &durationMs,
-	}
-	if err := s.usageRepo.CreateUsage(record); err != nil {
-		s.logger.Error("写入用量明细失败", zap.Error(err), zap.Int64("user_id", userID))
-	}
+	var wg sync.WaitGroup
+	wg.Add(5)
 
-	// 2. 更新每日汇总
-	now := time.Now().In(time.FixedZone("CST", 8*3600))
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	if err := s.usageRepo.UpsertDaily(userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens); err != nil {
-		s.logger.Error("更新每日汇总失败", zap.Error(err), zap.Int64("user_id", userID))
-	}
+	go func() {
+		defer wg.Done()
+		record := &model.TokenUsage{
+			UserID:           userID,
+			APIKeyID:         keyID,
+			Model:            modelName,
+			PromptTokens:     usage.PromptTokens,
+			CompletionTokens: usage.CompletionTokens,
+			TotalTokens:      usage.TotalTokens,
+			RequestType:      requestType,
+			DurationMs:       &durationMs,
+		}
+		if err := s.usageRepo.CreateUsage(record); err != nil {
+			s.logger.Error("写入用量明细失败", zap.Error(err), zap.Int64("user_id", userID))
+		}
+	}()
 
-	// 3. 更新周期限额计数器
-	s.limitService.RecordCycleUsage(ctx, userID, deptID, usage.TotalTokens)
+	go func() {
+		defer wg.Done()
+		if err := s.usageRepo.UpsertDaily(userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens); err != nil {
+			s.logger.Error("更新每日汇总失败", zap.Error(err), zap.Int64("user_id", userID))
+		}
+	}()
 
-	// 4. 更新 Key 最后使用时间
-	_ = s.keyRepo.UpdateLastUsed(keyID)
+	go func() {
+		defer wg.Done()
+		if err := s.usageRepo.UpsertDailyKey(keyID, userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens); err != nil {
+			s.logger.Error("更新 Key 每日汇总失败", zap.Error(err), zap.Int64("api_key_id", keyID))
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		s.limitService.RecordCycleUsage(ctx, userID, deptID, usage.TotalTokens)
+	}()
+
+	go func() {
+		defer wg.Done()
+		_ = s.keyRepo.UpdateLastUsed(keyID)
+	}()
+
+	wg.Wait()
 }
 
 // RecordRequestLog 记录请求日志
@@ -218,7 +238,7 @@ func (s *LLMProxyService) RecordRequestLog(
 }
 
 // RecordTrainingData 记录 LLM 请求/响应用于模型训练（异步调用）
-// 内部检查系统配置开关，关闭时直接跳过
+// 数据投递到批量缓冲器，由后台协程统一批量写入数据库
 func (s *LLMProxyService) RecordTrainingData(
 	userID, keyID int64,
 	requestType, modelName string,
@@ -255,9 +275,7 @@ func (s *LLMProxyService) RecordTrainingData(
 		ClientIP:         &clientIP,
 	}
 
-	if err := s.trainingDataRepo.Create(record); err != nil {
-		s.logger.Error("写入训练数据失败", zap.Error(err), zap.Int64("user_id", userID))
-	}
+	s.trainingDataBuffer.Add(record)
 }
 
 // isTrainingDataEnabled 检查训练数据采集是否开启（带 60 秒缓存）

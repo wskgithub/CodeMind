@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"codemind/internal/model"
+	"codemind/internal/pkg/timezone"
 
 	"gorm.io/gorm"
 )
@@ -33,6 +34,15 @@ type TrainingDataFilter struct {
 // Create 写入单条训练数据记录
 func (r *TrainingDataRepository) Create(data *model.LLMTrainingData) error {
 	return r.db.Create(data).Error
+}
+
+// BatchCreate 批量写入训练数据记录
+// 使用单条 INSERT ... VALUES (...), (...) 语句减少数据库往返次数
+func (r *TrainingDataRepository) BatchCreate(records []*model.LLMTrainingData) error {
+	if len(records) == 0 {
+		return nil
+	}
+	return r.db.CreateInBatches(records, len(records)).Error
 }
 
 // GetByID 根据 ID 查询单条记录（含完整请求/响应体）
@@ -75,50 +85,117 @@ func (r *TrainingDataRepository) UpdateExcluded(id int64, excluded bool) error {
 		Update("is_excluded", excluded).Error
 }
 
-// BatchIterator 返回按批次读取的游标查询（用于大数据量导出）
+// BatchIterator 按批次读取训练数据（用于大数据量导出）
+// FindInBatches 自动将结果填充到 records 切片，无需在回调中再次 Scan
 func (r *TrainingDataRepository) BatchIterator(filter TrainingDataFilter, batchSize int, fn func(batch []model.LLMTrainingData) error) error {
 	query := r.db.Model(&model.LLMTrainingData{})
 	query = r.applyFilter(query, filter)
-
-	// 强制排除已标记的记录
 	query = query.Where("is_excluded = FALSE")
 
-	return query.Order("id ASC").FindInBatches(&[]model.LLMTrainingData{}, batchSize, func(tx *gorm.DB, batch int) error {
-		var records []model.LLMTrainingData
-		if err := tx.Scan(&records).Error; err != nil {
-			return err
-		}
+	var records []model.LLMTrainingData
+	return query.Order("id ASC").FindInBatches(&records, batchSize, func(_ *gorm.DB, _ int) error {
 		return fn(records)
 	}).Error
 }
 
 // GetStats 获取训练数据统计信息
+// 将原先 4 次独立查询合并为 2 次，减少数据库往返
 func (r *TrainingDataRepository) GetStats() (*model.TrainingDataStats, error) {
 	stats := &model.TrainingDataStats{}
 
-	// 总记录数
-	r.db.Model(&model.LLMTrainingData{}).Count(&stats.TotalCount)
+	// 一次查询获取总数、今日新增、已排除数
+	today := timezone.TodayStr()
+	var counters struct {
+		TotalCount    int64 `gorm:"column:total_count"`
+		TodayCount    int64 `gorm:"column:today_count"`
+		ExcludedCount int64 `gorm:"column:excluded_count"`
+	}
+	err := r.db.Model(&model.LLMTrainingData{}).
+		Select(`COUNT(*) as total_count,
+			COUNT(*) FILTER (WHERE created_at >= ?::date) as today_count,
+			COUNT(*) FILTER (WHERE is_excluded = TRUE) as excluded_count`, today).
+		Scan(&counters).Error
+	if err != nil {
+		return nil, err
+	}
+	stats.TotalCount = counters.TotalCount
+	stats.TodayCount = counters.TodayCount
+	stats.ExcludedCount = counters.ExcludedCount
 
-	// 今日新增
-	today := time.Now().Format("2006-01-02")
-	r.db.Model(&model.LLMTrainingData{}).
-		Where("created_at >= ?::date", today).
-		Count(&stats.TodayCount)
-
-	// 已排除数
-	r.db.Model(&model.LLMTrainingData{}).
-		Where("is_excluded = TRUE").
-		Count(&stats.ExcludedCount)
-
-	// 模型分布
-	r.db.Model(&model.LLMTrainingData{}).
+	// 模型分布（独立查询，因为需要 GROUP BY）
+	err = r.db.Model(&model.LLMTrainingData{}).
 		Select("model, COUNT(*) as count").
 		Group("model").
 		Order("count DESC").
 		Limit(20).
-		Scan(&stats.ModelDistribution)
+		Scan(&stats.ModelDistribution).Error
+	if err != nil {
+		return nil, err
+	}
 
 	return stats, nil
+}
+
+// ──────────────────────────────────
+// 归档相关方法
+// ──────────────────────────────────
+
+// CountAll 获取训练数据总记录数
+func (r *TrainingDataRepository) CountAll() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.LLMTrainingData{}).Count(&count).Error
+	return count, err
+}
+
+// GetArchiveBoundaryID 获取归档边界 ID
+// 返回按 ID 升序排列第 n 条记录的 ID，用于确定归档快照的安全边界
+func (r *TrainingDataRepository) GetArchiveBoundaryID(n int) (int64, error) {
+	var id int64
+	err := r.db.Model(&model.LLMTrainingData{}).
+		Select("id").
+		Order("id ASC").
+		Offset(n - 1).
+		Limit(1).
+		Scan(&id).Error
+	return id, err
+}
+
+// GetIDRange 获取指定 ID 范围内的记录 ID 边界（min/max）
+func (r *TrainingDataRepository) GetIDRange(maxID int64) (minID, actualMaxID int64, err error) {
+	err = r.db.Model(&model.LLMTrainingData{}).
+		Select("MIN(id), MAX(id)").
+		Where("id <= ?", maxID).
+		Row().Scan(&minID, &actualMaxID)
+	return
+}
+
+// StreamByIDRange 按 ID 范围分批读取完整记录（用于归档导出）
+func (r *TrainingDataRepository) StreamByIDRange(maxID int64, batchSize int, fn func(batch []model.LLMTrainingData) error) error {
+	var records []model.LLMTrainingData
+	return r.db.Where("id <= ?", maxID).
+		Order("id ASC").
+		FindInBatches(&records, batchSize, func(_ *gorm.DB, _ int) error {
+			return fn(records)
+		}).Error
+}
+
+// DeleteByIDRange 按 ID 范围分批删除已归档的记录
+// 每批删除 batchSize 条，避免长事务和锁竞争
+func (r *TrainingDataRepository) DeleteByIDRange(maxID int64, batchSize int) (int64, error) {
+	var totalDeleted int64
+	for {
+		result := r.db.Where("id <= ?", maxID).
+			Limit(batchSize).
+			Delete(&model.LLMTrainingData{})
+		if result.Error != nil {
+			return totalDeleted, result.Error
+		}
+		totalDeleted += result.RowsAffected
+		if result.RowsAffected < int64(batchSize) {
+			break
+		}
+	}
+	return totalDeleted, nil
 }
 
 // applyFilter 应用筛选条件到查询

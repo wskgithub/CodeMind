@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -90,7 +90,7 @@ const DocsAdminPage: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       title: '排序',
       dataIndex: 'sort_order',
@@ -176,7 +176,7 @@ const DocsAdminPage: React.FC = () => {
         </Space>
       ),
     },
-  ];
+  ], []);
 
   return (
     <div className="docs-admin-page">

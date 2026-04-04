@@ -7,7 +7,7 @@ import authService from '@/services/authService';
 
 /** 个人中心页面 — 与首页/登录页新设计风格统一 */
 const ProfilePage: React.FC = () => {
-  const { fetchProfile } = useAuthStore();
+  const fetchProfile = useAuthStore((s) => s.fetchProfile);
   const [profile, setProfile] = useState<UserDetail | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [pwdLoading, setPwdLoading] = useState(false);
