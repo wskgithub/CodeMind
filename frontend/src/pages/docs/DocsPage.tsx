@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layout, Menu, Card, Typography, Skeleton, Empty, Alert, Button, Tooltip } from 'antd';
 import { BookOutlined, EditOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -266,6 +267,7 @@ const DocsPage: React.FC = () => {
               <Card className="docs-content-card" bordered={false}>
                 <div className="docs-markdown">
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                       code({ node, inline, className, children, ...props }: any) {
                         const match = /language-(\w+)/.exec(className || '');

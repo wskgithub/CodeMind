@@ -5,7 +5,7 @@ import "time"
 // Document 文档模型 - 存储开发工具接入文档
 type Document struct {
 	ID          int64      `gorm:"primaryKey;autoIncrement" json:"id"`
-	Slug        string     `gorm:"size:50;not null;uniqueIndex" json:"slug"`      // 文档标识，如 claude, cursor
+	Slug        string     `gorm:"size:50;not null" json:"slug"`                  // 文档标识，如 claude, cursor（唯一性由数据库部分索引保证）
 	Title       string     `gorm:"size:200;not null" json:"title"`                // 文档标题
 	Subtitle    string     `gorm:"size:500" json:"subtitle"`                      // 副标题/简介
 	Icon        string     `gorm:"size:100" json:"icon"`                          // 图标URL或类名
@@ -44,6 +44,7 @@ type DocumentListItem struct {
 
 // 预定义的工具标识常量
 const (
+	DocSlugOverview     = "overview"
 	DocSlugClaude       = "claude"
 	DocSlugClaudeIDE    = "claude-ide"
 	DocSlugOpenClaw     = "openclaw"
@@ -62,6 +63,14 @@ const (
 
 // 默认工具列表（用于初始化）
 var DefaultTools = []Document{
+	{
+		Slug:        DocSlugOverview,
+		Title:       "接入总览",
+		Subtitle:    "平台接入地址、可用模型与快速上手指南",
+		Icon:        "📋",
+		SortOrder:   0,
+		IsPublished: true,
+	},
 	{
 		Slug:        DocSlugClaude,
 		Title:       "Claude Code",

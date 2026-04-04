@@ -99,6 +99,7 @@ const getComponentTokens = (themeMode: ThemeMode) => {
 
 const App: React.FC = () => {
   const restore = useAuthStore((s) => s.restore);
+  const isRestored = useAuthStore((s) => s.isRestored);
   const themeMode = useAppStore((s) => s.themeMode);
 
   // 应用启动时恢复登录态
@@ -113,6 +114,11 @@ const App: React.FC = () => {
 
   const themeTokens = useMemo(() => getThemeTokens(themeMode), [themeMode]);
   const componentTokens = useMemo(() => getComponentTokens(themeMode), [themeMode]);
+
+  // 等待认证状态从 localStorage 恢复完成后再渲染路由
+  if (!isRestored) {
+    return null;
+  }
 
   return (
     <ConfigProvider

@@ -8,6 +8,8 @@ interface AuthState {
   user: UserBrief | null;
   isAuthenticated: boolean;
   loading: boolean;
+  /** 是否已完成从本地存储恢复 */
+  isRestored: boolean;
 
   /** 用户登录 */
   login: (username: string, password: string) => Promise<void>;
@@ -26,6 +28,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   loading: false,
+  isRestored: false,
 
   login: async (username: string, password: string) => {
     set({ loading: true });
@@ -85,12 +88,15 @@ const useAuthStore = create<AuthState>((set, get) => ({
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr) as UserBrief;
-        set({ token, user, isAuthenticated: true });
+        set({ token, user, isAuthenticated: true, isRestored: true });
       } catch {
         // JSON 解析失败，清除脏数据
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        set({ isRestored: true });
       }
+    } else {
+      set({ isRestored: true });
     }
   },
 

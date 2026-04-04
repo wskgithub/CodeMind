@@ -80,10 +80,11 @@ const DocsAdminPage: React.FC = () => {
       setInitModalVisible(false);
       loadDocuments();
     } catch (error: any) {
-      if (error.response?.data?.error === '文档已存在，无法初始化') {
-        message.warning('文档已存在，无法初始化');
-      } else {
-        message.error('初始化失败');
+      // 错误消息已在请求拦截器中显示，这里不再重复显示
+      // 仅处理特定业务逻辑（如关闭模态框）
+      const errorMsg = error.response?.data?.message;
+      if (errorMsg === '文档已存在，无法初始化') {
+        setInitModalVisible(false);
       }
     } finally {
       setInitLoading(false);
