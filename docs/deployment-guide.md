@@ -124,10 +124,10 @@ bash scripts/package.sh
 
 ```bash
 # 上传部署包
-scp dist/codemind-v0.3.0.tar.gz user@server:/tmp/
+scp dist/codemind-v0.4.0.tar.gz user@server:/tmp/
 
 # 上传校验文件（可选，用于验证完整性）
-scp dist/codemind-v0.3.0.tar.gz.sha256 user@server:/tmp/
+scp dist/codemind-v0.4.0.tar.gz.sha256 user@server:/tmp/
 ```
 
 ### 3.3 在服务器上部署
@@ -138,13 +138,13 @@ ssh user@server
 
 # 验证文件完整性（可选）
 cd /tmp
-sha256sum -c codemind-v0.3.0.tar.gz.sha256
+sha256sum -c codemind-v0.4.0.tar.gz.sha256
 
 # 解压部署包
-tar -xzf codemind-v0.3.0.tar.gz
+tar -xzf codemind-v0.4.0.tar.gz
 
 # 执行一键部署
-cd codemind-v0.3.0
+cd codemind-v0.4.0
 sudo bash scripts/deploy.sh
 ```
 
@@ -316,7 +316,7 @@ sudo bash /opt/codemind/scripts/backup.sh --db-only
 备份保存在 `/opt/codemind/backups/`，格式：
 
 ```
-codemind-backup-v0.3.0-20260403_030000.tar.gz
+codemind-backup-v0.4.0-20260403_030000.tar.gz
 ├── database.dump          # PostgreSQL 数据库转储
 ├── env.bak                # .env 配置
 ├── app.yaml.bak           # 应用配置
@@ -333,7 +333,7 @@ codemind-backup-v0.3.0-20260403_030000.tar.gz
 sudo bash /opt/codemind/scripts/restore.sh --list
 
 # 恢复数据库（不影响配置）
-sudo bash /opt/codemind/scripts/restore.sh /opt/codemind/backups/codemind-backup-v0.3.0-20260403.tar.gz
+sudo bash /opt/codemind/scripts/restore.sh /opt/codemind/backups/codemind-backup-v0.4.0-20260403.tar.gz
 
 # 同时恢复数据库和配置
 sudo bash /opt/codemind/scripts/restore.sh /opt/codemind/backups/xxx.tar.gz --with-config
@@ -577,11 +577,11 @@ sudo bash /opt/codemind/scripts/uninstall.sh --keep-backups
 ```bash
 # ──── 开发机（macOS）──────────────────────
 bash scripts/package.sh                                  # 打包
-scp dist/codemind-v0.3.0.tar.gz user@server:/tmp/       # 上传
+scp dist/codemind-v0.4.0.tar.gz user@server:/tmp/       # 上传
 
 # ──── 服务器（Ubuntu 22.04）────────────────
-cd /tmp && tar -xzf codemind-v0.3.0.tar.gz             # 解压
-cd codemind-v0.3.0 && sudo bash scripts/deploy.sh      # 部署
+cd /tmp && tar -xzf codemind-v0.4.0.tar.gz             # 解压
+cd codemind-v0.4.0 && sudo bash scripts/deploy.sh      # 部署
 
 # ──── 日常运维 ─────────────────────────────
 sudo bash /opt/codemind/scripts/status.sh               # 查看状态
