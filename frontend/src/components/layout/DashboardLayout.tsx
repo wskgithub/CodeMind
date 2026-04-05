@@ -168,34 +168,35 @@ const DashboardLayout: React.FC = () => {
   const selectedKey = location.pathname;
 
   return (
-    <Layout style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
-      {/* 背景装饰光圈 - 新设计 */}
+    <Layout style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
+      {/*
+       * 背景装饰光圈 — 用大尺寸柔和渐变实现，不使用 filter: blur()
+       * radial-gradient 由 GPU 着色器原生渲染，零后处理开销
+       */}
       <div
         style={{
           position: 'fixed',
-          top: -150,
-          right: -150,
-          width: 500,
-          height: 500,
-          background: 'radial-gradient(circle, rgba(0, 217, 255, 0.1) 0%, transparent 70%)',
+          top: -200,
+          right: -200,
+          width: 800,
+          height: 800,
+          background: 'radial-gradient(circle, rgba(0, 217, 255, 0.08) 0%, rgba(0, 217, 255, 0.03) 30%, rgba(0, 217, 255, 0.008) 55%, transparent 70%)',
           borderRadius: '50%',
           pointerEvents: 'none',
           zIndex: 0,
-          filter: 'blur(60px)',
         }}
       />
       <div
         style={{
           position: 'fixed',
-          bottom: -100,
-          left: -100,
-          width: 400,
-          height: 400,
-          background: 'radial-gradient(circle, rgba(157, 78, 221, 0.08) 0%, transparent 70%)',
+          bottom: -150,
+          left: -150,
+          width: 650,
+          height: 650,
+          background: 'radial-gradient(circle, rgba(157, 78, 221, 0.06) 0%, rgba(157, 78, 221, 0.025) 30%, rgba(157, 78, 221, 0.006) 55%, transparent 70%)',
           borderRadius: '50%',
           pointerEvents: 'none',
           zIndex: 0,
-          filter: 'blur(60px)',
         }}
       />
       <div
@@ -203,17 +204,15 @@ const DashboardLayout: React.FC = () => {
           position: 'fixed',
           top: '50%',
           left: '30%',
-          width: 300,
-          height: 300,
-          background: 'radial-gradient(circle, rgba(0, 245, 212, 0.05) 0%, transparent 70%)',
+          width: 500,
+          height: 500,
+          background: 'radial-gradient(circle, rgba(0, 245, 212, 0.04) 0%, rgba(0, 245, 212, 0.015) 30%, rgba(0, 245, 212, 0.004) 55%, transparent 70%)',
           borderRadius: '50%',
           pointerEvents: 'none',
           zIndex: 0,
-          filter: 'blur(50px)',
         }}
       />
 
-      {/* 玻璃效果侧边栏 - 新设计 */}
       <Sider
         trigger={null}
         collapsible
@@ -328,7 +327,7 @@ const DashboardLayout: React.FC = () => {
         />
       </Sider>
 
-      {/* 右侧内容区 */}
+      {/* 右侧内容区 — flex 列布局，高度锁定视口 */}
       <Layout
         style={{
           marginLeft: sidebarCollapsed ? 80 : 240,
@@ -336,9 +335,12 @@ const DashboardLayout: React.FC = () => {
           background: 'transparent',
           position: 'relative',
           zIndex: 1,
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
-        {/* 玻璃效果顶栏 - 新设计 */}
         <Header
           className="glass-header"
           style={{
@@ -350,11 +352,10 @@ const DashboardLayout: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            position: 'sticky',
-            top: 0,
             zIndex: 15,
             height: 72,
             lineHeight: '72px',
+            flexShrink: 0,
           }}
         >
           <Button
@@ -439,11 +440,12 @@ const DashboardLayout: React.FC = () => {
           </div>
         </Header>
 
-        {/* 页面内容区 */}
         <Content
           style={{
-            margin: 24,
-            minHeight: 280,
+            padding: 24,
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
           }}

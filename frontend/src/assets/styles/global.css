@@ -54,10 +54,10 @@
   --header-bg: rgba(5, 13, 20, 0.85);
   --header-blur: 20px;
 
-  /* 装饰光圈 - 新设计 */
-  --orb-primary: radial-gradient(circle, rgba(0, 217, 255, 0.12) 0%, transparent 70%);
-  --orb-accent: radial-gradient(circle, rgba(157, 78, 221, 0.1) 0%, transparent 70%);
-  --orb-teal: radial-gradient(circle, rgba(0, 245, 212, 0.08) 0%, transparent 70%);
+  /* 装饰光圈 — 多级渐变模拟柔和光晕，无需 filter: blur */
+  --orb-primary: radial-gradient(circle, rgba(0, 217, 255, 0.1) 0%, rgba(0, 217, 255, 0.04) 30%, rgba(0, 217, 255, 0.01) 55%, transparent 70%);
+  --orb-accent: radial-gradient(circle, rgba(157, 78, 221, 0.08) 0%, rgba(157, 78, 221, 0.03) 30%, rgba(157, 78, 221, 0.008) 55%, transparent 70%);
+  --orb-teal: radial-gradient(circle, rgba(0, 245, 212, 0.06) 0%, rgba(0, 245, 212, 0.02) 30%, rgba(0, 245, 212, 0.005) 55%, transparent 70%);
   
   /* 文字颜色 - 深色模式（白底黑字） */
   --text-primary: #ffffff;
@@ -96,10 +96,10 @@
   --header-bg: rgba(255, 255, 255, 0.85);
   --header-blur: 20px;
 
-  /* 装饰光圈 - 亮色模式（增强可见性） */
-  --orb-primary: radial-gradient(circle, rgba(0, 217, 255, 0.2) 0%, transparent 70%);
-  --orb-accent: radial-gradient(circle, rgba(157, 78, 221, 0.15) 0%, transparent 70%);
-  --orb-teal: radial-gradient(circle, rgba(0, 245, 212, 0.12) 0%, transparent 70%);
+  /* 装饰光圈 — 亮色模式（稍增强） */
+  --orb-primary: radial-gradient(circle, rgba(0, 217, 255, 0.15) 0%, rgba(0, 217, 255, 0.06) 30%, rgba(0, 217, 255, 0.015) 55%, transparent 70%);
+  --orb-accent: radial-gradient(circle, rgba(157, 78, 221, 0.12) 0%, rgba(157, 78, 221, 0.05) 30%, rgba(157, 78, 221, 0.012) 55%, transparent 70%);
+  --orb-teal: radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, rgba(0, 245, 212, 0.04) 30%, rgba(0, 245, 212, 0.01) 55%, transparent 70%);
   
   /* 文字颜色 - 亮色模式（黑底白字） */
   --text-primary: rgba(0, 0, 0, 0.85);
@@ -149,7 +149,6 @@ body {
     transform: translateY(-1px);
   }
 
-  /* 玻璃侧边栏 - 新设计 */
   .glass-sidebar {
     background: var(--sidebar-bg);
     backdrop-filter: blur(24px);
@@ -157,7 +156,6 @@ body {
     border-right: 1px solid var(--sidebar-border);
   }
 
-  /* 玻璃顶栏 - 新设计 */
   .glass-header {
     background: var(--header-bg);
     backdrop-filter: blur(var(--header-blur));
@@ -202,39 +200,37 @@ body {
     opacity: 1;
   }
 
-  /* 页面容器背景 - 新设计 */
+  /* 页面容器背景 */
   .page-bg {
     position: relative;
     min-height: 100%;
   }
 
-  /* 页面背景装饰 - 发光球体 */
+  /* 页面背景装饰 — 用大尺寸柔和渐变实现，不使用 filter: blur() */
   .page-bg::before {
     content: '';
     position: fixed;
-    top: -100px;
-    right: -100px;
-    width: 500px;
-    height: 500px;
+    top: -150px;
+    right: -150px;
+    width: 800px;
+    height: 800px;
     background: var(--orb-primary);
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
-    filter: blur(60px);
   }
 
   .page-bg::after {
     content: '';
     position: fixed;
-    bottom: -100px;
-    left: -100px;
-    width: 400px;
-    height: 400px;
+    bottom: -150px;
+    left: -150px;
+    width: 650px;
+    height: 650px;
     background: var(--orb-accent);
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
-    filter: blur(60px);
   }
 
   /* 渐变图标容器 */
