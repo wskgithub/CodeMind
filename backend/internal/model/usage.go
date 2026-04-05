@@ -84,22 +84,24 @@ func (RequestLog) TableName() string {
 // LLMTrainingData LLM 训练数据记录
 // 存储完整的请求/响应 JSON，用于后续模型训练
 type LLMTrainingData struct {
-	ID               int64           `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID           int64           `gorm:"not null;index:idx_training_data_user_created" json:"user_id"`
-	APIKeyID         int64           `gorm:"not null" json:"api_key_id"`
-	RequestType      string          `gorm:"size:30;not null;index:idx_training_data_type" json:"request_type"`
-	Model            string          `gorm:"size:100;not null;index:idx_training_data_model" json:"model"`
-	IsStream         bool            `gorm:"not null;default:false" json:"is_stream"`
-	RequestBody      json.RawMessage `gorm:"type:jsonb;not null" json:"request_body"`
-	ResponseBody     json.RawMessage `gorm:"type:jsonb" json:"response_body"`
-	PromptTokens     int             `gorm:"not null;default:0" json:"prompt_tokens"`
-	CompletionTokens int             `gorm:"not null;default:0" json:"completion_tokens"`
-	TotalTokens      int             `gorm:"not null;default:0" json:"total_tokens"`
-	DurationMs       *int            `json:"duration_ms"`
-	StatusCode       int             `gorm:"not null;default:200" json:"status_code"`
-	ClientIP         *string         `gorm:"size:45" json:"client_ip"`
-	IsExcluded       bool            `gorm:"not null;default:false" json:"is_excluded"`
-	CreatedAt        time.Time       `gorm:"not null;autoCreateTime;index:idx_training_data_user_created;index:idx_training_data_created" json:"created_at"`
+	ID                   int64           `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID               int64           `gorm:"not null;index:idx_training_data_user_created" json:"user_id"`
+	APIKeyID             int64           `gorm:"not null" json:"api_key_id"`
+	RequestType          string          `gorm:"size:30;not null;index:idx_training_data_type" json:"request_type"`
+	Model                string          `gorm:"size:100;not null;index:idx_training_data_model" json:"model"`
+	IsStream             bool            `gorm:"not null;default:false" json:"is_stream"`
+	RequestBody          json.RawMessage `gorm:"type:jsonb;not null" json:"request_body"`
+	ResponseBody         json.RawMessage `gorm:"type:jsonb" json:"response_body"`
+	PromptTokens         int             `gorm:"not null;default:0" json:"prompt_tokens"`
+	CompletionTokens     int             `gorm:"not null;default:0" json:"completion_tokens"`
+	TotalTokens          int             `gorm:"not null;default:0" json:"total_tokens"`
+	DurationMs           *int            `json:"duration_ms"`
+	StatusCode           int             `gorm:"not null;default:200" json:"status_code"`
+	ClientIP             *string         `gorm:"size:45" json:"client_ip"`
+	IsExcluded           bool            `gorm:"not null;default:false" json:"is_excluded"`
+	Source               string          `gorm:"size:20;not null;default:platform;index:idx_training_data_source" json:"source"`    // platform | third_party
+	ThirdPartyProviderID *int64          `json:"third_party_provider_id,omitempty"`
+	CreatedAt            time.Time       `gorm:"not null;autoCreateTime;index:idx_training_data_user_created;index:idx_training_data_created" json:"created_at"`
 }
 
 // TableName 指定表名

@@ -55,7 +55,7 @@ URL: http://localhost:3000
 ### API 端点
 - 健康检查: `GET http://localhost:8080/health`
 - 管理 API: `http://localhost:8080/api/v1/*`
-- LLM 代理: `http://localhost:8080/v1/*`
+- LLM 代理（OpenAI 兼容）: `http://localhost:8080/api/openai/v1/*`；Anthropic: `http://localhost:8080/api/anthropic/*`
 
 ---
 
@@ -108,7 +108,7 @@ CodeMind/
 - ✅ 每用户最多 10 个密钥
 
 ### LLM 代理
-- ✅ OpenAI 兼容 API (`/v1/chat/completions`, `/v1/completions`, `/v1/models`)
+- ✅ OpenAI 兼容 API (`/api/openai/v1/chat/completions`, `/api/openai/v1/completions`, `/api/openai/v1/models`)
 - ✅ SSE 流式响应支持
 - ✅ 并发请求控制（Redis 计数器）
 - ✅ Token 用量计量（估算 + 实际）

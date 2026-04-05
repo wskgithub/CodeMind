@@ -96,6 +96,8 @@ const DashboardPage = () => {
     }
   };
 
+  const hasThirdPartyData = usageData.some((d) => (d.third_party_total_tokens || 0) > 0);
+
   const renderChart = () => {
     if (!chartRef.current) return;
 
@@ -105,7 +107,44 @@ const DashboardPage = () => {
 
     const dates = usageData.map((d) => d.date);
     const tokens = usageData.map((d) => d.total_tokens);
-    const requests = usageData.map((d) => d.request_count);
+    const tpTokens = usageData.map((d) => d.third_party_total_tokens || 0);
+    const requests = usageData.map((d) => (d.request_count || 0) + (d.third_party_request_count || 0));
+
+    const legendData = hasThirdPartyData
+      ? ['平台 Token', '第三方 Token', '请求次数']
+      : ['Token 用量', '请求次数'];
+
+    const barSeries: echarts.SeriesOption[] = [
+      {
+        name: hasThirdPartyData ? '平台 Token' : 'Token 用量',
+        type: 'bar',
+        stack: 'tokens',
+        data: tokens,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#00D9FF' },
+            { offset: 1, color: '#9D4EDD' },
+          ]),
+          borderRadius: hasThirdPartyData ? [0, 0, 0, 0] : [4, 4, 0, 0],
+        },
+      },
+    ];
+
+    if (hasThirdPartyData) {
+      barSeries.push({
+        name: '第三方 Token',
+        type: 'bar',
+        stack: 'tokens',
+        data: tpTokens,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#FFBE0B' },
+            { offset: 1, color: '#FF8800' },
+          ]),
+          borderRadius: [4, 4, 0, 0],
+        },
+      });
+    }
 
     chartInstance.current.setOption({
       backgroundColor: 'transparent',
@@ -117,7 +156,7 @@ const DashboardPage = () => {
         textStyle: { color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' },
       },
       legend: {
-        data: ['Token 用量', '请求次数'],
+        data: legendData,
         textStyle: { color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)' },
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -152,18 +191,7 @@ const DashboardPage = () => {
         },
       ],
       series: [
-        {
-          name: 'Token 用量',
-          type: 'bar',
-          data: tokens,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#00D9FF' },
-              { offset: 1, color: '#9D4EDD' },
-            ]),
-            borderRadius: [4, 4, 0, 0],
-          },
-        },
+        ...barSeries,
         {
           name: '请求次数',
           type: 'line',
@@ -180,7 +208,7 @@ const DashboardPage = () => {
           },
         },
       ],
-    });
+    }, true);
   };
 
   /** 格式化大数字 */
@@ -227,44 +255,53 @@ const DashboardPage = () => {
       {/* 统计卡片 — 新设计 */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
-          <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
-            <div className="flex items-center gap-4">
+          <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.05s' }}>
+            <div className="flex items-center gap-4 h-full">
               <StatIcon
                 icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
                 gradient="linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)"
               />
-              <Statistic
-                title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>今日 Token 用量</span>}
-                value={overview?.today.total_tokens || 0}
-                formatter={(val) => formatNumber(Number(val))}
-                valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
-                suffix={
+              <div>
+                <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13, marginBottom: 4 }}>今日 Token 用量</div>
+                <div style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}>
+                  {formatNumber((overview?.today.total_tokens || 0) + (overview?.today.third_party_total_tokens || 0))}
                   <ArrowUpOutlined style={{ fontSize: 12, color: '#00F5D4', marginLeft: 4 }} />
-                }
-              />
+                </div>
+                {(overview?.today.third_party_total_tokens || 0) > 0 && (
+                  <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', fontSize: 11, marginTop: 2 }}>
+                    平台 {formatNumber(overview?.today.total_tokens || 0)} · 第三方 {formatNumber(overview?.today.third_party_total_tokens || 0)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            <div className="flex items-center gap-4">
+          <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.1s' }}>
+            <div className="flex items-center gap-4 h-full">
               <StatIcon
                 icon={<MessageOutlined style={{ fontSize: 22 }} />}
                 gradient="linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%)"
               />
-              <Statistic
-                title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>今日请求数</span>}
-                value={overview?.today.total_requests || 0}
-                valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
-              />
+              <div>
+                <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13, marginBottom: 4 }}>今日请求数</div>
+                <div style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}>
+                  {((overview?.today.total_requests || 0) + (overview?.today.third_party_total_requests || 0)).toLocaleString()}
+                </div>
+                {(overview?.today.third_party_total_requests || 0) > 0 && (
+                  <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', fontSize: 11, marginTop: 2 }}>
+                    平台 {(overview?.today.total_requests || 0).toLocaleString()} · 第三方 {(overview?.today.third_party_total_requests || 0).toLocaleString()}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </Col>
         {isAdmin && (
           <>
             <Col xs={24} sm={12} lg={6}>
-              <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-                <div className="flex items-center gap-4">
+              <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.15s' }}>
+                <div className="flex items-center gap-4 h-full">
                   <StatIcon
                     icon={<TeamOutlined style={{ fontSize: 22 }} />}
                     gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
@@ -278,8 +315,8 @@ const DashboardPage = () => {
               </div>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <div className="flex items-center gap-4">
+              <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.2s' }}>
+                <div className="flex items-center gap-4 h-full">
                   <StatIcon
                     icon={<KeyOutlined style={{ fontSize: 22 }} />}
                     gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
@@ -297,33 +334,44 @@ const DashboardPage = () => {
         {!isAdmin && (
           <>
             <Col xs={24} sm={12} lg={6}>
-              <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-                <div className="flex items-center gap-4">
+              <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.15s' }}>
+                <div className="flex items-center gap-4 h-full">
                   <StatIcon
                     icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
                     gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                   />
-                  <Statistic
-                    title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>本月 Token 用量</span>}
-                    value={overview?.this_month.total_tokens || 0}
-                    formatter={(val) => formatNumber(Number(val))}
-                    valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
-                  />
+                  <div>
+                    <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13, marginBottom: 4 }}>本月 Token 用量</div>
+                    <div style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}>
+                      {formatNumber((overview?.this_month.total_tokens || 0) + (overview?.this_month.third_party_total_tokens || 0))}
+                    </div>
+                    {(overview?.this_month.third_party_total_tokens || 0) > 0 && (
+                      <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', fontSize: 11, marginTop: 2 }}>
+                        平台 {formatNumber(overview?.this_month.total_tokens || 0)} · 第三方 {formatNumber(overview?.this_month.third_party_total_tokens || 0)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </Col>
             <Col xs={24} sm={12} lg={6}>
-              <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                <div className="flex items-center gap-4">
+              <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.2s' }}>
+                <div className="flex items-center gap-4 h-full">
                   <StatIcon
                     icon={<MessageOutlined style={{ fontSize: 22 }} />}
                     gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                   />
-                  <Statistic
-                    title={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13 }}>本月请求数</span>}
-                    value={overview?.this_month.total_requests || 0}
-                    valueStyle={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}
-                  />
+                  <div>
+                    <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', fontSize: 13, marginBottom: 4 }}>本月请求数</div>
+                    <div style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 24, fontWeight: 700 }}>
+                      {((overview?.this_month.total_requests || 0) + (overview?.this_month.third_party_total_requests || 0)).toLocaleString()}
+                    </div>
+                    {(overview?.this_month.third_party_total_requests || 0) > 0 && (
+                      <div style={{ color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', fontSize: 11, marginTop: 2 }}>
+                        平台 {(overview?.this_month.total_requests || 0).toLocaleString()} · 第三方 {(overview?.this_month.third_party_total_requests || 0).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </Col>

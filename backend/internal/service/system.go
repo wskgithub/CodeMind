@@ -65,6 +65,15 @@ func (s *SystemService) UpdateConfigs(req *dto.UpdateConfigsRequest, operatorID 
 	return nil
 }
 
+// GetPlatformServiceURL 获取平台服务 URL（所有已登录用户可调用）
+func (s *SystemService) GetPlatformServiceURL() string {
+	cfg, err := s.configRepo.GetByKey(model.ConfigPlatformServiceURL)
+	if err != nil || cfg.ConfigValue == "" {
+		return ""
+	}
+	return cfg.ConfigValue
+}
+
 // ──────────────────────────────────
 // 公告管理
 // ──────────────────────────────────

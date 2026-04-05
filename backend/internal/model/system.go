@@ -26,4 +26,5 @@ const (
 	ConfigDefaultConcurrency     = "system.default_concurrency"
 	ConfigForceChangePwd         = "system.force_change_password"
 	ConfigTrainingDataCollection = "system.training_data_collection"
+	ConfigPlatformServiceURL     = "platform.service_url"
 )

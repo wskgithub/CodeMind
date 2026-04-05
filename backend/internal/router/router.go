@@ -14,20 +14,21 @@ import (
 
 // Handlers 所有 Handler 集合
 type Handlers struct {
-	Auth         *handler.AuthHandler
-	User         *handler.UserHandler
-	Department   *handler.DepartmentHandler
-	APIKey       *handler.APIKeyHandler
-	LLMProxy     *handler.LLMProxyHandler
-	Stats        *handler.StatsHandler
-	Limit        *handler.LimitHandler
-	System       *handler.SystemHandler
-	MCPAdmin     *handler.MCPAdminHandler
-	MCPGateway   *handler.MCPGatewayHandler
-	LLMBackend   *handler.LLMBackendHandler
-	Monitor      *handler.MonitorHandler
-	Document     *handler.DocumentHandler
-	TrainingData *handler.TrainingDataHandler
+	Auth               *handler.AuthHandler
+	User               *handler.UserHandler
+	Department         *handler.DepartmentHandler
+	APIKey             *handler.APIKeyHandler
+	LLMProxy           *handler.LLMProxyHandler
+	Stats              *handler.StatsHandler
+	Limit              *handler.LimitHandler
+	System             *handler.SystemHandler
+	MCPAdmin           *handler.MCPAdminHandler
+	MCPGateway         *handler.MCPGatewayHandler
+	LLMBackend         *handler.LLMBackendHandler
+	Monitor            *handler.MonitorHandler
+	Document           *handler.DocumentHandler
+	TrainingData       *handler.TrainingDataHandler
+	ThirdPartyProvider *handler.ThirdPartyProviderHandler
 }
 
 // Setup 初始化路由
@@ -110,6 +111,12 @@ func Setup(
 			limits.GET("/my/progress", handlers.Limit.GetMyProgress)
 		}
 
+		// 平台设置（所有用户可查看）
+		settings := authenticated.Group("/settings")
+		{
+			settings.GET("/platform", handlers.System.GetPlatformServiceURL)
+		}
+
 		// 公告查询（所有用户可查看已发布公告）
 		announcements := authenticated.Group("/announcements")
 		{
@@ -121,6 +128,18 @@ func Setup(
 		{
 			docs.GET("", handlers.Document.ListDocuments)
 			docs.GET("/:slug", handlers.Document.GetDocument)
+		}
+
+		// 模型服务（所有已登录用户可用）
+		models := authenticated.Group("/models")
+		{
+			models.GET("/platform", handlers.ThirdPartyProvider.ListPlatformModels)
+			models.GET("/templates", handlers.ThirdPartyProvider.ListTemplatesForUser)
+			models.GET("/third-party", handlers.ThirdPartyProvider.ListProviders)
+			models.POST("/third-party", handlers.ThirdPartyProvider.CreateProvider)
+			models.PUT("/third-party/:id", handlers.ThirdPartyProvider.UpdateProvider)
+			models.PUT("/third-party/:id/status", handlers.ThirdPartyProvider.UpdateProviderStatus)
+			models.DELETE("/third-party/:id", handlers.ThirdPartyProvider.DeleteProvider)
 		}
 
 		// 用户管理（管理员 + 部门经理）
@@ -178,6 +197,16 @@ func Setup(
 			system.POST("/llm-backends", handlers.LLMBackend.Create)
 			system.PUT("/llm-backends/:id", handlers.LLMBackend.Update)
 			system.DELETE("/llm-backends/:id", handlers.LLMBackend.Delete)
+		}
+
+		// 第三方服务模板管理（仅超级管理员）
+		providerTemplates := authenticated.Group("/system/provider-templates")
+		providerTemplates.Use(middleware.RequireAdmin())
+		{
+			providerTemplates.GET("", handlers.ThirdPartyProvider.ListTemplatesAdmin)
+			providerTemplates.POST("", handlers.ThirdPartyProvider.CreateTemplate)
+			providerTemplates.PUT("/:id", handlers.ThirdPartyProvider.UpdateTemplate)
+			providerTemplates.DELETE("/:id", handlers.ThirdPartyProvider.DeleteTemplate)
 		}
 
 		// MCP 服务管理（仅超级管理员）
@@ -243,21 +272,30 @@ func Setup(
 	}
 
 	// ──────────────────────────────────
-	// LLM 代理接口 (/v1)
+	// LLM 代理接口 — OpenAI 协议 (/api/openai/v1)
 	// 使用 API Key 认证
 	// ──────────────────────────────────
-	llmV1 := engine.Group("/v1")
-	llmV1.Use(middleware.APIKeyAuth(db, rdb, logger))
+	openaiLLM := engine.Group("/api/openai/v1")
+	openaiLLM.Use(middleware.SetLLMProtocol("openai"))
+	openaiLLM.Use(middleware.APIKeyAuth(db, rdb, logger))
 	{
-		// OpenAI 兼容接口
-		llmV1.POST("/chat/completions", handlers.LLMProxy.ChatCompletions)
-		llmV1.POST("/completions", handlers.LLMProxy.Completions)
-		llmV1.GET("/models", handlers.LLMProxy.ListModels)
-		llmV1.GET("/models/:model", handlers.LLMProxy.RetrieveModel)
-		llmV1.POST("/embeddings", handlers.LLMProxy.Embeddings)
-		llmV1.POST("/responses", handlers.LLMProxy.Responses)
+		openaiLLM.POST("/chat/completions", handlers.LLMProxy.ChatCompletions)
+		openaiLLM.POST("/completions", handlers.LLMProxy.Completions)
+		openaiLLM.GET("/models", handlers.LLMProxy.ListModels)
+		openaiLLM.GET("/models/:model", handlers.LLMProxy.RetrieveModel)
+		openaiLLM.POST("/embeddings", handlers.LLMProxy.Embeddings)
+		openaiLLM.POST("/responses", handlers.LLMProxy.Responses)
+	}
 
-		// Anthropic 原生接口
-		llmV1.POST("/messages", handlers.LLMProxy.AnthropicMessages)
+	// ──────────────────────────────────
+	// LLM 代理接口 — Anthropic 协议 (/api/anthropic)
+	// 使用 API Key 认证
+	// Anthropic 客户端会自动追加 /v1/messages 到 base URL
+	// ──────────────────────────────────
+	anthropicLLM := engine.Group("/api/anthropic")
+	anthropicLLM.Use(middleware.SetLLMProtocol("anthropic"))
+	anthropicLLM.Use(middleware.APIKeyAuth(db, rdb, logger))
+	{
+		anthropicLLM.POST("/v1/messages", handlers.LLMProxy.AnthropicMessages)
 	}
 }

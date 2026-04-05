@@ -4,14 +4,13 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"codemind/internal/pkg/errcode"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 // Recovery Panic 恢复中间件
 // 捕获 panic 并返回 500 错误，同时记录堆栈信息
+// 自动适配 LLM 代理端点的协议格式（需配合 SetLLMProtocol 使用）
 func Recovery(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
@@ -25,12 +24,8 @@ func Recovery(logger *zap.Logger) gin.HandlerFunc {
 					zap.ByteString("stack", debug.Stack()),
 				)
 
-				// 返回 500 错误
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-					"code":    errcode.ErrInternal.Code,
-					"message": errcode.ErrInternal.Message,
-					"data":    nil,
-				})
+				sendProtocolError(c, http.StatusInternalServerError, "服务器内部错误")
+				c.Abort()
 			}
 		}()
 

@@ -55,7 +55,7 @@
 - **部门管理**：CRUD、树形结构查询、级联校验
 - **API Key 管理**：创建（cm- 前缀 + SHA-256 哈希存储）、启用/禁用、Redis 缓存验证
 - **LLM 代理层**：
-  - OpenAI 兼容 API（`/v1/chat/completions`、`/v1/completions`、`/v1/models`）
+  - OpenAI 兼容 API（`/api/openai/v1/chat/completions`、`/api/openai/v1/completions`、`/api/openai/v1/models`）
   - SSE 流式响应转发
   - Token 用量计量与异步记录
   - Redis 并发控制与 Token 配额检查

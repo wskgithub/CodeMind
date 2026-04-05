@@ -354,9 +354,9 @@ LLM 代理层是本系统的核心模块，负责所有 AI 编码请求的转发
 
 | 代理接口 | 对应 OpenAI 接口 | 说明 |
 |----------|-----------------|------|
-| `POST /v1/chat/completions` | Chat Completions | 对话补全（主要接口） |
-| `POST /v1/completions` | Completions | 文本补全 |
-| `GET /v1/models` | List Models | 获取可用模型列表 |
+| `POST /api/openai/v1/chat/completions` | Chat Completions | 对话补全（主要接口） |
+| `POST /api/openai/v1/completions` | Completions | 文本补全 |
+| `GET /api/openai/v1/models` | List Models | 获取可用模型列表 |
 
 #### 4.4.2 请求转发流程
 
@@ -662,7 +662,7 @@ TTL: 300s (安全超时，防止异常情况下计数器不释放)
 
 ```
 管理平台 API：  /api/v1/*
-LLM 代理 API：  /v1/*
+LLM 代理 API：  OpenAI 兼容 `/api/openai/v1/*`；Anthropic `/api/anthropic/*`
 ```
 
 #### 6.1.2 认证方式
@@ -1298,7 +1298,7 @@ lisi,李四,lisi@company.com,13700137000,2,user
 
 以下接口兼容 OpenAI API 标准格式，客户端使用 API Key 进行认证。
 
-#### POST /v1/chat/completions
+#### POST /api/openai/v1/chat/completions
 
 对话补全接口（主要的 AI 编码接口）。
 
@@ -1366,7 +1366,7 @@ data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","choices":[{"delta":
 data: [DONE]
 ```
 
-#### POST /v1/completions
+#### POST /api/openai/v1/completions
 
 文本补全接口。
 
@@ -1380,7 +1380,7 @@ data: [DONE]
 }
 ```
 
-#### GET /v1/models
+#### GET /api/openai/v1/models
 
 获取可用模型列表。
 
@@ -1890,14 +1890,25 @@ location /api/ {
     proxy_set_header X-Real-IP $remote_addr;
 }
 
-# LLM proxy (with SSE support)
-location /v1/ {
+# OpenAI 兼容 LLM 代理（含 SSE）
+location /api/openai/ {
     proxy_pass http://backend:8080;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
-    proxy_buffering off;           # Required for SSE
+    proxy_buffering off;           # SSE 所需
     proxy_cache off;
-    proxy_read_timeout 600s;       # Long timeout for LLM requests
+    proxy_read_timeout 600s;       # LLM 长连接超时
+    chunked_transfer_encoding on;
+}
+
+# Anthropic LLM 代理（含 SSE）
+location /api/anthropic/ {
+    proxy_pass http://backend:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 600s;
     chunked_transfer_encoding on;
 }
 ```
@@ -2233,9 +2244,9 @@ Closes #12
 |---|------|----------|------|
 | 5.1 | LLM Client | HTTP 客户端，支持流式和非流式请求 | pkg/llm/client.go |
 | 5.2 | SSE 流式处理 | Server-Sent Events 流式转发 | pkg/llm/stream.go |
-| 5.3 | Chat Completions | POST /v1/chat/completions 代理 | handler |
-| 5.4 | Completions | POST /v1/completions 代理 | handler |
-| 5.5 | Models List | GET /v1/models 代理 | handler |
+| 5.3 | Chat Completions | POST /api/openai/v1/chat/completions 代理 | handler |
+| 5.4 | Completions | POST /api/openai/v1/completions 代理 | handler |
+| 5.5 | Models List | GET /api/openai/v1/models 代理 | handler |
 | 5.6 | Token 计量 | 从响应中解析 token 用量 | pkg/token/counter.go |
 | 5.7 | 用量记录 | 请求完成后写入用量数据 | service + repo |
 | 5.8 | 并发控制 | Redis 实现的并发请求限制 | middleware |

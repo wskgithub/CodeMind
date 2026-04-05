@@ -1,6 +1,7 @@
 package service
 
 import (
+	"sort"
 	"sync"
 	"time"
 
@@ -49,20 +50,29 @@ func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*
 	}
 
 	var (
-		todayTokens, todayRequests, todayActive   int64
-		monthTokens, monthRequests, monthActive   int64
-		totalUsers, totalDepts, totalKeys         int64
+		todayTokens, todayRequests, todayActive int64
+		monthTokens, monthRequests, monthActive int64
+		tpTodayTokens, tpTodayRequests          int64
+		tpMonthTokens, tpMonthRequests          int64
+		totalUsers, totalDepts, totalKeys       int64
 	)
 
 	var wg sync.WaitGroup
-	wg.Add(6)
+	wg.Add(10)
 
+	// 平台用量
 	go func() { defer wg.Done(); todayTokens, _ = s.usageRepo.GetTodayTotalTokens(filterUserID) }()
 	go func() { defer wg.Done(); todayRequests, _ = s.usageRepo.GetTodayRequestCount(filterUserID) }()
 	go func() { defer wg.Done(); todayActive, _ = s.usageRepo.GetTodayActiveUsers() }()
 	go func() { defer wg.Done(); monthTokens, _ = s.usageRepo.GetMonthTotalTokens(filterUserID) }()
 	go func() { defer wg.Done(); monthRequests, _ = s.usageRepo.GetMonthRequestCount(filterUserID) }()
 	go func() { defer wg.Done(); monthActive, _ = s.usageRepo.GetMonthActiveUsers() }()
+
+	// 第三方用量
+	go func() { defer wg.Done(); tpTodayTokens, _ = s.usageRepo.GetThirdPartyTodayTotalTokens(filterUserID) }()
+	go func() { defer wg.Done(); tpTodayRequests, _ = s.usageRepo.GetThirdPartyTodayRequestCount(filterUserID) }()
+	go func() { defer wg.Done(); tpMonthTokens, _ = s.usageRepo.GetThirdPartyMonthTotalTokens(filterUserID) }()
+	go func() { defer wg.Done(); tpMonthRequests, _ = s.usageRepo.GetThirdPartyMonthRequestCount(filterUserID) }()
 
 	if role != "user" {
 		wg.Add(3)
@@ -74,14 +84,18 @@ func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*
 	wg.Wait()
 
 	overview.Today = dto.PeriodStats{
-		TotalTokens:   todayTokens,
-		TotalRequests: todayRequests,
-		ActiveUsers:   todayActive,
+		TotalTokens:             todayTokens,
+		TotalRequests:           todayRequests,
+		ActiveUsers:             todayActive,
+		ThirdPartyTotalTokens:   tpTodayTokens,
+		ThirdPartyTotalRequests: tpTodayRequests,
 	}
 	overview.ThisMonth = dto.PeriodStats{
-		TotalTokens:   monthTokens,
-		TotalRequests: monthRequests,
-		ActiveUsers:   monthActive,
+		TotalTokens:             monthTokens,
+		TotalRequests:           monthRequests,
+		ActiveUsers:             monthActive,
+		ThirdPartyTotalTokens:   tpMonthTokens,
+		ThirdPartyTotalRequests: tpMonthRequests,
 	}
 	overview.TotalUsers = totalUsers
 	overview.TotalDepts = totalDepts
@@ -90,7 +104,7 @@ func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*
 	return overview, nil
 }
 
-// GetUsageStats 获取用量统计数据
+// GetUsageStats 获取用量统计数据（平台 + 第三方并行查询后合并）
 func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string, operatorID int64, operatorDeptID *int64) (*dto.UsageResponse, error) {
 	// 确定查询范围
 	var userID *int64
@@ -109,45 +123,99 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 		userID = &operatorID
 	}
 
-	// 解析日期范围
-	startDate, endDate := s.parseDateRange(query.StartDate, query.EndDate, query.Period)
-
-	// 根据周期查询
-	var rows []repository.DailyStatRow
-	var err error
-
-	switch query.Period {
-	case "daily":
-		rows, err = s.usageRepo.GetDailyStats(userID, deptID, startDate, endDate)
-	case "weekly":
-		rows, err = s.usageRepo.GetWeeklyStats(userID, deptID, startDate, endDate)
-	case "monthly":
-		rows, err = s.usageRepo.GetMonthlyStats(userID, deptID, startDate, endDate)
-	default:
+	if query.Period != "daily" && query.Period != "weekly" && query.Period != "monthly" {
 		return nil, errcode.ErrInvalidParams.WithMessage("无效的统计周期")
 	}
 
-	if err != nil {
-		s.logger.Error("查询统计数据失败", zap.Error(err))
+	// 解析日期范围
+	startDate, endDate := s.parseDateRange(query.StartDate, query.EndDate, query.Period)
+
+	// 并行查询平台和第三方用量
+	var platformRows, tpRows []repository.DailyStatRow
+	var platformErr, tpErr error
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		switch query.Period {
+		case "daily":
+			platformRows, platformErr = s.usageRepo.GetDailyStats(userID, deptID, startDate, endDate)
+		case "weekly":
+			platformRows, platformErr = s.usageRepo.GetWeeklyStats(userID, deptID, startDate, endDate)
+		case "monthly":
+			platformRows, platformErr = s.usageRepo.GetMonthlyStats(userID, deptID, startDate, endDate)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		switch query.Period {
+		case "daily":
+			tpRows, tpErr = s.usageRepo.GetThirdPartyDailyStats(userID, deptID, startDate, endDate)
+		case "weekly":
+			tpRows, tpErr = s.usageRepo.GetThirdPartyWeeklyStats(userID, deptID, startDate, endDate)
+		case "monthly":
+			tpRows, tpErr = s.usageRepo.GetThirdPartyMonthlyStats(userID, deptID, startDate, endDate)
+		}
+	}()
+
+	wg.Wait()
+
+	if platformErr != nil {
+		s.logger.Error("查询平台统计数据失败", zap.Error(platformErr))
 		return nil, errcode.ErrDatabase
 	}
-
-	// 转换为响应格式
-	items := make([]dto.UsageItem, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, dto.UsageItem{
-			Date:             row.UsageDate.Format("2006-01-02"),
-			PromptTokens:     row.PromptTokens,
-			CompletionTokens: row.CompletionTokens,
-			TotalTokens:      row.TotalTokens,
-			RequestCount:     row.RequestCount,
-		})
+	if tpErr != nil {
+		s.logger.Warn("查询第三方统计数据失败，跳过第三方数据", zap.Error(tpErr))
 	}
+
+	items := s.mergeUsageStats(platformRows, tpRows)
 
 	return &dto.UsageResponse{
 		Period: query.Period,
 		Items:  items,
 	}, nil
+}
+
+// mergeUsageStats 将平台和第三方用量按日期合并为统一的 UsageItem 列表
+func (s *StatsService) mergeUsageStats(platform, thirdParty []repository.DailyStatRow) []dto.UsageItem {
+	dateMap := make(map[string]*dto.UsageItem, len(platform))
+
+	for _, row := range platform {
+		dateStr := row.UsageDate.Format("2006-01-02")
+		dateMap[dateStr] = &dto.UsageItem{
+			Date:             dateStr,
+			PromptTokens:     row.PromptTokens,
+			CompletionTokens: row.CompletionTokens,
+			TotalTokens:      row.TotalTokens,
+			RequestCount:     row.RequestCount,
+		}
+	}
+
+	for _, row := range thirdParty {
+		dateStr := row.UsageDate.Format("2006-01-02")
+		item, ok := dateMap[dateStr]
+		if !ok {
+			item = &dto.UsageItem{Date: dateStr}
+			dateMap[dateStr] = item
+		}
+		item.ThirdPartyPromptTokens = row.PromptTokens
+		item.ThirdPartyCompletionTokens = row.CompletionTokens
+		item.ThirdPartyTotalTokens = row.TotalTokens
+		item.ThirdPartyRequestCount = row.RequestCount
+	}
+
+	items := make([]dto.UsageItem, 0, len(dateMap))
+	for _, item := range dateMap {
+		items = append(items, *item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Date < items[j].Date
+	})
+
+	return items
 }
 
 // GetRanking 获取用量排行榜
@@ -241,7 +309,7 @@ func (s *StatsService) getPeriodRange(now time.Time, period string) (time.Time, 
 	}
 }
 
-// GetKeyUsageSummary 获取 Key 用量汇总
+// GetKeyUsageSummary 获取 Key 用量汇总（平台 + 第三方）
 func (s *StatsService) GetKeyUsageSummary(query *dto.KeyUsageQuery, operatorRole string, operatorID int64, operatorDeptID *int64) ([]dto.KeyUsageItem, error) {
 	// 确定查询范围
 	var userID *int64
@@ -259,25 +327,86 @@ func (s *StatsService) GetKeyUsageSummary(query *dto.KeyUsageQuery, operatorRole
 	// 解析日期范围（period 仅用于默认范围，此处传空字符串使用默认 30 天）
 	startDate, endDate := s.parseDateRange(query.StartDate, query.EndDate, "")
 
-	rows, err := s.usageRepo.GetKeyUsageSummary(userID, deptID, startDate, endDate)
-	if err != nil {
-		s.logger.Error("查询 Key 用量汇总失败", zap.Error(err))
+	// 并行查询平台用量和第三方用量
+	var platformRows, tpRows []repository.KeyUsageRow
+	var platformErr, tpErr error
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		platformRows, platformErr = s.usageRepo.GetKeyUsageSummary(userID, deptID, startDate, endDate)
+	}()
+
+	go func() {
+		defer wg.Done()
+		tpRows, tpErr = s.usageRepo.GetThirdPartyKeyUsageSummary(userID, deptID, startDate, endDate)
+	}()
+
+	wg.Wait()
+
+	if platformErr != nil {
+		s.logger.Error("查询平台 Key 用量汇总失败", zap.Error(platformErr))
 		return nil, errcode.ErrDatabase
 	}
+	if tpErr != nil {
+		s.logger.Warn("查询第三方 Key 用量汇总失败，跳过第三方数据", zap.Error(tpErr))
+	}
 
-	items := make([]dto.KeyUsageItem, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, dto.KeyUsageItem{
+	// 合并平台和第三方用量
+	items := s.mergeKeyUsageStats(platformRows, tpRows)
+
+	return items, nil
+}
+
+// mergeKeyUsageStats 合并平台和第三方 Key 用量
+func (s *StatsService) mergeKeyUsageStats(platform, thirdParty []repository.KeyUsageRow) []dto.KeyUsageItem {
+	keyMap := make(map[int64]*dto.KeyUsageItem)
+
+	// 添加平台用量
+	for _, row := range platform {
+		keyMap[row.ID] = &dto.KeyUsageItem{
 			ID:               row.ID,
 			Name:             row.Name,
 			PromptTokens:     row.PromptTokens,
 			CompletionTokens: row.CompletionTokens,
 			TotalTokens:      row.TotalTokens,
 			RequestCount:     row.RequestCount,
-		})
+		}
 	}
 
-	return items, nil
+	// 合并第三方用量
+	for _, row := range thirdParty {
+		if item, ok := keyMap[row.ID]; ok {
+			// 已存在，累加用量
+			item.PromptTokens += row.PromptTokens
+			item.CompletionTokens += row.CompletionTokens
+			item.TotalTokens += row.TotalTokens
+			item.RequestCount += row.RequestCount
+		} else {
+			// 新建条目
+			keyMap[row.ID] = &dto.KeyUsageItem{
+				ID:               row.ID,
+				Name:             row.Name,
+				PromptTokens:     row.PromptTokens,
+				CompletionTokens: row.CompletionTokens,
+				TotalTokens:      row.TotalTokens,
+				RequestCount:     row.RequestCount,
+			}
+		}
+	}
+
+	// 转换为切片并按总用量排序
+	items := make([]dto.KeyUsageItem, 0, len(keyMap))
+	for _, item := range keyMap {
+		items = append(items, *item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].TotalTokens > items[j].TotalTokens
+	})
+
+	return items
 }
 
 // ExportUsageStats 导出租用量统计数据

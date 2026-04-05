@@ -124,18 +124,24 @@ type StatsOverview struct {
 
 // PeriodStats 某个时间段的统计
 type PeriodStats struct {
-	TotalTokens   int64 `json:"total_tokens"`
-	TotalRequests int64 `json:"total_requests"`
-	ActiveUsers   int64 `json:"active_users"`
+	TotalTokens             int64 `json:"total_tokens"`
+	TotalRequests           int64 `json:"total_requests"`
+	ActiveUsers             int64 `json:"active_users"`
+	ThirdPartyTotalTokens   int64 `json:"third_party_total_tokens"`
+	ThirdPartyTotalRequests int64 `json:"third_party_total_requests"`
 }
 
 // UsageItem 用量统计项
 type UsageItem struct {
-	Date             string `json:"date"`
-	PromptTokens     int64  `json:"prompt_tokens"`
-	CompletionTokens int64  `json:"completion_tokens"`
-	TotalTokens      int64  `json:"total_tokens"`
-	RequestCount     int64  `json:"request_count"`
+	Date                       string `json:"date"`
+	PromptTokens               int64  `json:"prompt_tokens"`
+	CompletionTokens           int64  `json:"completion_tokens"`
+	TotalTokens                int64  `json:"total_tokens"`
+	RequestCount               int64  `json:"request_count"`
+	ThirdPartyPromptTokens     int64  `json:"third_party_prompt_tokens"`
+	ThirdPartyCompletionTokens int64  `json:"third_party_completion_tokens"`
+	ThirdPartyTotalTokens      int64  `json:"third_party_total_tokens"`
+	ThirdPartyRequestCount     int64  `json:"third_party_request_count"`
 }
 
 // UsageResponse 用量统计响应
@@ -243,6 +249,19 @@ type LLMBackendResponse struct {
 	ModelPatterns        string `json:"model_patterns"`
 	CreatedAt            string `json:"created_at"`
 	UpdatedAt            string `json:"updated_at"`
+}
+
+// ──────────────────────────────────
+// 第三方模型服务响应
+// ──────────────────────────────────
+
+// PlatformModelInfo CodeMind 平台模型信息（面向普通用户）
+type PlatformModelInfo struct {
+	Name          string `json:"name"`
+	DisplayName   string `json:"display_name"`
+	Format        string `json:"format"`
+	ModelPatterns string `json:"model_patterns"`
+	Status        int16  `json:"status"`
 }
 
 // ──────────────────────────────────

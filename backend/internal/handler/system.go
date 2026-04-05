@@ -52,6 +52,17 @@ func (h *SystemHandler) UpdateConfigs(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// GetPlatformServiceURL 获取平台服务 URL（所有已登录用户可用）
+// GET /api/v1/settings/platform
+func (h *SystemHandler) GetPlatformServiceURL(c *gin.Context) {
+	url := h.systemService.GetPlatformServiceURL()
+	response.Success(c, gin.H{
+		"service_url":          url,
+		"openai_base_url":     url + "/api/openai/v1",
+		"anthropic_base_url":  url + "/api/anthropic",
+	})
+}
+
 // ──────────────────────────────────
 // 公告管理
 // ──────────────────────────────────

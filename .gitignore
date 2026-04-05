@@ -98,3 +98,4 @@ Thumbs.db
 debug
 *.debug
 
+.playwright-mcp/

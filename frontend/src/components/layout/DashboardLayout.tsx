@@ -15,11 +15,14 @@ import {
   ApiOutlined,
   CloudServerOutlined,
   MonitorOutlined,
-  BookOutlined,
-  FileTextOutlined,
-  DatabaseOutlined,
-  MoonOutlined,
-  SunOutlined,
+    BookOutlined,
+    FileTextOutlined,
+    DatabaseOutlined,
+    MoonOutlined,
+    SunOutlined,
+    AppstoreOutlined,
+    BlockOutlined,
+    GlobalOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import useAuthStore from '@/store/authStore';
@@ -60,6 +63,11 @@ const DashboardLayout: React.FC = () => {
       label: '用量统计',
     },
     {
+      key: '/dashboard/models',
+      icon: <AppstoreOutlined />,
+      label: '模型服务',
+    },
+    {
       key: '/docs',
       icon: <BookOutlined />,
       label: '接入文档',
@@ -92,9 +100,19 @@ const DashboardLayout: React.FC = () => {
             label: 'LLM 节点',
           },
           {
+            key: '/admin/templates',
+            icon: <BlockOutlined />,
+            label: '模型模板',
+          },
+          {
             key: '/admin/mcp',
             icon: <ApiOutlined />,
             label: 'MCP 服务',
+          },
+          {
+            key: '/admin/platform',
+            icon: <GlobalOutlined />,
+            label: '平台配置',
           },
           {
             key: '/admin/system',

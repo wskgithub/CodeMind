@@ -74,9 +74,11 @@ var (
 	ErrAPIKeyLimit        = &ErrCode{Code: 40304, Message: "API Key 数量已达上限", HTTP: http.StatusConflict}
 	ErrDeptHasUsers       = &ErrCode{Code: 40305, Message: "部门下还有用户，无法删除", HTTP: http.StatusConflict}
 	ErrUserNotFound       = &ErrCode{Code: 40306, Message: "用户不存在", HTTP: http.StatusNotFound}
-	ErrOldPasswordWrong   = &ErrCode{Code: 40307, Message: "原密码错误", HTTP: http.StatusBadRequest}
-	ErrAPIKeyNotFound     = &ErrCode{Code: 40308, Message: "API Key 不存在", HTTP: http.StatusNotFound}
-	ErrRecordNotFound     = &ErrCode{Code: 40309, Message: "记录不存在", HTTP: http.StatusNotFound}
+	ErrOldPasswordWrong              = &ErrCode{Code: 40307, Message: "原密码错误", HTTP: http.StatusBadRequest}
+	ErrAPIKeyNotFound                = &ErrCode{Code: 40308, Message: "API Key 不存在", HTTP: http.StatusNotFound}
+	ErrRecordNotFound                = &ErrCode{Code: 40309, Message: "记录不存在", HTTP: http.StatusNotFound}
+	ErrProviderNameExists            = &ErrCode{Code: 40310, Message: "服务名称已存在", HTTP: http.StatusConflict}
+	ErrProviderTemplateNameExists    = &ErrCode{Code: 40311, Message: "模板名称已存在", HTTP: http.StatusConflict}
 )
 
 // ──────────────────────────────────

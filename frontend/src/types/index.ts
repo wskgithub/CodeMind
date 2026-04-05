@@ -147,6 +147,8 @@ export interface PeriodStats {
   total_tokens: number;
   total_requests: number;
   active_users: number;
+  third_party_total_tokens: number;
+  third_party_total_requests: number;
 }
 
 /** 用量统计项 */
@@ -156,6 +158,10 @@ export interface UsageItem {
   completion_tokens: number;
   total_tokens: number;
   request_count: number;
+  third_party_prompt_tokens: number;
+  third_party_completion_tokens: number;
+  third_party_total_tokens: number;
+  third_party_request_count: number;
 }
 
 /** 用量统计响应 */
@@ -500,4 +506,94 @@ export interface TrainingDataStats {
   today_count: number;
   excluded_count: number;
   model_distribution: { model: string; count: number }[];
+}
+
+// ──────────────────────────────────
+// 第三方模型服务类型
+// ──────────────────────────────────
+
+/** CodeMind 平台模型信息 */
+export interface PlatformModelInfo {
+  name: string;
+  display_name: string;
+  format: string;
+  model_patterns: string;
+  status: number;
+}
+
+/** 第三方服务模板 */
+export interface ProviderTemplate {
+  id: number;
+  name: string;
+  openai_base_url: string;
+  anthropic_base_url: string;
+  models: string[];
+  format: string;
+  description?: string;
+  icon?: string;
+  status: number;
+  sort_order: number;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 用户第三方模型服务 */
+export interface UserThirdPartyProvider {
+  id: number;
+  user_id: number;
+  name: string;
+  openai_base_url: string;
+  anthropic_base_url: string;
+  models: string[];
+  format: string;
+  template_id?: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 创建第三方服务请求 */
+export interface CreateThirdPartyProviderRequest {
+  name: string;
+  openai_base_url?: string;
+  anthropic_base_url?: string;
+  api_key: string;
+  models: string[];
+  format: string;
+  template_id?: number;
+}
+
+/** 更新第三方服务请求 */
+export interface UpdateThirdPartyProviderRequest {
+  name?: string;
+  openai_base_url?: string;
+  anthropic_base_url?: string;
+  api_key?: string;
+  models?: string[];
+  format?: string;
+  status?: number;
+}
+
+/** 创建模板请求 */
+export interface CreateProviderTemplateRequest {
+  name: string;
+  openai_base_url?: string;
+  anthropic_base_url?: string;
+  models: string[];
+  format: string;
+  description?: string;
+  sort_order?: number;
+}
+
+/** 更新模板请求 */
+export interface UpdateProviderTemplateRequest {
+  name?: string;
+  openai_base_url?: string;
+  anthropic_base_url?: string;
+  models?: string[];
+  format?: string;
+  description?: string;
+  sort_order?: number;
+  status?: number;
 }

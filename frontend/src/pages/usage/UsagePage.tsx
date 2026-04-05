@@ -140,6 +140,8 @@ const UsagePage = () => {
     }
   };
 
+  const hasThirdPartyData = usageData.some((d) => (d.third_party_total_tokens || 0) > 0);
+
   const renderChart = () => {
     if (!chartRef.current) return;
     if (!chartInstance.current) {
@@ -149,40 +151,90 @@ const UsagePage = () => {
     const dates = usageData.map((d) => d.date);
     const promptTokens = usageData.map((d) => d.prompt_tokens);
     const completionTokens = usageData.map((d) => d.completion_tokens);
-    const requests = usageData.map((d) => d.request_count);
+    const tpTokens = usageData.map((d) => d.third_party_total_tokens || 0);
+    const requests = usageData.map((d) => (d.request_count || 0) + (d.third_party_request_count || 0));
+
+    const legendData = hasThirdPartyData
+      ? ['Prompt Tokens', 'Completion Tokens', '第三方 Tokens', '请求次数']
+      : ['Prompt Tokens', 'Completion Tokens', '请求次数'];
+
+    const barSeries: echarts.SeriesOption[] = [
+      {
+        name: 'Prompt Tokens',
+        type: 'bar',
+        stack: 'tokens',
+        data: promptTokens,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#00D9FF' },
+            { offset: 1, color: '#00A8CC' },
+          ]),
+          borderRadius: [0, 0, 0, 0],
+        },
+      },
+      {
+        name: 'Completion Tokens',
+        type: 'bar',
+        stack: 'tokens',
+        data: completionTokens,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#9D4EDD' },
+            { offset: 1, color: '#7B2CBF' },
+          ]),
+          borderRadius: hasThirdPartyData ? [0, 0, 0, 0] : [4, 4, 0, 0],
+        },
+      },
+    ];
+
+    if (hasThirdPartyData) {
+      barSeries.push({
+        name: '第三方 Tokens',
+        type: 'bar',
+        stack: 'tokens',
+        data: tpTokens,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#FFBE0B' },
+            { offset: 1, color: '#FF8800' },
+          ]),
+          borderRadius: [4, 4, 0, 0],
+        },
+      });
+    }
 
     chartInstance.current.setOption({
       backgroundColor: 'transparent',
-      tooltip: { 
+      tooltip: {
         trigger: 'axis',
         backgroundColor: isDark ? 'rgba(13, 29, 45, 0.95)' : 'rgba(255, 255, 255, 0.95)',
         borderColor: isDark ? 'rgba(0, 217, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
         textStyle: { color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' },
       },
-      legend: { 
-        data: ['Prompt Tokens', 'Completion Tokens', '请求次数'],
+      legend: {
+        data: legendData,
         textStyle: { color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.65)' },
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: {
         type: 'category',
         data: dates,
-        axisLabel: { 
+        axisLabel: {
           formatter: (v: string) => v.slice(5),
           color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
         },
         axisLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } },
       },
       yAxis: [
-        { 
-          type: 'value', 
+        {
+          type: 'value',
           name: 'Tokens',
           nameTextStyle: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
           axisLabel: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
           splitLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' } },
         },
-        { 
-          type: 'value', 
+        {
+          type: 'value',
           name: '请求数',
           nameTextStyle: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
           axisLabel: { color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' },
@@ -190,32 +242,7 @@ const UsagePage = () => {
         },
       ],
       series: [
-        {
-          name: 'Prompt Tokens',
-          type: 'bar',
-          stack: 'tokens',
-          data: promptTokens,
-          itemStyle: { 
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#00D9FF' },
-              { offset: 1, color: '#00A8CC' },
-            ]),
-            borderRadius: [0, 0, 0, 0] 
-          },
-        },
-        {
-          name: 'Completion Tokens',
-          type: 'bar',
-          stack: 'tokens',
-          data: completionTokens,
-          itemStyle: { 
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#9D4EDD' },
-              { offset: 1, color: '#7B2CBF' },
-            ]),
-            borderRadius: [4, 4, 0, 0] 
-          },
-        },
+        ...barSeries,
         {
           name: '请求次数',
           type: 'line',
@@ -226,52 +253,83 @@ const UsagePage = () => {
           itemStyle: { color: '#00F5D4' },
         },
       ],
-    });
+    }, true);
   };
 
-  // 汇总统计
-  const totalTokens = useMemo(() => usageData.reduce((sum, d) => sum + (d.total_tokens || 0), 0), [usageData]);
-  const totalRequests = useMemo(() => usageData.reduce((sum, d) => sum + (d.request_count || 0), 0), [usageData]);
-  const totalPrompt = useMemo(() => usageData.reduce((sum, d) => sum + (d.prompt_tokens || 0), 0), [usageData]);
-  const totalCompletion = useMemo(() => usageData.reduce((sum, d) => sum + (d.completion_tokens || 0), 0), [usageData]);
+  // 汇总统计（平台 + 第三方）
+  const platformTokens = useMemo(() => usageData.reduce((sum, d) => sum + (d.total_tokens || 0), 0), [usageData]);
+  const thirdPartyTokens = useMemo(() => usageData.reduce((sum, d) => sum + (d.third_party_total_tokens || 0), 0), [usageData]);
+  const totalTokens = platformTokens + thirdPartyTokens;
+  
+  const platformRequests = useMemo(() => usageData.reduce((sum, d) => sum + (d.request_count || 0), 0), [usageData]);
+  const thirdPartyRequests = useMemo(() => usageData.reduce((sum, d) => sum + (d.third_party_request_count || 0), 0), [usageData]);
+  const totalRequests = platformRequests + thirdPartyRequests;
+  
+  const platformPrompt = useMemo(() => usageData.reduce((sum, d) => sum + (d.prompt_tokens || 0), 0), [usageData]);
+  const thirdPartyPrompt = useMemo(() => usageData.reduce((sum, d) => sum + (d.third_party_prompt_tokens || 0), 0), [usageData]);
+  const totalPrompt = platformPrompt + thirdPartyPrompt;
+  
+  const platformCompletion = useMemo(() => usageData.reduce((sum, d) => sum + (d.completion_tokens || 0), 0), [usageData]);
+  const thirdPartyCompletion = useMemo(() => usageData.reduce((sum, d) => sum + (d.third_party_completion_tokens || 0), 0), [usageData]);
+  const totalCompletion = platformCompletion + thirdPartyCompletion;
+  
+  // 是否有第三方数据
+  const hasThirdPartyStats = thirdPartyTokens > 0 || thirdPartyRequests > 0 || thirdPartyPrompt > 0 || thirdPartyCompletion > 0;
 
-  const columns: ColumnsType<UsageItem> = useMemo(() => [
-    { 
-      title: '日期', 
-      dataIndex: 'date', 
-      key: 'date', 
-      width: 120,
-      render: (text) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>{text}</span>,
-    },
-    {
-      title: 'Prompt Tokens',
-      dataIndex: 'prompt_tokens',
-      key: 'prompt_tokens',
-      align: 'right',
-      render: (v: number) => <span style={{ color: '#00D9FF' }}>{v.toLocaleString()}</span>,
-    },
-    {
-      title: 'Completion Tokens',
-      dataIndex: 'completion_tokens',
-      key: 'completion_tokens',
-      align: 'right',
-      render: (v: number) => <span style={{ color: '#9D4EDD' }}>{v.toLocaleString()}</span>,
-    },
-    {
-      title: '总 Tokens',
-      dataIndex: 'total_tokens',
-      key: 'total_tokens',
-      align: 'right',
-      render: (v: number) => <strong style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{v.toLocaleString()}</strong>,
-    },
-    {
+  const columns: ColumnsType<UsageItem> = useMemo(() => {
+    const cols: ColumnsType<UsageItem> = [
+      {
+        title: '日期',
+        dataIndex: 'date',
+        key: 'date',
+        width: 120,
+        render: (text) => <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.65)' }}>{text}</span>,
+      },
+      {
+        title: 'Prompt Tokens',
+        dataIndex: 'prompt_tokens',
+        key: 'prompt_tokens',
+        align: 'right',
+        render: (v: number) => <span style={{ color: '#00D9FF' }}>{v.toLocaleString()}</span>,
+      },
+      {
+        title: 'Completion Tokens',
+        dataIndex: 'completion_tokens',
+        key: 'completion_tokens',
+        align: 'right',
+        render: (v: number) => <span style={{ color: '#9D4EDD' }}>{v.toLocaleString()}</span>,
+      },
+      {
+        title: '平台 Tokens',
+        dataIndex: 'total_tokens',
+        key: 'total_tokens',
+        align: 'right',
+        render: (v: number) => <strong style={{ color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)' }}>{v.toLocaleString()}</strong>,
+      },
+    ];
+
+    if (hasThirdPartyData) {
+      cols.push({
+        title: '第三方 Tokens',
+        dataIndex: 'third_party_total_tokens',
+        key: 'tp_tokens',
+        align: 'right',
+        render: (v: number) => <span style={{ color: '#FFBE0B' }}>{(v || 0).toLocaleString()}</span>,
+      });
+    }
+
+    cols.push({
       title: '请求次数',
-      dataIndex: 'request_count',
       key: 'request_count',
       align: 'right',
-      render: (v: number) => <span style={{ color: '#00F5D4' }}>{v.toLocaleString()}</span>,
-    },
-  ], [isDark]);
+      render: (_, record) => {
+        const total = (record.request_count || 0) + (record.third_party_request_count || 0);
+        return <span style={{ color: '#00F5D4' }}>{total.toLocaleString()}</span>;
+      },
+    });
+
+    return cols;
+  }, [isDark, hasThirdPartyData]);
 
   const rankColumns: ColumnsType<RankingItem> = useMemo(() => [
     { 
@@ -413,57 +471,77 @@ const UsagePage = () => {
         {/* 统计汇总卡片 — stat-card 带渐变图标 - 新设计 */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={12} lg={6}>
-            <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.05s' }}>
-              <div className="flex items-center gap-4">
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.05s' }}>
+              <div className="flex items-center gap-4 h-full">
                 <StatIcon
                   icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
                   gradient="linear-gradient(135deg, #00D9FF 0%, #00F5D4 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>总 Tokens</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>总 Tokens</div>
                   <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalTokens)}</div>
+                  {hasThirdPartyStats && (
+                    <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                      平台 {formatNum(platformTokens)} · 第三方 {formatNum(thirdPartyTokens)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              <div className="flex items-center gap-4">
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.1s' }}>
+              <div className="flex items-center gap-4 h-full">
                 <StatIcon
                   icon={<MessageOutlined style={{ fontSize: 22 }} />}
                   gradient="linear-gradient(135deg, #9D4EDD 0%, #FF6B6B 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>总请求数</div>
-                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{totalRequests.toLocaleString()}</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>总请求数</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalRequests)}</div>
+                  {hasThirdPartyStats && (
+                    <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                      平台 {formatNum(platformRequests)} · 第三方 {formatNum(thirdPartyRequests)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
-              <div className="flex items-center gap-4">
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.15s' }}>
+              <div className="flex items-center gap-4 h-full">
                 <StatIcon
                   icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
                   gradient="linear-gradient(135deg, #00F5D4 0%, #00D9FF 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>Prompt Tokens</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>Prompt Tokens</div>
                   <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalPrompt)}</div>
+                  {hasThirdPartyStats && (
+                    <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                      平台 {formatNum(platformPrompt)} · 第三方 {formatNum(thirdPartyPrompt)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </Col>
           <Col xs={24} sm={12} lg={6}>
-            <div className="stat-card animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <div className="flex items-center gap-4">
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.2s' }}>
+              <div className="flex items-center gap-4 h-full">
                 <StatIcon
                   icon={<MessageOutlined style={{ fontSize: 22 }} />}
                   gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
                 />
                 <div>
-                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>Completion Tokens</div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>Completion Tokens</div>
                   <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalCompletion)}</div>
+                  {hasThirdPartyStats && (
+                    <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                      平台 {formatNum(platformCompletion)} · 第三方 {formatNum(thirdPartyCompletion)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

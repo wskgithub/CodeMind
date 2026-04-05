@@ -19,12 +19,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      // 开发环境代理后端 API
+      // 开发环境代理后端 API（管理 API + LLM 代理均在 /api/ 下）
       '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/v1': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },

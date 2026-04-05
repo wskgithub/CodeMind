@@ -16,6 +16,19 @@ export function updateConfigs(configs: { key: string; value: string }[]) {
 }
 
 // ──────────────────────────────────
+// 平台设置
+// ──────────────────────────────────
+
+/** 获取平台服务 URL（所有已登录用户可用） */
+export function getPlatformSettings() {
+  return request.get<ApiResponse<{
+    service_url: string;
+    openai_base_url: string;
+    anthropic_base_url: string;
+  }>>('/settings/platform');
+}
+
+// ──────────────────────────────────
 // 公告管理
 // ──────────────────────────────────
 

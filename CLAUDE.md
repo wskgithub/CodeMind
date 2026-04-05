@@ -7,224 +7,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **代码注释使用中文** (Code comments should be written in Chinese)
 - 完成工作或有需要澄清的问题时，请主动提问获取进一步指示
 
-## Project Overview
+## Project
 
-CodeMind is an enterprise-level AI coding service management platform. It acts as a middleware layer that proxies requests to locally deployed LLM models, providing user management, resource control, and usage statistics.
+CodeMind — 企业级 AI 编码服务管理平台。代理 LLM 请求，提供用户管理、资源控制和用量统计。
 
-**Tech Stack:**
-- **Frontend**: React 18 + TypeScript + Vite + Ant Design 5 + TailwindCSS
-- **Backend**: Go 1.23 + Gin + GORM
-- **Database**: PostgreSQL 16
-- **Cache**: Redis 7
-- **Deployment**: Docker + Docker Compose + Nginx
+**Tech Stack**: React 18 + TypeScript + Vite | Go 1.24 + Gin + GORM | PostgreSQL 16 | Redis 7 | Docker
 
-## Common Development Commands
+## 文档索引
 
-### Infrastructure (Docker)
+根据任务需要，在 `docs/` 中按需阅读对应文档。
 
-```bash
-# Start infrastructure services only (PostgreSQL + Redis)
-docker compose up -d postgres redis
+### 核心架构
 
-# Start all services (production)
-docker compose up -d --build
+| 文档 | 说明 | 何时阅读 |
+|------|------|---------|
+| [docs/architecture.md](docs/architecture.md) | 系统架构、项目结构、请求流程 | 首次了解项目、修改架构相关代码时 |
+| [docs/llm-proxy.md](docs/llm-proxy.md) | LLM 代理、多服务商路由、第三方代理、MCP 网关 | 修改代理逻辑、添加服务商、调试路由时 |
+| [docs/api-routes.md](docs/api-routes.md) | API 路由分组、认证方式、Nginx 路由 | 添加/修改 API 端点、调试认证问题时 |
+| [docs/design-patterns.md](docs/design-patterns.md) | RBAC 角色、API Key 格式、限流、软删除、登录锁定 | 涉及权限、认证、限流、删除逻辑时 |
 
-# Stop all services
-docker compose down
+### 配置与安全
 
-# View logs
-docker compose logs -f [service]
-```
+| 文档 | 说明 | 何时阅读 |
+|------|------|---------|
+| [docs/configuration.md](docs/configuration.md) | 配置加载、环境变量、Redis Key 模式、开发命令 | 配置环境、调试配置问题、查看 Redis Key 时 |
+| [docs/security.md](docs/security.md) | 密码、API Key、JWT、审计日志安全规范 | 涉及认证、加密、审计日志时 |
 
-### Backend
+### 开发规范
 
-```bash
-cd backend
+| 文档 | 说明 | 何时阅读 |
+|------|------|---------|
+| [docs/development-standards.md](docs/development-standards.md) | 开发工作流、代码质量、安全规范 | 开始开发前 |
+| [docs/backend-standards.md](docs/backend-standards.md) | 后端代码规范、分层架构、错误处理 | 编写后端代码时 |
+| [docs/frontend-standards.md](docs/frontend-standards.md) | 前端代码规范、组件规范、样式规范 | 编写前端代码时 |
+| [docs/testing-guide.md](docs/testing-guide.md) | 测试原则、测试模板、覆盖率要求 | 编写测试时 |
 
-# Run development server (requires infrastructure running)
-go run cmd/server/main.go
+### 环境与部署
 
-# Build binary
-make build
+| 文档 | 说明 | 何时阅读 |
+|------|------|---------|
+| [docs/dev-setup.md](docs/dev-setup.md) | 开发环境搭建步骤 | 首次配置开发环境时 |
+| [docs/deployment-guide.md](docs/deployment-guide.md) | 部署与运维手册、升级、备份、故障排查 | 部署或运维时 |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | 云服务器部署手册（Docker 容器化） | 服务器首次部署时 |
 
-# Run all tests with coverage
-make test
+### 项目管理
 
-# Run a single test
-go test ./internal/service/ -run TestUserService -v
-
-# Generate coverage report (HTML)
-make test-coverage
-
-# Run linter
-make lint
-
-# Generate Swagger documentation
-make swagger
-
-# Run database migrations
-make migrate
-```
-
-**Backend Entry Point**: `backend/cmd/server/main.go`
-
-### Frontend
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Run development server (proxies API to localhost:8080 via Vite)
-npm run dev
-
-# Build for production
-npm run build
-
-# Run tests
-npm test -- --run
-
-# Run linter
-npm run lint
-```
-
-### Project-Wide Scripts
-
-```bash
-./scripts/dev.sh      # Start development infrastructure (postgres + redis)
-./scripts/build.sh    # Build all Docker images
-./scripts/test.sh     # Run all tests (backend + frontend)
-```
-
-## High-Level Architecture
-
-### Backend Structure (Layered Architecture)
-
-```
-backend/
-├── cmd/server/          # Application entry point
-├── internal/
-│   ├── config/          # Configuration management (Viper: YAML + env vars)
-│   ├── middleware/      # HTTP middleware (auth, CORS, rate limiting, etc.)
-│   ├── handler/         # HTTP handlers (controllers)
-│   ├── service/         # Business logic layer
-│   ├── repository/      # Data access layer (GORM)
-│   ├── model/           # Data models & DTOs
-│   ├── router/          # Route definitions (Gin)
-│   └── pkg/             # Internal utilities (JWT, crypto, response, etc.)
-├── pkg/                 # External shared packages (LLM client, token counter)
-└── migrations/          # SQL migration files (numbered prefix: 001_, 002_, ...)
-```
-
-> Tests are co-located with source files following Go conventions (e.g. `service/user.go` + `service/service_test.go`).
-
-**Request Flow**:
-1. Router → Middleware Chain → Handler → Service → Repository → PostgreSQL
-2. LLM Proxy: API Key validation → Rate limit check → Concurrency check → Load balancer selects provider → Forward to LLM → Stream response → Record usage
-
-**Dependency Injection**: App initializes bottom-up in `main.go`: Config → DB/Redis → Repositories → Services → Handlers → Router. All dependencies are injected via constructors.
-
-### API Route Groups
-
-| Route Group | Auth Method | Access |
-|-------------|------------|--------|
-| `/health` | None | Public |
-| `/api/v1/auth/*` | None | Login, register, refresh |
-| `/api/v1/*` (authenticated) | JWT | All logged-in users |
-| `/api/v1/admin/*` | JWT + role | `super_admin` / `dept_manager` |
-| `/api/v1/system/*` | JWT + role | `super_admin` only |
-| `/v1/*` | API Key | OpenAI-compatible LLM proxy |
-| `/mcp/*` | API Key | MCP protocol gateway |
-
-### Frontend Structure
-
-```
-frontend/src/
-├── pages/               # Page components (route-based, lazy loaded)
-├── components/
-│   ├── common/          # Reusable components (UsageProgressCards, etc.)
-│   └── layout/          # Layout components (DashboardLayout)
-├── services/            # API client layer (Axios, base URL: /api/v1)
-├── store/               # Zustand state management
-│   ├── authStore.ts     # Auth state (token/user in localStorage)
-│   └── appStore.ts      # UI state (theme, sidebar)
-├── router/              # React Router with AuthGuard (role-based) and GuestGuard
-└── types/               # TypeScript type definitions
-```
-
-**Frontend Styling**: Ant Design + Tailwind utility classes + inline styles with CSS variables. Preflight disabled. Vite build splits vendor chunks for React, Ant Design, and ECharts.
-
-### Key Design Patterns
-
-**User Roles**: Three-tier RBAC system
-- `super_admin`: Full system access
-- `dept_manager`: Manages department users and statistics
-- `user`: Personal API keys and usage only
-
-**API Key Format**: `cm-{32-char-hex}` - Only shown once at creation, stored as SHA-256 hash
-
-**Rate Limiting Priority**: User limit > Department limit > Global limit
-
-**Soft Delete**: Models use `deleted_at` timestamps (GORM soft delete pattern)
-
-**Login Lockout**: Exponential backoff for failed attempts (5 min → 24h max)
-
-## LLM Proxy & Multi-Provider Architecture
-
-The LLM proxy (`backend/pkg/llm/`) supports multiple providers with intelligent routing:
-
-- **Provider Manager** (`manager.go`): Manages multiple LLM providers (OpenAI/Anthropic), supports model routing rules (e.g., `claude-*` → anthropic provider)
-- **Load Balancer** (`balancer.go`): Weighted round-robin with Redis-based user affinity for sticky sessions
-- **SSE Streaming**: All LLM responses stream via Server-Sent Events
-- **MCP Gateway** (`/mcp/*`): Separate protocol gateway for Model Context Protocol integration
-- **Usage Recording**: Token usage parsed from responses and recorded asynchronously
-
-## Configuration
-
-### Environment Setup
-
-1. Copy `.env.example` to `.env` and fill in required values
-2. Copy `deploy/config/app.yaml.example` to `deploy/config/app.yaml`
-3. Minimum required env vars: `DB_PASSWORD`, `JWT_SECRET`, `LLM_BASE_URL`
-
-**Config Loading Order**: Default values → YAML file → Environment variables (use `_` for `.` separator, e.g., `database.host` → `DB_HOST`)
-
-### Default Credentials
-
-- Username: `admin`
-- Password: `Admin@123456` (change on first login)
-
-## Redis Key Patterns
-
-| Pattern | Type | TTL | Purpose |
-|---------|------|-----|---------|
-| `codemind:jwt:blacklist:{jti}` | String | JWT remaining | JWT blacklist |
-| `codemind:apikey:{hash}` | String(JSON) | 300s | API Key cache |
-| `codemind:concurrency:{user_id}` | Counter | 300s | Concurrent requests |
-| `codemind:usage:{user_id}:daily:{date}` | Counter | 48h | Daily token usage |
-
-## Security Requirements
-
-- Passwords: bcrypt with cost factor 12
-- API Keys: SHA-256 hash storage, never log full keys
-- JWT: HS256 algorithm, 24-hour expiration, blacklisted on logout/password change
-- All sensitive operations: audit log with IP, operator, timestamp
-
-## Testing Strategy
-
-- **Backend**: Unit tests (service/repository) > 80% coverage, integration tests for full request flow
-- **Frontend**: Component tests with Vitest + React Testing Library
-- **Test Command**: `./scripts/test.sh` runs both backend and frontend tests
-
-## Deployment
-
-Production deployment requires:
-1. Set all environment variables in `.env`
-2. Configure `deploy/config/app.yaml`
-3. Run: `docker compose up -d --build`
-
-Services are orchestrated via `docker-compose.yml` with health checks for PostgreSQL and Redis. Nginx handles:
-- Frontend static files with SPA fallback
-- `/api/` → Backend management APIs
-- `/v1/` → LLM proxy with SSE support and 600s timeout
+| 文档 | 说明 | 何时阅读 |
+|------|------|---------|
+| [docs/development-plan.md](docs/development-plan.md) | 完整开发计划、数据库设计、API 设计 | 了解整体规划或设计决策时 |
+| [docs/permission-optimization.md](docs/permission-optimization.md) | 权限矩阵与优化记录 | 修改权限相关功能时 |
+| [docs/monitoring.md](docs/monitoring.md) | 系统监控仪表盘功能说明 | 修改监控相关功能时 |
+| [docs/status.md](docs/status.md) | 项目当前状态报告 | 了解项目进度时 |
+| [docs/fixes.md](docs/fixes.md) | 已修复问题的记录 | 排查类似问题时 |

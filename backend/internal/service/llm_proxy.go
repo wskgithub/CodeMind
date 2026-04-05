@@ -27,6 +27,7 @@ type LLMProxyService struct {
 	trainingDataBuffer *TrainingDataBuffer
 	sysConfigRepo      *repository.SystemRepository
 	limitService       *LimitService
+	thirdPartyService  *ThirdPartyProviderService
 	rdb                *redis.Client
 	logger             *zap.Logger
 
@@ -62,6 +63,16 @@ func NewLLMProxyService(
 		rdb:                rdb,
 		logger:             logger,
 	}
+}
+
+// SetThirdPartyService 注入第三方服务（避免循环依赖，延迟注入）
+func (s *LLMProxyService) SetThirdPartyService(tps *ThirdPartyProviderService) {
+	s.thirdPartyService = tps
+}
+
+// GetThirdPartyService 获取第三方服务实例
+func (s *LLMProxyService) GetThirdPartyService() *ThirdPartyProviderService {
+	return s.thirdPartyService
 }
 
 // GetProviderManager 获取 Provider 管理器
@@ -274,6 +285,51 @@ func (s *LLMProxyService) RecordTrainingData(
 		DurationMs:       &durationMs,
 		StatusCode:       statusCode,
 		ClientIP:         &clientIP,
+	}
+
+	s.trainingDataBuffer.Add(record)
+}
+
+// RecordTrainingDataWithSource 记录训练数据（支持来源标记）
+// 第三方服务的请求也需要记录到训练数据中
+func (s *LLMProxyService) RecordTrainingDataWithSource(
+	userID, keyID int64,
+	requestType, modelName string,
+	isStream bool,
+	requestBody, responseBody json.RawMessage,
+	usage *llm.Usage,
+	statusCode, durationMs int,
+	clientIP string,
+	source string,
+	thirdPartyProviderID *int64,
+) {
+	if !s.isTrainingDataEnabled() {
+		return
+	}
+
+	var promptTokens, completionTokens, totalTokens int
+	if usage != nil {
+		promptTokens = usage.PromptTokens
+		completionTokens = usage.CompletionTokens
+		totalTokens = usage.TotalTokens
+	}
+
+	record := &model.LLMTrainingData{
+		UserID:               userID,
+		APIKeyID:             keyID,
+		RequestType:          requestType,
+		Model:                modelName,
+		IsStream:             isStream,
+		RequestBody:          requestBody,
+		ResponseBody:         responseBody,
+		PromptTokens:         promptTokens,
+		CompletionTokens:     completionTokens,
+		TotalTokens:          totalTokens,
+		DurationMs:           &durationMs,
+		StatusCode:           statusCode,
+		ClientIP:             &clientIP,
+		Source:               source,
+		ThirdPartyProviderID: thirdPartyProviderID,
 	}
 
 	s.trainingDataBuffer.Add(record)

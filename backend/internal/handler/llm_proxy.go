@@ -37,7 +37,7 @@ func NewLLMProxyHandler(proxyService *service.LLMProxyService, logger *zap.Logge
 // ──────────────────────────────────
 
 // ChatCompletions 对话补全代理（OpenAI 格式）
-// POST /v1/chat/completions
+// POST /api/openai/v1/chat/completions
 //
 // 采用「原始请求体透传」模式：
 //   - 只解析路由所需的最小字段（model、stream）
@@ -56,14 +56,20 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 
-	// 清理对话历史中的 thinking 内容（Thinking 模型优化）
-	rawBody = llm.CleanThinkingFromHistory(rawBody)
-
+	// 轻量解析模型名称（在任何请求体修改之前）
 	meta, err := llm.ExtractRequestMeta(rawBody)
 	if err != nil {
 		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
 		return
 	}
+
+	// 优先检查第三方模型服务 — 透明代理，不修改请求体
+	if h.checkAndHandleThirdParty(c, rawBody, meta, "/chat/completions", "openai", userID, apiKeyID, startTime) {
+		return
+	}
+
+	// 内置服务：清理对话历史中的 thinking 内容（Thinking 模型优化）
+	rawBody = llm.CleanThinkingFromHistory(rawBody)
 
 	allowed, err := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if err != nil {
@@ -89,7 +95,8 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
 		h.logger.Error("获取 Provider 失败", zap.Error(err), zap.String("model", modelName))
-		h.sendOpenAIError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error",
+			fmt.Sprintf("模型 %q 不受平台任何已配置的服务支持", modelName))
 		return
 	}
 
@@ -165,7 +172,7 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 // ──────────────────────────────────
 
 // Completions 文本补全代理（OpenAI 格式）
-// POST /v1/completions
+// POST /api/openai/v1/completions
 //
 // 同样采用「原始请求体透传」模式，确保 suffix、logprobs 等所有字段完整保留
 func (h *LLMProxyHandler) Completions(c *gin.Context) {
@@ -187,6 +194,11 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 		return
 	}
 
+	// 优先检查第三方模型服务
+	if h.checkAndHandleThirdParty(c, rawBody, meta, "/completions", "openai", userID, apiKeyID, startTime) {
+		return
+	}
+
 	allowed, _ := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if !allowed {
 		h.sendOpenAIError(c, http.StatusTooManyRequests, "rate_limit_exceeded", errcode.ErrTokenQuotaExceeded.Message)
@@ -204,7 +216,8 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
-		h.sendOpenAIError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error",
+			fmt.Sprintf("模型 %q 不受平台任何已配置的服务支持", modelName))
 		return
 	}
 
@@ -303,7 +316,7 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 // ──────────────────────────────────
 
 // ListModels 获取可用模型列表
-// GET /v1/models
+// GET /api/openai/v1/models
 func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	provider, err := h.proxyService.GetProviderManager().GetDefault()
 	if err != nil {
@@ -319,7 +332,7 @@ func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 }
 
 // RetrieveModel 获取单个模型信息
-// GET /v1/models/:model
+// GET /api/openai/v1/models/:model
 func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	modelID := c.Param("model")
 	if modelID == "" {
@@ -351,7 +364,7 @@ func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 // ──────────────────────────────────
 
 // Embeddings 向量嵌入代理
-// POST /v1/embeddings
+// POST /api/openai/v1/embeddings
 func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -371,6 +384,11 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 		return
 	}
 
+	// 优先检查第三方模型服务
+	if h.checkAndHandleThirdParty(c, rawBody, meta, "/embeddings", "openai", userID, apiKeyID, startTime) {
+		return
+	}
+
 	allowed, _ := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if !allowed {
 		h.sendOpenAIError(c, http.StatusTooManyRequests, "rate_limit_exceeded", errcode.ErrTokenQuotaExceeded.Message)
@@ -381,7 +399,8 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
-		h.sendOpenAIError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
+		h.sendOpenAIError(c, http.StatusBadRequest, "invalid_request_error",
+			fmt.Sprintf("模型 %q 不受平台任何已配置的服务支持", modelName))
 		return
 	}
 
@@ -409,7 +428,7 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 // ──────────────────────────────────
 
 // Responses 代理（OpenAI Responses API）
-// POST /v1/responses
+// POST /api/openai/v1/responses
 //
 // Responses API 是 OpenAI 2025 年引入的新接口，与 Chat Completions 并存。
 // 采用原始请求体透传模式；流式输出使用命名事件格式（event: xxx\ndata: {...}），
@@ -430,6 +449,11 @@ func (h *LLMProxyHandler) Responses(c *gin.Context) {
 	meta, err := llm.ExtractRequestMeta(rawBody)
 	if err != nil {
 		h.sendResponsesError(c, http.StatusBadRequest, "invalid_request_error", "请求体解析失败")
+		return
+	}
+
+	// 优先检查第三方模型服务
+	if h.checkAndHandleThirdParty(c, rawBody, meta, "/responses", "openai", userID, apiKeyID, startTime) {
 		return
 	}
 
@@ -457,7 +481,8 @@ func (h *LLMProxyHandler) Responses(c *gin.Context) {
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
 		h.logger.Error("获取 Provider 失败", zap.Error(err), zap.String("model", modelName))
-		h.sendResponsesError(c, http.StatusServiceUnavailable, "server_error", "没有可用的 LLM Provider")
+		h.sendResponsesError(c, http.StatusBadRequest, "invalid_request_error",
+			fmt.Sprintf("模型 %q 不受平台任何已配置的服务支持", modelName))
 		return
 	}
 
@@ -526,7 +551,7 @@ func (h *LLMProxyHandler) handleStreamResponses(
 // ──────────────────────────────────
 
 // AnthropicMessages Anthropic 原生消息代理
-// POST /v1/messages
+// POST /api/anthropic/v1/messages
 // 采用原始请求体透传，避免结构体反序列化丢失 thinking 等未定义字段
 func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	startTime := time.Now()
@@ -555,6 +580,13 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 		return
 	}
 
+	// 优先检查第三方模型服务
+	// Anthropic SDK 惯例：base_url 不含版本号，客户端拼接 /v1/messages
+	meta := &llm.RequestMeta{Model: partial.Model, Stream: partial.Stream}
+	if h.checkAndHandleThirdParty(c, rawBody, meta, "/v1/messages", "anthropic", userID, apiKeyID, startTime) {
+		return
+	}
+
 	allowed, err := h.proxyService.CheckTokenQuota(c.Request.Context(), userID, deptID)
 	if err != nil {
 		h.logger.Error("配额检查失败", zap.Error(err))
@@ -578,7 +610,8 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)
 	if err != nil {
-		h.sendAnthropicError(c, http.StatusServiceUnavailable, "api_error", "没有可用的 LLM Provider")
+		h.sendAnthropicError(c, http.StatusBadRequest, "invalid_request_error",
+			fmt.Sprintf("模型 %q 不受平台任何已配置的服务支持", modelName))
 		return
 	}
 

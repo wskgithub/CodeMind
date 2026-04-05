@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
-	"codemind/internal/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -30,9 +30,82 @@ type APIKeyInfo struct {
 
 // 上下文键常量（LLM 代理请求专用）
 const (
-	CtxKeyAPIKeyID   = "api_key_id"
-	CtxKeyAPIKeyInfo = "api_key_info"
+	CtxKeyAPIKeyID     = "api_key_id"
+	CtxKeyAPIKeyInfo   = "api_key_info"
+	CtxKeyLLMProtocol  = "llm_protocol" // LLM 代理端点的协议格式（openai / anthropic）
 )
+
+// SetLLMProtocol 设置 LLM 代理端点的协议格式
+// 注册在路由组上，使中间件和 Recovery 能够返回符合协议规范的错误响应
+func SetLLMProtocol(protocol string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(CtxKeyLLMProtocol, protocol)
+		c.Next()
+	}
+}
+
+// sendProtocolError 根据 LLM 协议格式发送错误响应
+// 非 LLM 端点（CtxKeyLLMProtocol 未设置）回退到平台内部格式
+func sendProtocolError(c *gin.Context, httpStatus int, msg string) {
+	protocol, _ := c.Get(CtxKeyLLMProtocol)
+	switch protocol {
+	case "anthropic":
+		c.JSON(httpStatus, gin.H{
+			"type": "error",
+			"error": gin.H{
+				"type":    anthropicErrorType(httpStatus),
+				"message": msg,
+			},
+		})
+	case "openai":
+		c.JSON(httpStatus, gin.H{
+			"error": gin.H{
+				"message": msg,
+				"type":    openaiErrorType(httpStatus),
+				"param":   nil,
+				"code":    nil,
+			},
+		})
+	default:
+		c.JSON(httpStatus, gin.H{
+			"code":    httpStatus,
+			"message": msg,
+			"data":    nil,
+		})
+	}
+}
+
+func anthropicErrorType(status int) string {
+	switch {
+	case status == http.StatusUnauthorized:
+		return "authentication_error"
+	case status == http.StatusForbidden:
+		return "permission_error"
+	case status == http.StatusNotFound:
+		return "not_found_error"
+	case status == http.StatusTooManyRequests:
+		return "rate_limit_error"
+	case status >= 500:
+		return "api_error"
+	default:
+		return "invalid_request_error"
+	}
+}
+
+func openaiErrorType(status int) string {
+	switch {
+	case status == http.StatusUnauthorized:
+		return "invalid_api_key"
+	case status == http.StatusForbidden:
+		return "insufficient_quota"
+	case status == http.StatusTooManyRequests:
+		return "rate_limit_exceeded"
+	case status >= 500:
+		return "server_error"
+	default:
+		return "invalid_request_error"
+	}
+}
 
 // APIKeyAuth API Key 认证中间件
 // 支持两种认证方式：
@@ -46,20 +119,14 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerF
 				zap.String("path", c.Request.URL.Path),
 				zap.String("client_ip", c.ClientIP()),
 			)
-			c.JSON(502, gin.H{
-				"error": gin.H{
-					"message": "LLM 后端配置错误：base_url 不能指向 CodeMind 自身（检测到请求自环）",
-					"type":    "configuration_error",
-					"code":    "502",
-				},
-			})
+			sendProtocolError(c, http.StatusBadGateway, "LLM 后端配置错误：base_url 不能指向 CodeMind 自身（检测到请求自环）")
 			c.Abort()
 			return
 		}
 
 		// 从 Header 提取 API Key（兼容 OpenAI 和 Anthropic 两种认证方式）
 		apiKey := extractAPIKey(c)
-		
+
 		if apiKey == "" || !strings.HasPrefix(apiKey, "cm-") {
 			if logger != nil {
 				logger.Warn("API Key 格式无效",
@@ -68,7 +135,7 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerF
 					zap.Bool("has_cm_prefix", strings.HasPrefix(apiKey, "cm-")),
 				)
 			}
-			response.Error(c, errcode.ErrAPIKeyInvalid)
+			sendProtocolError(c, errcode.ErrAPIKeyInvalid.HTTP, errcode.ErrAPIKeyInvalid.Message)
 			c.Abort()
 			return
 		}
@@ -91,21 +158,21 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerF
 					zap.Error(err),
 				)
 			}
-			response.Error(c, errcode.ErrAPIKeyInvalid)
+			sendProtocolError(c, errcode.ErrAPIKeyInvalid.HTTP, errcode.ErrAPIKeyInvalid.Message)
 			c.Abort()
 			return
 		}
 
 		// 验证 Key 状态
 		if info.KeyStatus != 1 {
-			response.Error(c, errcode.ErrAPIKeyDisabled)
+			sendProtocolError(c, errcode.ErrAPIKeyDisabled.HTTP, errcode.ErrAPIKeyDisabled.Message)
 			c.Abort()
 			return
 		}
 
 		// 验证用户状态
 		if info.UserStatus != 1 {
-			response.Error(c, errcode.ErrAccountDisabled)
+			sendProtocolError(c, errcode.ErrAccountDisabled.HTTP, errcode.ErrAccountDisabled.Message)
 			c.Abort()
 			return
 		}

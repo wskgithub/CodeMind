@@ -359,6 +359,61 @@ type SetMCPAccessRuleRequest struct {
 }
 
 // ──────────────────────────────────
+// 第三方模型服务模板请求
+// ──────────────────────────────────
+
+// CreateProviderTemplateRequest 创建第三方服务模板请求
+type CreateProviderTemplateRequest struct {
+	Name             string   `json:"name" binding:"required,min=1,max=100"`
+	OpenAIBaseURL    string   `json:"openai_base_url" binding:"omitempty,max=500"`
+	AnthropicBaseURL string   `json:"anthropic_base_url" binding:"omitempty,max=500"`
+	Models           []string `json:"models" binding:"required,min=1"`
+	Format           string   `json:"format" binding:"required,oneof=openai anthropic all"`
+	Description      *string  `json:"description" binding:"omitempty,max=500"`
+	Icon             *string  `json:"icon" binding:"omitempty,max=100"`
+	SortOrder        int      `json:"sort_order"`
+}
+
+// UpdateProviderTemplateRequest 更新第三方服务模板请求
+type UpdateProviderTemplateRequest struct {
+	Name             *string  `json:"name" binding:"omitempty,min=1,max=100"`
+	OpenAIBaseURL    *string  `json:"openai_base_url" binding:"omitempty,max=500"`
+	AnthropicBaseURL *string  `json:"anthropic_base_url" binding:"omitempty,max=500"`
+	Models           []string `json:"models"`
+	Format           *string  `json:"format" binding:"omitempty,oneof=openai anthropic all"`
+	Description      *string  `json:"description" binding:"omitempty,max=500"`
+	Icon             *string  `json:"icon" binding:"omitempty,max=100"`
+	SortOrder        *int     `json:"sort_order"`
+	Status           *int16   `json:"status" binding:"omitempty,oneof=0 1"`
+}
+
+// ──────────────────────────────────
+// 用户第三方模型服务请求
+// ──────────────────────────────────
+
+// CreateThirdPartyProviderRequest 用户创建第三方服务请求
+type CreateThirdPartyProviderRequest struct {
+	Name             string   `json:"name" binding:"required,min=1,max=100"`
+	OpenAIBaseURL    string   `json:"openai_base_url" binding:"omitempty,max=500"`
+	AnthropicBaseURL string   `json:"anthropic_base_url" binding:"omitempty,max=500"`
+	APIKey           string   `json:"api_key" binding:"required"`
+	Models           []string `json:"models" binding:"required,min=1"`
+	Format           string   `json:"format" binding:"required,oneof=openai anthropic all"`
+	TemplateID       *int64   `json:"template_id"`
+}
+
+// UpdateThirdPartyProviderRequest 更新第三方服务请求
+type UpdateThirdPartyProviderRequest struct {
+	Name             *string  `json:"name" binding:"omitempty,min=1,max=100"`
+	OpenAIBaseURL    *string  `json:"openai_base_url" binding:"omitempty,max=500"`
+	AnthropicBaseURL *string  `json:"anthropic_base_url" binding:"omitempty,max=500"`
+	APIKey           *string  `json:"api_key"`
+	Models           []string `json:"models"`
+	Format           *string  `json:"format" binding:"omitempty,oneof=openai anthropic all"`
+	Status           *int16   `json:"status" binding:"omitempty,oneof=0 1"`
+}
+
+// ──────────────────────────────────
 // 文档管理请求
 // ──────────────────────────────────
 

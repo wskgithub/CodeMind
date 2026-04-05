@@ -320,7 +320,7 @@ type RankingRow struct {
 	RequestCount int64  `gorm:"column:request_count"`
 }
 
-// GetKeyUsageSummary 获取每个 Key 的用量汇总（基于 Key 级每日汇总表）
+// GetKeyUsageSummary 获取每个 Key 的平台用量汇总（基于 Key 级每日汇总表）
 func (r *UsageRepository) GetKeyUsageSummary(userID *int64, deptID *int64, startDate, endDate time.Time) ([]KeyUsageRow, error) {
 	var rows []KeyUsageRow
 
@@ -342,6 +342,28 @@ func (r *UsageRepository) GetKeyUsageSummary(userID *int64, deptID *int64, start
 	return rows, err
 }
 
+// GetThirdPartyKeyUsageSummary 获取每个 Key 的第三方用量汇总
+func (r *UsageRepository) GetThirdPartyKeyUsageSummary(userID *int64, deptID *int64, startDate, endDate time.Time) ([]KeyUsageRow, error) {
+	var rows []KeyUsageRow
+
+	query := r.db.Table("third_party_token_usage t").
+		Select("t.api_key_id as id, k.name, SUM(t.prompt_tokens) as prompt_tokens, SUM(t.completion_tokens) as completion_tokens, SUM(t.total_tokens) as total_tokens, COUNT(*) as request_count").
+		Joins("JOIN api_keys k ON k.id = t.api_key_id").
+		Where("(t.created_at AT TIME ZONE 'Asia/Shanghai')::date BETWEEN ? AND ?", startDate, endDate)
+
+	if userID != nil {
+		query = query.Where("t.user_id = ?", *userID)
+	}
+	if deptID != nil {
+		query = query.Where("t.user_id IN (SELECT id FROM users WHERE department_id = ? AND deleted_at IS NULL)", *deptID)
+	}
+
+	err := query.Group("t.api_key_id, k.name").
+		Order("total_tokens DESC").
+		Scan(&rows).Error
+	return rows, err
+}
+
 // KeyUsageRow Key 用量查询结果行
 type KeyUsageRow struct {
 	ID               int64  `gorm:"column:id"`
@@ -350,6 +372,99 @@ type KeyUsageRow struct {
 	CompletionTokens int64  `gorm:"column:completion_tokens"`
 	TotalTokens      int64  `gorm:"column:total_tokens"`
 	RequestCount     int64  `gorm:"column:request_count"`
+}
+
+// ──────────────────────────────────
+// 第三方模型服务用量查询
+// ──────────────────────────────────
+
+// GetThirdPartyTodayTotalTokens 获取今日第三方服务总 token 用量（Asia/Shanghai 时区）
+func (r *UsageRepository) GetThirdPartyTodayTotalTokens(userID *int64) (int64, error) {
+	var total int64
+	query := r.db.Table("third_party_token_usage").
+		Select("COALESCE(SUM(total_tokens), 0)").
+		Where("created_at >= DATE_TRUNC('day', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai'")
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+	err := query.Scan(&total).Error
+	return total, err
+}
+
+// GetThirdPartyTodayRequestCount 获取今日第三方服务请求数（Asia/Shanghai 时区）
+func (r *UsageRepository) GetThirdPartyTodayRequestCount(userID *int64) (int64, error) {
+	var count int64
+	query := r.db.Table("third_party_token_usage").
+		Where("created_at >= DATE_TRUNC('day', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai'")
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+	err := query.Count(&count).Error
+	return count, err
+}
+
+// GetThirdPartyMonthTotalTokens 获取本月第三方服务总 token 用量（Asia/Shanghai 时区）
+func (r *UsageRepository) GetThirdPartyMonthTotalTokens(userID *int64) (int64, error) {
+	var total int64
+	query := r.db.Table("third_party_token_usage").
+		Select("COALESCE(SUM(total_tokens), 0)").
+		Where("created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai'")
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+	err := query.Scan(&total).Error
+	return total, err
+}
+
+// GetThirdPartyMonthRequestCount 获取本月第三方服务请求数（Asia/Shanghai 时区）
+func (r *UsageRepository) GetThirdPartyMonthRequestCount(userID *int64) (int64, error) {
+	var count int64
+	query := r.db.Table("third_party_token_usage").
+		Where("created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai'")
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+	err := query.Count(&count).Error
+	return count, err
+}
+
+// GetThirdPartyDailyStats 查询第三方服务每日统计数据
+func (r *UsageRepository) GetThirdPartyDailyStats(userID *int64, deptID *int64, startDate, endDate time.Time) ([]DailyStatRow, error) {
+	return r.getThirdPartyStats("", userID, deptID, startDate, endDate)
+}
+
+// GetThirdPartyWeeklyStats 查询第三方服务每周统计
+func (r *UsageRepository) GetThirdPartyWeeklyStats(userID *int64, deptID *int64, startDate, endDate time.Time) ([]DailyStatRow, error) {
+	return r.getThirdPartyStats("week", userID, deptID, startDate, endDate)
+}
+
+// GetThirdPartyMonthlyStats 查询第三方服务每月统计
+func (r *UsageRepository) GetThirdPartyMonthlyStats(userID *int64, deptID *int64, startDate, endDate time.Time) ([]DailyStatRow, error) {
+	return r.getThirdPartyStats("month", userID, deptID, startDate, endDate)
+}
+
+// getThirdPartyStats 通用第三方用量聚合查询
+// trunc 为空字符串表示按日聚合，否则按 DATE_TRUNC(trunc, ...) 聚合
+func (r *UsageRepository) getThirdPartyStats(trunc string, userID *int64, deptID *int64, startDate, endDate time.Time) ([]DailyStatRow, error) {
+	dateExpr := "(created_at AT TIME ZONE 'Asia/Shanghai')::date"
+	if trunc != "" {
+		dateExpr = "DATE_TRUNC('" + trunc + "', created_at AT TIME ZONE 'Asia/Shanghai')::date"
+	}
+
+	var rows []DailyStatRow
+	query := r.db.Table("third_party_token_usage").
+		Select(dateExpr+" as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, COUNT(*) as request_count").
+		Where("(created_at AT TIME ZONE 'Asia/Shanghai')::date BETWEEN ? AND ?", startDate, endDate)
+
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+	if deptID != nil {
+		query = query.Where("user_id IN (SELECT id FROM users WHERE department_id = ? AND deleted_at IS NULL)", *deptID)
+	}
+
+	err := query.Group(dateExpr).Order("usage_date ASC").Scan(&rows).Error
+	return rows, err
 }
 
 // CreateRequestLog 记录请求日志

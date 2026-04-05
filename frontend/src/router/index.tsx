@@ -10,17 +10,20 @@ const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const KeysPage = lazy(() => import('@/pages/keys/KeysPage'));
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 const UsagePage = lazy(() => import('@/pages/usage/UsagePage'));
+const ModelsPage = lazy(() => import('@/pages/models/ModelsPage'));
 const UsersPage = lazy(() => import('@/pages/admin/users/UsersPage'));
 const DepartmentsPage = lazy(() => import('@/pages/admin/departments/DepartmentsPage'));
 const LimitsPage = lazy(() => import('@/pages/admin/limits/LimitsPage'));
 const SystemPage = lazy(() => import('@/pages/admin/system/SystemPage'));
 const McpPage = lazy(() => import('@/pages/admin/mcp/McpPage'));
 const BackendsPage = lazy(() => import('@/pages/admin/backends/BackendsPage'));
+const ProviderTemplatesPage = lazy(() => import('@/pages/admin/templates/ProviderTemplatesPage'));
 const MonitorPage = lazy(() => import('@/pages/admin/monitor/MonitorPage'));
 const DocsPage = lazy(() => import('@/pages/docs/DocsPage'));
 const DocsAdminPage = lazy(() => import('@/pages/admin/docs/DocsAdminPage'));
 const DocsEditPage = lazy(() => import('@/pages/admin/docs/DocsEditPage'));
 const TrainingDataPage = lazy(() => import('@/pages/admin/training/TrainingDataPage'));
+const PlatformSettingsPage = lazy(() => import('@/pages/admin/platform/PlatformSettingsPage'));
 
 /** 懒加载组件包裹 Suspense */
 function Lazy(Component: React.LazyExoticComponent<React.ComponentType>) {
@@ -56,6 +59,7 @@ const router = createBrowserRouter([
       { index: true, element: Lazy(DashboardPage) },
       { path: 'keys', element: Lazy(KeysPage) },
       { path: 'usage', element: Lazy(UsagePage) },
+      { path: 'models', element: Lazy(ModelsPage) },
       { path: 'profile', element: Lazy(ProfilePage) },
     ],
   },
@@ -84,6 +88,7 @@ const router = createBrowserRouter([
       { path: 'departments', element: Lazy(DepartmentsPage) },
       { path: 'limits', element: Lazy(LimitsPage) },
       { path: 'backends', element: Lazy(BackendsPage) },
+      { path: 'templates', element: Lazy(ProviderTemplatesPage) },
       { path: 'mcp', element: Lazy(McpPage) },
       { path: 'system', element: Lazy(SystemPage) },
       { path: 'monitor', element: Lazy(MonitorPage) },
@@ -91,6 +96,7 @@ const router = createBrowserRouter([
       { path: 'docs/create', element: Lazy(DocsEditPage) },
       { path: 'docs/edit/:id', element: Lazy(DocsEditPage) },
       { path: 'training', element: Lazy(TrainingDataPage) },
+      { path: 'platform', element: Lazy(PlatformSettingsPage) },
     ],
   },
   // 文档页面（需要登录）
