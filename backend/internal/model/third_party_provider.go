@@ -112,17 +112,19 @@ func (p *UserThirdPartyProvider) ContainsModel(model string) bool {
 
 // ThirdPartyTokenUsage 第三方模型服务用量（仅供参考）
 type ThirdPartyTokenUsage struct {
-	ID               int64     `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID           int64     `gorm:"not null;index:idx_tptu_user_created" json:"user_id"`
-	ProviderID       int64     `gorm:"not null;index:idx_tptu_provider" json:"provider_id"`
-	APIKeyID         int64     `gorm:"not null" json:"api_key_id"`
-	Model            string    `gorm:"size:100;not null" json:"model"`
-	PromptTokens     int       `gorm:"not null;default:0" json:"prompt_tokens"`
-	CompletionTokens int       `gorm:"not null;default:0" json:"completion_tokens"`
-	TotalTokens      int       `gorm:"not null;default:0" json:"total_tokens"`
-	RequestType      string    `gorm:"size:30;not null" json:"request_type"`
-	DurationMs       *int      `json:"duration_ms"`
-	CreatedAt        time.Time `gorm:"not null;autoCreateTime;index:idx_tptu_user_created" json:"created_at"`
+	ID                       int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID                   int64     `gorm:"not null;index:idx_tptu_user_created" json:"user_id"`
+	ProviderID               int64     `gorm:"not null;index:idx_tptu_provider" json:"provider_id"`
+	APIKeyID                 int64     `gorm:"not null" json:"api_key_id"`
+	Model                    string    `gorm:"size:100;not null" json:"model"`
+	PromptTokens             int       `gorm:"not null;default:0" json:"prompt_tokens"`
+	CompletionTokens         int       `gorm:"not null;default:0" json:"completion_tokens"`
+	TotalTokens              int       `gorm:"not null;default:0" json:"total_tokens"`
+	CacheCreationInputTokens int       `gorm:"not null;default:0" json:"cache_creation_input_tokens"` // 缓存创建 Token 数
+	CacheReadInputTokens     int       `gorm:"not null;default:0" json:"cache_read_input_tokens"`     // 缓存命中 Token 数
+	RequestType              string    `gorm:"size:30;not null" json:"request_type"`
+	DurationMs               *int      `json:"duration_ms"`
+	CreatedAt                time.Time `gorm:"not null;autoCreateTime;index:idx_tptu_user_created" json:"created_at"`
 }
 
 // TableName 指定表名

@@ -398,18 +398,21 @@ func (s *ThirdPartyProviderService) RecordThirdPartyUsage(
 	userID, providerID, apiKeyID int64,
 	modelName, requestType string,
 	promptTokens, completionTokens, totalTokens int,
+	cacheCreationTokens, cacheReadTokens int,
 	durationMs *int,
 ) {
 	usage := &model.ThirdPartyTokenUsage{
-		UserID:           userID,
-		ProviderID:       providerID,
-		APIKeyID:         apiKeyID,
-		Model:            modelName,
-		PromptTokens:     promptTokens,
-		CompletionTokens: completionTokens,
-		TotalTokens:      totalTokens,
-		RequestType:      requestType,
-		DurationMs:       durationMs,
+		UserID:                   userID,
+		ProviderID:               providerID,
+		APIKeyID:                 apiKeyID,
+		Model:                    modelName,
+		PromptTokens:             promptTokens,
+		CompletionTokens:         completionTokens,
+		TotalTokens:              totalTokens,
+		CacheCreationInputTokens: cacheCreationTokens,
+		CacheReadInputTokens:     cacheReadTokens,
+		RequestType:              requestType,
+		DurationMs:               durationMs,
 	}
 
 	if err := s.repo.CreateThirdPartyUsage(usage); err != nil {

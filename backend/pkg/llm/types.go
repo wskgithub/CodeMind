@@ -272,9 +272,13 @@ type CompletionTokensDetails struct {
 }
 
 // PromptTokensDetails 提示 Token 分类详情
+// PromptTokensDetails 提示 Token 分类详情
+// 包含缓存创建（首次写入）和缓存读取（命中）的详细信息
 type PromptTokensDetails struct {
-	CachedTokens int `json:"cached_tokens,omitempty"`
-	AudioTokens  int `json:"audio_tokens,omitempty"`
+	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"` // 缓存创建 token（首次写入）
+	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`     // 缓存读取 token（命中）
+	CachedTokens             int `json:"cached_tokens,omitempty"`               // 缓存 token 总量（创建+读取，兼容 OpenAI 格式）
+	AudioTokens              int `json:"audio_tokens,omitempty"`
 }
 
 // ──────────────────────────────────

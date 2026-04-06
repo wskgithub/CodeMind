@@ -25,48 +25,56 @@ func (r *UsageRepository) CreateUsage(usage *model.TokenUsage) error {
 }
 
 // UpsertDaily 更新或插入每日汇总（使用 UPSERT）
-func (r *UsageRepository) UpsertDaily(userID int64, date time.Time, promptTokens, completionTokens, totalTokens int) error {
+func (r *UsageRepository) UpsertDaily(userID int64, date time.Time, promptTokens, completionTokens, totalTokens int, cacheCreationTokens, cacheReadTokens int) error {
 	daily := model.TokenUsageDaily{
-		UserID:           userID,
-		UsageDate:        date,
-		PromptTokens:     int64(promptTokens),
-		CompletionTokens: int64(completionTokens),
-		TotalTokens:      int64(totalTokens),
-		RequestCount:     1,
+		UserID:                   userID,
+		UsageDate:                date,
+		PromptTokens:             int64(promptTokens),
+		CompletionTokens:         int64(completionTokens),
+		TotalTokens:              int64(totalTokens),
+		CacheCreationInputTokens: int64(cacheCreationTokens),
+		CacheReadInputTokens:     int64(cacheReadTokens),
+		RequestCount:             1,
 	}
 
 	return r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}, {Name: "usage_date"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"prompt_tokens":     gorm.Expr("token_usage_daily.prompt_tokens + ?", promptTokens),
-			"completion_tokens": gorm.Expr("token_usage_daily.completion_tokens + ?", completionTokens),
-			"total_tokens":      gorm.Expr("token_usage_daily.total_tokens + ?", totalTokens),
-			"request_count":     gorm.Expr("token_usage_daily.request_count + 1"),
-			"updated_at":        gorm.Expr("NOW()"),
+			"prompt_tokens":                 gorm.Expr("token_usage_daily.prompt_tokens + ?", promptTokens),
+			"completion_tokens":             gorm.Expr("token_usage_daily.completion_tokens + ?", completionTokens),
+			"total_tokens":                  gorm.Expr("token_usage_daily.total_tokens + ?", totalTokens),
+			"cache_creation_input_tokens":   gorm.Expr("token_usage_daily.cache_creation_input_tokens + ?", cacheCreationTokens),
+			"cache_read_input_tokens":       gorm.Expr("token_usage_daily.cache_read_input_tokens + ?", cacheReadTokens),
+			"request_count":                 gorm.Expr("token_usage_daily.request_count + 1"),
+			"updated_at":                    gorm.Expr("NOW()"),
 		}),
 	}).Create(&daily).Error
 }
 
 // UpsertDailyKey 更新或插入 Key 级每日汇总（使用 UPSERT）
-func (r *UsageRepository) UpsertDailyKey(keyID, userID int64, date time.Time, promptTokens, completionTokens, totalTokens int) error {
+func (r *UsageRepository) UpsertDailyKey(keyID, userID int64, date time.Time, promptTokens, completionTokens, totalTokens int, cacheCreationTokens, cacheReadTokens int) error {
 	daily := model.TokenUsageDailyKey{
-		APIKeyID:         keyID,
-		UserID:           userID,
-		UsageDate:        date,
-		PromptTokens:     int64(promptTokens),
-		CompletionTokens: int64(completionTokens),
-		TotalTokens:      int64(totalTokens),
-		RequestCount:     1,
+		APIKeyID:                 keyID,
+		UserID:                   userID,
+		UsageDate:                date,
+		PromptTokens:             int64(promptTokens),
+		CompletionTokens:         int64(completionTokens),
+		TotalTokens:              int64(totalTokens),
+		CacheCreationInputTokens: int64(cacheCreationTokens),
+		CacheReadInputTokens:     int64(cacheReadTokens),
+		RequestCount:             1,
 	}
 
 	return r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "api_key_id"}, {Name: "usage_date"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"prompt_tokens":     gorm.Expr("token_usage_daily_key.prompt_tokens + ?", promptTokens),
-			"completion_tokens": gorm.Expr("token_usage_daily_key.completion_tokens + ?", completionTokens),
-			"total_tokens":      gorm.Expr("token_usage_daily_key.total_tokens + ?", totalTokens),
-			"request_count":     gorm.Expr("token_usage_daily_key.request_count + 1"),
-			"updated_at":        gorm.Expr("NOW()"),
+			"prompt_tokens":                 gorm.Expr("token_usage_daily_key.prompt_tokens + ?", promptTokens),
+			"completion_tokens":             gorm.Expr("token_usage_daily_key.completion_tokens + ?", completionTokens),
+			"total_tokens":                  gorm.Expr("token_usage_daily_key.total_tokens + ?", totalTokens),
+			"cache_creation_input_tokens":   gorm.Expr("token_usage_daily_key.cache_creation_input_tokens + ?", cacheCreationTokens),
+			"cache_read_input_tokens":       gorm.Expr("token_usage_daily_key.cache_read_input_tokens + ?", cacheReadTokens),
+			"request_count":                 gorm.Expr("token_usage_daily_key.request_count + 1"),
+			"updated_at":                    gorm.Expr("NOW()"),
 		}),
 	}).Create(&daily).Error
 }
@@ -76,7 +84,7 @@ func (r *UsageRepository) GetDailyStats(userID *int64, deptID *int64, startDate,
 	var rows []DailyStatRow
 
 	query := r.db.Table("token_usage_daily").
-		Select("usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, SUM(request_count) as request_count").
+		Select("usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, SUM(request_count) as request_count, SUM(cache_creation_input_tokens) as cache_creation_input_tokens, SUM(cache_read_input_tokens) as cache_read_input_tokens").
 		Where("usage_date BETWEEN ? AND ?", startDate, endDate)
 
 	if userID != nil {
@@ -95,7 +103,7 @@ func (r *UsageRepository) GetWeeklyStats(userID *int64, deptID *int64, startDate
 	var rows []DailyStatRow
 
 	query := r.db.Table("token_usage_daily").
-		Select("DATE_TRUNC('week', usage_date)::date as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, SUM(request_count) as request_count").
+		Select("DATE_TRUNC('week', usage_date)::date as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, SUM(request_count) as request_count, SUM(cache_creation_input_tokens) as cache_creation_input_tokens, SUM(cache_read_input_tokens) as cache_read_input_tokens").
 		Where("usage_date BETWEEN ? AND ?", startDate, endDate)
 
 	if userID != nil {
@@ -114,7 +122,7 @@ func (r *UsageRepository) GetMonthlyStats(userID *int64, deptID *int64, startDat
 	var rows []DailyStatRow
 
 	query := r.db.Table("token_usage_daily").
-		Select("DATE_TRUNC('month', usage_date)::date as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, SUM(request_count) as request_count").
+		Select("DATE_TRUNC('month', usage_date)::date as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, SUM(request_count) as request_count, SUM(cache_creation_input_tokens) as cache_creation_input_tokens, SUM(cache_read_input_tokens) as cache_read_input_tokens").
 		Where("usage_date BETWEEN ? AND ?", startDate, endDate)
 
 	if userID != nil {
@@ -305,11 +313,13 @@ type UsageExportRow struct {
 
 // DailyStatRow 统计查询结果行
 type DailyStatRow struct {
-	UsageDate        time.Time `gorm:"column:usage_date"`
-	PromptTokens     int64     `gorm:"column:prompt_tokens"`
-	CompletionTokens int64     `gorm:"column:completion_tokens"`
-	TotalTokens      int64     `gorm:"column:total_tokens"`
-	RequestCount     int64     `gorm:"column:request_count"`
+	UsageDate                time.Time `gorm:"column:usage_date"`
+	PromptTokens             int64     `gorm:"column:prompt_tokens"`
+	CompletionTokens         int64     `gorm:"column:completion_tokens"`
+	TotalTokens              int64     `gorm:"column:total_tokens"`
+	RequestCount             int64     `gorm:"column:request_count"`
+	CacheCreationInputTokens int64     `gorm:"column:cache_creation_input_tokens"` // 缓存创建 Token 数
+	CacheReadInputTokens     int64     `gorm:"column:cache_read_input_tokens"`     // 缓存命中 Token 数
 }
 
 // RankingRow 排行榜查询结果行
@@ -453,7 +463,7 @@ func (r *UsageRepository) getThirdPartyStats(trunc string, userID *int64, deptID
 
 	var rows []DailyStatRow
 	query := r.db.Table("third_party_token_usage").
-		Select(dateExpr+" as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, COUNT(*) as request_count").
+		Select(dateExpr+" as usage_date, SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, SUM(total_tokens) as total_tokens, COUNT(*) as request_count, SUM(cache_creation_input_tokens) as cache_creation_input_tokens, SUM(cache_read_input_tokens) as cache_read_input_tokens").
 		Where("(created_at AT TIME ZONE 'Asia/Shanghai')::date BETWEEN ? AND ?", startDate, endDate)
 
 	if userID != nil {

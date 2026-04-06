@@ -5,6 +5,7 @@ import {
   ThunderboltOutlined,
   MessageOutlined,
   DownloadOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as echarts from 'echarts';
@@ -151,12 +152,16 @@ const UsagePage = () => {
     const dates = usageData.map((d) => d.date);
     const promptTokens = usageData.map((d) => d.prompt_tokens);
     const completionTokens = usageData.map((d) => d.completion_tokens);
+    const cacheReadTokens = usageData.map((d) => d.cache_read_input_tokens || 0);
     const tpTokens = usageData.map((d) => d.third_party_total_tokens || 0);
     const requests = usageData.map((d) => (d.request_count || 0) + (d.third_party_request_count || 0));
 
+    // 是否有缓存数据
+    const hasCacheData = cacheReadTokens.some((v) => v > 0);
+
     const legendData = hasThirdPartyData
-      ? ['Prompt Tokens', 'Completion Tokens', '第三方 Tokens', '请求次数']
-      : ['Prompt Tokens', 'Completion Tokens', '请求次数'];
+      ? ['Prompt Tokens', '缓存命中', 'Completion Tokens', '第三方 Tokens', '请求次数']
+      : ['Prompt Tokens', '缓存命中', 'Completion Tokens', '请求次数'];
 
     const barSeries: echarts.SeriesOption[] = [
       {
@@ -172,20 +177,38 @@ const UsagePage = () => {
           borderRadius: [0, 0, 0, 0],
         },
       },
-      {
-        name: 'Completion Tokens',
+    ];
+
+    // 添加缓存命中系列（如果有缓存数据）
+    if (hasCacheData) {
+      barSeries.push({
+        name: '缓存命中',
         type: 'bar',
         stack: 'tokens',
-        data: completionTokens,
+        data: cacheReadTokens,
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#9D4EDD' },
-            { offset: 1, color: '#7B2CBF' },
+            { offset: 0, color: '#00F5D4' },
+            { offset: 1, color: '#00CCB3' },
           ]),
-          borderRadius: hasThirdPartyData ? [0, 0, 0, 0] : [4, 4, 0, 0],
+          borderRadius: [0, 0, 0, 0],
         },
+      });
+    }
+
+    barSeries.push({
+      name: 'Completion Tokens',
+      type: 'bar',
+      stack: 'tokens',
+      data: completionTokens,
+      itemStyle: {
+        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          { offset: 0, color: '#9D4EDD' },
+          { offset: 1, color: '#7B2CBF' },
+        ]),
+        borderRadius: hasThirdPartyData ? [0, 0, 0, 0] : [4, 4, 0, 0],
       },
-    ];
+    });
 
     if (hasThirdPartyData) {
       barSeries.push({
@@ -275,6 +298,13 @@ const UsagePage = () => {
   
   // 是否有第三方数据
   const hasThirdPartyStats = thirdPartyTokens > 0 || thirdPartyRequests > 0 || thirdPartyPrompt > 0 || thirdPartyCompletion > 0;
+
+  // 缓存相关统计
+  const platformCacheRead = useMemo(() => usageData.reduce((sum, d) => sum + (d.cache_read_input_tokens || 0), 0), [usageData]);
+  const thirdPartyCacheRead = useMemo(() => usageData.reduce((sum, d) => sum + (d.third_party_cache_read_input_tokens || 0), 0), [usageData]);
+  const totalCacheRead = platformCacheRead + thirdPartyCacheRead;
+  // 缓存命中率 = 缓存命中 Token / Prompt Tokens
+  const cacheHitRate = totalPrompt > 0 ? ((totalCacheRead / totalPrompt) * 100).toFixed(1) : '0';
 
   const columns: ColumnsType<UsageItem> = useMemo(() => {
     const cols: ColumnsType<UsageItem> = [
@@ -468,9 +498,10 @@ const UsagePage = () => {
           </div>
         </div>
 
-        {/* 统计汇总卡片 — stat-card 带渐变图标 - 新设计 */}
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} lg={6}>
+        {/* 统计汇总卡片 — 2 行 3 列布局 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 12 }}>
+          {/* 第一行: 总 Tokens、总请求数、第三方 Tokens */}
+          <Col xs={24} sm={8}>
             <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.05s' }}>
               <div className="flex items-center gap-4 h-full">
                 <StatIcon
@@ -489,7 +520,7 @@ const UsagePage = () => {
               </div>
             </div>
           </Col>
-          <Col xs={24} sm={12} lg={6}>
+          <Col xs={24} sm={8}>
             <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center gap-4 h-full">
                 <StatIcon
@@ -508,8 +539,29 @@ const UsagePage = () => {
               </div>
             </div>
           </Col>
-          <Col xs={24} sm={12} lg={6}>
+          <Col xs={24} sm={8}>
             <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.15s' }}>
+              <div className="flex items-center gap-4 h-full">
+                <StatIcon
+                  icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
+                  gradient="linear-gradient(135deg, #FFBE0B 0%, #FF8800 100%)"
+                />
+                <div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>第三方 Tokens</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(thirdPartyTokens)}</div>
+                  <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                    {hasThirdPartyStats ? `${thirdPartyRequests} 次请求` : '暂无第三方请求'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+
+        {/* 第二行: Prompt Tokens、Completion Tokens、缓存命中 */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={24} sm={8}>
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.2s' }}>
               <div className="flex items-center gap-4 h-full">
                 <StatIcon
                   icon={<ThunderboltOutlined style={{ fontSize: 22 }} />}
@@ -527,12 +579,12 @@ const UsagePage = () => {
               </div>
             </div>
           </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.2s' }}>
+          <Col xs={24} sm={8}>
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.25s' }}>
               <div className="flex items-center gap-4 h-full">
                 <StatIcon
                   icon={<MessageOutlined style={{ fontSize: 22 }} />}
-                  gradient="linear-gradient(135deg, #FFBE0B 0%, #FF6B6B 100%)"
+                  gradient="linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%)"
                 />
                 <div>
                   <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>Completion Tokens</div>
@@ -540,6 +592,29 @@ const UsagePage = () => {
                   {hasThirdPartyStats && (
                     <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
                       平台 {formatNum(platformCompletion)} · 第三方 {formatNum(thirdPartyCompletion)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Col>
+          <Col xs={24} sm={8}>
+            <div className="stat-card animate-fade-in-up h-full" style={{ animationDelay: '0.3s' }}>
+              <div className="flex items-center gap-4 h-full">
+                <StatIcon
+                  icon={<RocketOutlined style={{ fontSize: 22 }} />}
+                  gradient="linear-gradient(135deg, #00F5D4 0%, #00CCB3 100%)"
+                />
+                <div>
+                  <div style={{ fontSize: 12, color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)', marginBottom: 4 }}>缓存命中</div>
+                  <div style={{ fontWeight: 700, color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 20 }}>{formatNum(totalCacheRead)}</div>
+                  {hasThirdPartyStats ? (
+                    <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                      平台 {formatNum(platformCacheRead)} · 第三方 {formatNum(thirdPartyCacheRead)}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', marginTop: 2 }}>
+                      命中率 {cacheHitRate}%
                     </div>
                   )}
                 </div>

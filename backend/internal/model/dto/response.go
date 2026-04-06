@@ -133,15 +133,19 @@ type PeriodStats struct {
 
 // UsageItem 用量统计项
 type UsageItem struct {
-	Date                       string `json:"date"`
-	PromptTokens               int64  `json:"prompt_tokens"`
-	CompletionTokens           int64  `json:"completion_tokens"`
-	TotalTokens                int64  `json:"total_tokens"`
-	RequestCount               int64  `json:"request_count"`
-	ThirdPartyPromptTokens     int64  `json:"third_party_prompt_tokens"`
-	ThirdPartyCompletionTokens int64  `json:"third_party_completion_tokens"`
-	ThirdPartyTotalTokens      int64  `json:"third_party_total_tokens"`
-	ThirdPartyRequestCount     int64  `json:"third_party_request_count"`
+	Date                             string `json:"date"`
+	PromptTokens                     int64  `json:"prompt_tokens"`
+	CompletionTokens                 int64  `json:"completion_tokens"`
+	TotalTokens                      int64  `json:"total_tokens"`
+	RequestCount                     int64  `json:"request_count"`
+	CacheCreationInputTokens         int64  `json:"cache_creation_input_tokens"`         // 缓存创建 Token 数（平台）
+	CacheReadInputTokens             int64  `json:"cache_read_input_tokens"`             // 缓存命中 Token 数（平台）
+	ThirdPartyPromptTokens           int64  `json:"third_party_prompt_tokens"`
+	ThirdPartyCompletionTokens       int64  `json:"third_party_completion_tokens"`
+	ThirdPartyTotalTokens            int64  `json:"third_party_total_tokens"`
+	ThirdPartyRequestCount           int64  `json:"third_party_request_count"`
+	ThirdPartyCacheCreationInputTokens int64 `json:"third_party_cache_creation_input_tokens"` // 缓存创建 Token 数（第三方）
+	ThirdPartyCacheReadInputTokens     int64 `json:"third_party_cache_read_input_tokens"`     // 缓存命中 Token 数（第三方)
 }
 
 // UsageResponse 用量统计响应

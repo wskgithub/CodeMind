@@ -158,10 +158,18 @@ export interface UsageItem {
   completion_tokens: number;
   total_tokens: number;
   request_count: number;
+  /** 缓存创建 Token 数（首次写入缓存） */
+  cache_creation_input_tokens: number;
+  /** 缓存命中 Token 数（从缓存读取） */
+  cache_read_input_tokens: number;
   third_party_prompt_tokens: number;
   third_party_completion_tokens: number;
   third_party_total_tokens: number;
   third_party_request_count: number;
+  /** 第三方缓存创建 Token 数 */
+  third_party_cache_creation_input_tokens: number;
+  /** 第三方缓存命中 Token 数 */
+  third_party_cache_read_input_tokens: number;
 }
 
 /** 用量统计响应 */

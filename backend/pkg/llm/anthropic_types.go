@@ -118,15 +118,25 @@ type AnthropicUsage struct {
 }
 
 // ToUsage 转换为通用 Usage 格式
+// 保留缓存相关字段：CacheCreationInputTokens 和 CacheReadInputTokens
 func (u *AnthropicUsage) ToUsage() *Usage {
 	if u == nil {
 		return nil
 	}
-	return &Usage{
+	usage := &Usage{
 		PromptTokens:     u.InputTokens,
 		CompletionTokens: u.OutputTokens,
 		TotalTokens:      u.InputTokens + u.OutputTokens,
 	}
+	// 转换缓存相关字段
+	if u.CacheCreationInputTokens > 0 || u.CacheReadInputTokens > 0 {
+		usage.PromptTokensDetails = &PromptTokensDetails{
+			CacheCreationInputTokens: u.CacheCreationInputTokens,
+			CacheReadInputTokens:     u.CacheReadInputTokens,
+			CachedTokens:             u.CacheCreationInputTokens + u.CacheReadInputTokens,
+		}
+	}
+	return usage
 }
 
 // ──────────────────────────────────

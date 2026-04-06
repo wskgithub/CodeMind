@@ -163,6 +163,13 @@ func (s *LLMProxyService) RecordUsage(
 		return
 	}
 
+	// 提取缓存相关 token
+	var cacheCreationTokens, cacheReadTokens int
+	if usage.PromptTokensDetails != nil {
+		cacheCreationTokens = usage.PromptTokensDetails.CacheCreationInputTokens
+		cacheReadTokens = usage.PromptTokensDetails.CacheReadInputTokens
+	}
+
 	ctx := context.Background()
 	today := timezone.Today()
 
@@ -172,14 +179,16 @@ func (s *LLMProxyService) RecordUsage(
 	go func() {
 		defer wg.Done()
 		record := &model.TokenUsage{
-			UserID:           userID,
-			APIKeyID:         keyID,
-			Model:            modelName,
-			PromptTokens:     usage.PromptTokens,
-			CompletionTokens: usage.CompletionTokens,
-			TotalTokens:      usage.TotalTokens,
-			RequestType:      requestType,
-			DurationMs:       &durationMs,
+			UserID:                   userID,
+			APIKeyID:                 keyID,
+			Model:                    modelName,
+			PromptTokens:             usage.PromptTokens,
+			CompletionTokens:         usage.CompletionTokens,
+			TotalTokens:              usage.TotalTokens,
+			CacheCreationInputTokens: cacheCreationTokens,
+			CacheReadInputTokens:     cacheReadTokens,
+			RequestType:              requestType,
+			DurationMs:               &durationMs,
 		}
 		if err := s.usageRepo.CreateUsage(record); err != nil {
 			s.logger.Error("写入用量明细失败", zap.Error(err), zap.Int64("user_id", userID))
@@ -188,14 +197,14 @@ func (s *LLMProxyService) RecordUsage(
 
 	go func() {
 		defer wg.Done()
-		if err := s.usageRepo.UpsertDaily(userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens); err != nil {
+		if err := s.usageRepo.UpsertDaily(userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens, cacheCreationTokens, cacheReadTokens); err != nil {
 			s.logger.Error("更新每日汇总失败", zap.Error(err), zap.Int64("user_id", userID))
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		if err := s.usageRepo.UpsertDailyKey(keyID, userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens); err != nil {
+		if err := s.usageRepo.UpsertDailyKey(keyID, userID, today, usage.PromptTokens, usage.CompletionTokens, usage.TotalTokens, cacheCreationTokens, cacheReadTokens); err != nil {
 			s.logger.Error("更新 Key 每日汇总失败", zap.Error(err), zap.Int64("api_key_id", keyID))
 		}
 	}()

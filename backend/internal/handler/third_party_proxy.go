@@ -226,15 +226,21 @@ func (h *LLMProxyHandler) recordThirdPartyMetrics(
 
 	// 记录第三方用量（仅供参考）
 	var promptTokens, completionTokens, totalTokens int
+	var cacheCreationTokens, cacheReadTokens int
 	if usage != nil {
 		promptTokens = usage.PromptTokens
 		completionTokens = usage.CompletionTokens
 		totalTokens = usage.TotalTokens
+		if usage.PromptTokensDetails != nil {
+			cacheCreationTokens = usage.PromptTokensDetails.CacheCreationInputTokens
+			cacheReadTokens = usage.PromptTokensDetails.CacheReadInputTokens
+		}
 	}
 	tpService.RecordThirdPartyUsage(
 		userID, route.ProviderID, apiKeyID,
 		meta.Model, "chat_completion",
 		promptTokens, completionTokens, totalTokens,
+		cacheCreationTokens, cacheReadTokens,
 		&durationMs,
 	)
 

@@ -180,17 +180,21 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 }
 
 // mergeUsageStats 将平台和第三方用量按日期合并为统一的 UsageItem 列表
+// 缓存数据分别存储：平台缓存存在 CacheCreationInputTokens/CacheReadInputTokens
+// 第三方缓存存在 ThirdPartyCacheCreationInputTokens/ThirdPartyCacheReadInputTokens
 func (s *StatsService) mergeUsageStats(platform, thirdParty []repository.DailyStatRow) []dto.UsageItem {
 	dateMap := make(map[string]*dto.UsageItem, len(platform))
 
 	for _, row := range platform {
 		dateStr := row.UsageDate.Format("2006-01-02")
 		dateMap[dateStr] = &dto.UsageItem{
-			Date:             dateStr,
-			PromptTokens:     row.PromptTokens,
-			CompletionTokens: row.CompletionTokens,
-			TotalTokens:      row.TotalTokens,
-			RequestCount:     row.RequestCount,
+			Date:                     dateStr,
+			PromptTokens:             row.PromptTokens,
+			CompletionTokens:         row.CompletionTokens,
+			TotalTokens:              row.TotalTokens,
+			RequestCount:             row.RequestCount,
+			CacheCreationInputTokens: row.CacheCreationInputTokens,
+			CacheReadInputTokens:     row.CacheReadInputTokens,
 		}
 	}
 
@@ -205,6 +209,9 @@ func (s *StatsService) mergeUsageStats(platform, thirdParty []repository.DailySt
 		item.ThirdPartyCompletionTokens = row.CompletionTokens
 		item.ThirdPartyTotalTokens = row.TotalTokens
 		item.ThirdPartyRequestCount = row.RequestCount
+		// 第三方缓存数据单独存储
+		item.ThirdPartyCacheCreationInputTokens = row.CacheCreationInputTokens
+		item.ThirdPartyCacheReadInputTokens = row.CacheReadInputTokens
 	}
 
 	items := make([]dto.UsageItem, 0, len(dateMap))

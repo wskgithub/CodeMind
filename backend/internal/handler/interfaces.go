@@ -87,7 +87,7 @@ type ThirdPartyProviderService interface {
 	// 路由和用量
 	ResolveThirdPartyModel(ctx context.Context, userID int64, modelName string, requestFormat string) *model.ThirdPartyRouteInfo
 	DecryptAPIKey(encrypted string) (string, error)
-	RecordThirdPartyUsage(userID, providerID, apiKeyID int64, modelName, requestType string, promptTokens, completionTokens, totalTokens int, durationMs *int)
+	RecordThirdPartyUsage(userID, providerID, apiKeyID int64, modelName, requestType string, promptTokens, completionTokens, totalTokens int, cacheCreationTokens, cacheReadTokens int, durationMs *int)
 	ListPlatformModels() ([]dto.PlatformModelInfo, error)
 }
 
