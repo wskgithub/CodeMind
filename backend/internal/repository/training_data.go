@@ -59,7 +59,9 @@ func (r *TrainingDataRepository) List(filter TrainingDataFilter) ([]model.LLMTra
 			llm_training_data.request_type, llm_training_data.model, llm_training_data.is_stream,
 			llm_training_data.prompt_tokens, llm_training_data.completion_tokens, llm_training_data.total_tokens,
 			llm_training_data.duration_ms, llm_training_data.status_code,
-			llm_training_data.is_excluded, llm_training_data.created_at`).
+			llm_training_data.is_excluded, llm_training_data.created_at,
+			llm_training_data.is_sanitized, llm_training_data.conversation_id,
+			llm_training_data.content_hash, llm_training_data.quality_score`).
 		Joins("LEFT JOIN users ON users.id = llm_training_data.user_id")
 
 	query = r.applyFilter(query, filter)

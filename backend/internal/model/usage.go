@@ -107,7 +107,12 @@ type LLMTrainingData struct {
 	IsExcluded           bool            `gorm:"not null;default:false" json:"is_excluded"`
 	Source               string          `gorm:"size:20;not null;default:platform;index:idx_training_data_source" json:"source"`    // platform | third_party
 	ThirdPartyProviderID *int64          `json:"third_party_provider_id,omitempty"`
-	CreatedAt            time.Time       `gorm:"not null;autoCreateTime;index:idx_training_data_user_created;index:idx_training_data_created" json:"created_at"`
+	// 增强字段
+	IsSanitized    bool    `gorm:"not null;default:false" json:"is_sanitized"`                            // 是否已脱敏
+	ConversationID *string `gorm:"size:64;index:idx_training_data_conversation" json:"conversation_id"`  // 会话ID
+	ContentHash    *string `gorm:"size:64;index:idx_training_data_content_hash" json:"content_hash"`     // 内容哈希（去重）
+	QualityScore   *int    `gorm:"type:smallint;index:idx_training_data_quality" json:"quality_score"`    // 质量评分 0-100
+	CreatedAt      time.Time `gorm:"not null;autoCreateTime;index:idx_training_data_user_created;index:idx_training_data_created" json:"created_at"`
 }
 
 // TableName 指定表名
@@ -129,7 +134,12 @@ type LLMTrainingDataListItem struct {
 	DurationMs       *int      `json:"duration_ms"`
 	StatusCode       int       `json:"status_code"`
 	IsExcluded       bool      `json:"is_excluded"`
-	CreatedAt        time.Time `json:"created_at"`
+	// 增强字段
+	IsSanitized    bool    `json:"is_sanitized"`
+	ConversationID *string `json:"conversation_id,omitempty"`
+	ContentHash    *string `json:"content_hash,omitempty"`
+	QualityScore   *int    `json:"quality_score,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
 }
 
 // TrainingDataStats 训练数据统计信息

@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Mandatory Rules
+
+- **必须在开发任务开始时触发 `codemind-dev` skill**：当用户请求涉及代码编写、功能实现、Bug 修复、架构调整等开发任务时，必须第一时间调用 `/codemind-dev` skill 加载项目开发规范，然后再开始实际工作。这是强制要求，不得跳过。
+
 ## Coding Conventions
 
 - **代码注释使用中文** (Code comments should be written in Chinese)

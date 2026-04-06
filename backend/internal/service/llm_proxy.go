@@ -31,6 +31,12 @@ type LLMProxyService struct {
 	rdb                *redis.Client
 	logger             *zap.Logger
 
+	// 训练数据增强模块
+	sanitizer            *TrainingDataSanitizer
+	conversationExtractor *ConversationExtractor
+	deduplicator         *TrainingDataDeduplicator
+	qualityScorer        *TrainingDataQualityScorer
+
 	// 训练数据采集开关缓存
 	trainingEnabled     bool
 	trainingEnabledAt   time.Time
@@ -51,17 +57,27 @@ func NewLLMProxyService(
 	rdb *redis.Client,
 	logger *zap.Logger,
 ) *LLMProxyService {
+	// 初始化训练数据增强模块
+	sanitizer := NewTrainingDataSanitizer(sysConfigRepo, logger)
+	conversationExtractor := NewConversationExtractor()
+	deduplicator := NewTrainingDataDeduplicator(rdb, sysConfigRepo, logger)
+	qualityScorer := NewTrainingDataQualityScorer(sysConfigRepo, logger)
+
 	return &LLMProxyService{
-		providerManager:    providerManager,
-		loadBalancer:       loadBalancer,
-		usageRepo:          usageRepo,
-		limitRepo:          limitRepo,
-		keyRepo:            keyRepo,
-		trainingDataBuffer: trainingDataBuffer,
-		sysConfigRepo:      sysConfigRepo,
-		limitService:       limitService,
-		rdb:                rdb,
-		logger:             logger,
+		providerManager:       providerManager,
+		loadBalancer:          loadBalancer,
+		usageRepo:             usageRepo,
+		limitRepo:             limitRepo,
+		keyRepo:               keyRepo,
+		trainingDataBuffer:    trainingDataBuffer,
+		sysConfigRepo:         sysConfigRepo,
+		limitService:          limitService,
+		rdb:                   rdb,
+		logger:                logger,
+		sanitizer:             sanitizer,
+		conversationExtractor: conversationExtractor,
+		deduplicator:          deduplicator,
+		qualityScorer:         qualityScorer,
 	}
 }
 
@@ -260,6 +276,7 @@ func (s *LLMProxyService) RecordRequestLog(
 
 // RecordTrainingData 记录 LLM 请求/响应用于模型训练（异步调用）
 // 数据投递到批量缓冲器，由后台协程统一批量写入数据库
+// 包含：敏感信息脱敏、会话关联、去重、质量评分
 func (s *LLMProxyService) RecordTrainingData(
 	userID, keyID int64,
 	requestType, modelName string,
@@ -273,11 +290,56 @@ func (s *LLMProxyService) RecordTrainingData(
 		return
 	}
 
+	// 1. 敏感信息脱敏
+	sanitizedRequest := requestBody
+	sanitizedResponse := responseBody
+	if s.sanitizer != nil {
+		sanitizedRequest = s.sanitizer.SanitizeRequestBody(requestBody)
+		sanitizedResponse = s.sanitizer.SanitizeResponseBody(responseBody)
+	}
+
+	// 2. 计算内容哈希并去重检查
+	var contentHash *string
+	if s.deduplicator != nil {
+		hash := s.deduplicator.ComputeContentHash(sanitizedRequest, sanitizedResponse)
+		if hash != "" {
+			contentHash = &hash
+			// 检查是否重复，重复则跳过
+			if s.deduplicator.IsDuplicate(hash) {
+				s.logger.Debug("跳过重复训练数据",
+					zap.Int64("user_id", userID),
+					zap.String("hash", hash),
+				)
+				return
+			}
+			// 标记为已见
+			s.deduplicator.MarkAsSeen(hash)
+		}
+	}
+
+	// 3. 提取会话 ID
+	var conversationID *string
+	if s.conversationExtractor != nil {
+		convID := s.conversationExtractor.ExtractConversationIDFromMetadata(sanitizedRequest)
+		if convID != "" {
+			conversationID = &convID
+		}
+	}
+
+	// 4. 计算质量评分
+	var qualityScore *int
 	var promptTokens, completionTokens, totalTokens int
 	if usage != nil {
 		promptTokens = usage.PromptTokens
 		completionTokens = usage.CompletionTokens
 		totalTokens = usage.TotalTokens
+	}
+	if s.qualityScorer != nil {
+		qualityScore = s.qualityScorer.Score(
+			sanitizedRequest, sanitizedResponse,
+			promptTokens, completionTokens,
+			statusCode, &durationMs,
+		)
 	}
 
 	record := &model.LLMTrainingData{
@@ -286,14 +348,19 @@ func (s *LLMProxyService) RecordTrainingData(
 		RequestType:      requestType,
 		Model:            modelName,
 		IsStream:         isStream,
-		RequestBody:      requestBody,
-		ResponseBody:     responseBody,
+		RequestBody:      sanitizedRequest,
+		ResponseBody:     sanitizedResponse,
 		PromptTokens:     promptTokens,
 		CompletionTokens: completionTokens,
 		TotalTokens:      totalTokens,
 		DurationMs:       &durationMs,
 		StatusCode:       statusCode,
 		ClientIP:         &clientIP,
+		// 增强字段
+		IsSanitized:    s.sanitizer != nil && s.sanitizer.IsEnabled(),
+		ConversationID: conversationID,
+		ContentHash:    contentHash,
+		QualityScore:   qualityScore,
 	}
 
 	s.trainingDataBuffer.Add(record)
@@ -301,6 +368,7 @@ func (s *LLMProxyService) RecordTrainingData(
 
 // RecordTrainingDataWithSource 记录训练数据（支持来源标记）
 // 第三方服务的请求也需要记录到训练数据中
+// 包含：敏感信息脱敏、会话关联、去重、质量评分
 func (s *LLMProxyService) RecordTrainingDataWithSource(
 	userID, keyID int64,
 	requestType, modelName string,
@@ -316,11 +384,54 @@ func (s *LLMProxyService) RecordTrainingDataWithSource(
 		return
 	}
 
+	// 1. 敏感信息脱敏
+	sanitizedRequest := requestBody
+	sanitizedResponse := responseBody
+	if s.sanitizer != nil {
+		sanitizedRequest = s.sanitizer.SanitizeRequestBody(requestBody)
+		sanitizedResponse = s.sanitizer.SanitizeResponseBody(responseBody)
+	}
+
+	// 2. 计算内容哈希并去重检查
+	var contentHash *string
+	if s.deduplicator != nil {
+		hash := s.deduplicator.ComputeContentHash(sanitizedRequest, sanitizedResponse)
+		if hash != "" {
+			contentHash = &hash
+			if s.deduplicator.IsDuplicate(hash) {
+				s.logger.Debug("跳过重复训练数据",
+					zap.Int64("user_id", userID),
+					zap.String("hash", hash),
+				)
+				return
+			}
+			s.deduplicator.MarkAsSeen(hash)
+		}
+	}
+
+	// 3. 提取会话 ID
+	var conversationID *string
+	if s.conversationExtractor != nil {
+		convID := s.conversationExtractor.ExtractConversationIDFromMetadata(sanitizedRequest)
+		if convID != "" {
+			conversationID = &convID
+		}
+	}
+
+	// 4. 计算质量评分
+	var qualityScore *int
 	var promptTokens, completionTokens, totalTokens int
 	if usage != nil {
 		promptTokens = usage.PromptTokens
 		completionTokens = usage.CompletionTokens
 		totalTokens = usage.TotalTokens
+	}
+	if s.qualityScorer != nil {
+		qualityScore = s.qualityScorer.Score(
+			sanitizedRequest, sanitizedResponse,
+			promptTokens, completionTokens,
+			statusCode, &durationMs,
+		)
 	}
 
 	record := &model.LLMTrainingData{
@@ -329,8 +440,8 @@ func (s *LLMProxyService) RecordTrainingDataWithSource(
 		RequestType:          requestType,
 		Model:                modelName,
 		IsStream:             isStream,
-		RequestBody:          requestBody,
-		ResponseBody:         responseBody,
+		RequestBody:          sanitizedRequest,
+		ResponseBody:         sanitizedResponse,
 		PromptTokens:         promptTokens,
 		CompletionTokens:     completionTokens,
 		TotalTokens:          totalTokens,
@@ -339,6 +450,11 @@ func (s *LLMProxyService) RecordTrainingDataWithSource(
 		ClientIP:             &clientIP,
 		Source:               source,
 		ThirdPartyProviderID: thirdPartyProviderID,
+		// 增强字段
+		IsSanitized:    s.sanitizer != nil && s.sanitizer.IsEnabled(),
+		ConversationID: conversationID,
+		ContentHash:    contentHash,
+		QualityScore:   qualityScore,
 	}
 
 	s.trainingDataBuffer.Add(record)

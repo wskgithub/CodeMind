@@ -27,4 +27,9 @@ const (
 	ConfigForceChangePwd         = "system.force_change_password"
 	ConfigTrainingDataCollection = "system.training_data_collection"
 	ConfigPlatformServiceURL     = "platform.service_url"
+	// 训练数据增强配置
+	ConfigTrainingSanitizeEnabled       = "training.sanitize_enabled"
+	ConfigTrainingSanitizePatterns      = "training.sanitize_patterns"
+	ConfigTrainingDedupEnabled          = "training.dedup_enabled"
+	ConfigTrainingQualityScoringEnabled = "training.quality_scoring_enabled"
 )

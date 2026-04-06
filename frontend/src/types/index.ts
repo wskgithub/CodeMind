@@ -497,6 +497,11 @@ export interface TrainingDataItem {
   duration_ms: number | null;
   status_code: number;
   is_excluded: boolean;
+  // 增强字段
+  is_sanitized: boolean;
+  conversation_id?: string;
+  content_hash?: string;
+  quality_score?: number;
   created_at: string;
 }
 
@@ -514,6 +519,9 @@ export interface TrainingDataStats {
   today_count: number;
   excluded_count: number;
   model_distribution: { model: string; count: number }[];
+  // 增强统计
+  avg_quality_score?: number;
+  unique_conversations?: number;
 }
 
 // ──────────────────────────────────
