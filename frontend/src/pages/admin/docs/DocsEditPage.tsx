@@ -139,7 +139,10 @@ const DocsEditPage: React.FC = () => {
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
+    const value = e.target.value;
+    setContent(value);
+    // 同步更新 Form 字段，确保提交时能获取最新值
+    form.setFieldValue('content', value);
   };
 
   const handleBack = () => {

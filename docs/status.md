@@ -53,9 +53,9 @@ URL: http://localhost:3000
 ```
 
 ### API 端点
-- 健康检查: `GET http://localhost:8080/health`
-- 管理 API: `http://localhost:8080/api/v1/*`
-- LLM 代理（OpenAI 兼容）: `http://localhost:8080/api/openai/v1/*`；Anthropic: `http://localhost:8080/api/anthropic/*`
+- 健康检查: `GET http://localhost:18080/api/health`
+- 管理 API: `http://localhost:18080/api/v1/*`
+- LLM 代理（OpenAI 兼容）: `http://localhost:18080/api/openai/v1/*`；Anthropic: `http://localhost:18080/api/anthropic/*`
 
 ---
 
