@@ -67,7 +67,10 @@ fi
 cd "$INSTALL_DIR"
 
 # ── 检查 PostgreSQL ──
-if ! docker compose ps postgres 2>/dev/null | grep -q "running"; then
+DB_USER=$(get_env_value "DB_USER" "$INSTALL_DIR/.env" "codemind")
+DB_NAME=$(get_env_value "DB_NAME" "$INSTALL_DIR/.env" "codemind")
+
+if ! docker compose exec -T postgres pg_isready -U "$DB_USER" -d "$DB_NAME" &>/dev/null; then
     log_error "PostgreSQL 未运行，无法备份"
     exit 1
 fi
@@ -78,9 +81,6 @@ mkdir -p "$BACKUP_PATH"
 # 1. 备份数据库
 # ============================================================
 log_info "备份 PostgreSQL 数据库..."
-
-DB_USER=$(get_env_value "DB_USER" "$INSTALL_DIR/.env" "codemind")
-DB_NAME=$(get_env_value "DB_NAME" "$INSTALL_DIR/.env" "codemind")
 
 docker compose exec -T postgres \
     pg_dump -U "$DB_USER" -d "$DB_NAME" \

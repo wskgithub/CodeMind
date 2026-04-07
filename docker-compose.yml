@@ -35,6 +35,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       - APP_ENV=${APP_ENV:-production}
       - DB_HOST=postgres

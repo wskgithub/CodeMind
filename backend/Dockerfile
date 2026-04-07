@@ -34,8 +34,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # ──────────────────────────────────
 FROM alpine:3.20
 
-# 安装运行时依赖
-RUN apk add --no-cache ca-certificates tzdata
+# 安装运行时依赖（wget 用于健康检查）
+RUN apk add --no-cache ca-certificates tzdata wget
 
 # 设置时区
 ENV TZ=Asia/Shanghai

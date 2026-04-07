@@ -225,9 +225,13 @@ log_step "━━━ Step 6/6: 健康检查 ━━━"
 
 cd "$INSTALL_DIR"
 
+# 从配置读取数据库连接信息
+DB_USER=$(get_env_value "DB_USER" "$INSTALL_DIR/.env" "codemind")
+DB_NAME=$(get_env_value "DB_NAME" "$INSTALL_DIR/.env" "codemind")
+
 # 等待 PostgreSQL
 wait_for_service "PostgreSQL" \
-    "docker compose exec -T postgres pg_isready -U codemind -d codemind" 60 || {
+    "docker compose exec -T postgres pg_isready -U $DB_USER -d $DB_NAME" 60 || {
     log_error "PostgreSQL 启动失败，查看日志: docker compose logs postgres"
     exit 1
 }
@@ -259,7 +263,7 @@ if ls "$INSTALL_DIR/migrations/"*.sql &>/dev/null; then
         if ! grep -qF "$filename" "$MIGRATIONS_APPLIED"; then
             log_info "  执行: $filename"
             if docker compose exec -T postgres \
-                psql -U codemind -d codemind < "$sql_file" 2>&1 | tail -5; then
+                psql -U "$DB_USER" -d "$DB_NAME" < "$sql_file" 2>&1 | tail -5; then
                 echo "$filename" >> "$MIGRATIONS_APPLIED"
                 MIGRATION_COUNT=$((MIGRATION_COUNT + 1))
             else
