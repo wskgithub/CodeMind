@@ -109,10 +109,20 @@ func (s *TrainingDataSanitizer) sanitizeMap(m map[string]interface{}) {
 	for key, value := range m {
 		lowerKey := strings.ToLower(key)
 
-		// 检查是否是敏感字段名
+		// 检查是否是敏感字段名（使用前缀或精确匹配，避免误伤包含敏感词的合法字段）
 		isSensitive := false
 		for _, sk := range sensitiveKeys {
-			if strings.Contains(lowerKey, strings.ToLower(sk)) {
+			skLower := strings.ToLower(sk)
+			// 精确匹配或作为前缀/后缀匹配（用下划线或点分隔）
+			if lowerKey == skLower ||
+				strings.HasPrefix(lowerKey, skLower+"_") ||
+				strings.HasPrefix(lowerKey, skLower+".") ||
+				strings.HasSuffix(lowerKey, "_"+skLower) ||
+				strings.HasSuffix(lowerKey, "."+skLower) ||
+				strings.Contains(lowerKey, "_"+skLower+"_") ||
+				strings.Contains(lowerKey, "."+skLower+"_") ||
+				strings.Contains(lowerKey, "_"+skLower+".") ||
+				strings.Contains(lowerKey, "."+skLower+".") {
 				isSensitive = true
 				break
 			}

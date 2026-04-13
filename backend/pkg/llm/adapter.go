@@ -427,6 +427,11 @@ func OpenAIResponseToAnthropic(resp *ChatCompletionResponse) *AnthropicMessagesR
 			InputTokens:  resp.Usage.PromptTokens,
 			OutputTokens: resp.Usage.CompletionTokens,
 		}
+		// 转换缓存相关字段
+		if resp.Usage.PromptTokensDetails != nil {
+			usage.CacheCreationInputTokens = resp.Usage.PromptTokensDetails.CacheCreationInputTokens
+			usage.CacheReadInputTokens = resp.Usage.PromptTokensDetails.CacheReadInputTokens
+		}
 	}
 
 	return &AnthropicMessagesResponse{
@@ -602,13 +607,20 @@ func OpenAIChunkToAnthropicEvents(chunk *ChatCompletionChunk, isFirst bool, stat
 			"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":%d}\n\n",
 			state.ContentIndex,
 		))
-		outputTokens := 0
+		// 构建 usage 信息，包含缓存字段
+		usage := AnthropicUsage{}
 		if chunk.Usage != nil {
-			outputTokens = chunk.Usage.CompletionTokens
+			usage.InputTokens = chunk.Usage.PromptTokens
+			usage.OutputTokens = chunk.Usage.CompletionTokens
+			if chunk.Usage.PromptTokensDetails != nil {
+				usage.CacheCreationInputTokens = chunk.Usage.PromptTokensDetails.CacheCreationInputTokens
+				usage.CacheReadInputTokens = chunk.Usage.PromptTokensDetails.CacheReadInputTokens
+			}
 		}
+		usageJSON, _ := json.Marshal(usage)
 		sb.WriteString(fmt.Sprintf(
-			"event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"%s\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":%d}}\n\n",
-			stopReason, outputTokens,
+			"event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"%s\",\"stop_sequence\":null},\"usage\":%s}\n\n",
+			stopReason, string(usageJSON),
 		))
 		sb.WriteString("event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
 	}
