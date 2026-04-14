@@ -108,6 +108,11 @@ type APIKeyCreateResponse struct {
 	CreatedAt time.Time  `json:"created_at"`
 }
 
+// APIKeyCopyResponse 复制 API Key 的响应
+type APIKeyCopyResponse struct {
+	Key string `json:"key"` // 完整 Key
+}
+
 // ──────────────────────────────────
 // 统计相关响应
 // ──────────────────────────────────

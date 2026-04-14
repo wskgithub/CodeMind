@@ -13,6 +13,11 @@ const keyService = {
     return request.post<ApiResponse<APIKeyCreateResult>>('/keys', data);
   },
 
+  /** 复制 Key（返回完整 Key） */
+  copy(id: number) {
+    return request.post<ApiResponse<{ key: string }>>(`/keys/${id}/copy`);
+  },
+
   /** 切换 Key 状态 */
   updateStatus(id: number, status: number) {
     return request.put<ApiResponse<null>>(`/keys/${id}/status`, { status });

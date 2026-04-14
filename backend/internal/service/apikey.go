@@ -22,6 +22,7 @@ type APIKeyService struct {
 	auditRepo *repository.AuditRepository
 	rdb       *redis.Client
 	logger    *zap.Logger
+	encryptor *crypto.Encryptor
 }
 
 // NewAPIKeyService 创建 API Key 服务
@@ -30,12 +31,14 @@ func NewAPIKeyService(
 	auditRepo *repository.AuditRepository,
 	rdb *redis.Client,
 	logger *zap.Logger,
+	encryptor *crypto.Encryptor,
 ) *APIKeyService {
 	return &APIKeyService{
 		keyRepo:   keyRepo,
 		auditRepo: auditRepo,
 		rdb:       rdb,
 		logger:    logger,
+		encryptor: encryptor,
 	}
 }
 
@@ -59,14 +62,25 @@ func (s *APIKeyService) Create(req *dto.CreateAPIKeyRequest, userID int64, clien
 		return nil, errcode.ErrInternal
 	}
 
+	// 加密存储完整 Key
+	keyEncrypted := ""
+	if s.encryptor != nil {
+		keyEncrypted, err = s.encryptor.Encrypt(fullKey)
+		if err != nil {
+			s.logger.Error("加密 API Key 失败", zap.Error(err))
+			return nil, errcode.ErrInternal
+		}
+	}
+
 	// 存储 Key
 	key := &model.APIKey{
-		UserID:    userID,
-		Name:      req.Name,
-		KeyPrefix: prefix,
-		KeyHash:   keyHash,
-		Status:    model.StatusEnabled,
-		ExpiresAt: req.ExpiresAt,
+		UserID:       userID,
+		Name:         req.Name,
+		KeyPrefix:    prefix,
+		KeyHash:      keyHash,
+		KeyEncrypted: keyEncrypted,
+		Status:       model.StatusEnabled,
+		ExpiresAt:    req.ExpiresAt,
 	}
 
 	if err := s.keyRepo.Create(key); err != nil {
@@ -86,6 +100,35 @@ func (s *APIKeyService) Create(req *dto.CreateAPIKeyRequest, userID int64, clien
 		ExpiresAt: req.ExpiresAt,
 		CreatedAt: key.CreatedAt,
 	}, nil
+}
+
+// Copy 复制 API Key（解密并返回完整 Key）
+func (s *APIKeyService) Copy(keyID int64, operatorID int64, operatorRole string, clientIP string) (*dto.APIKeyCopyResponse, error) {
+	key, err := s.keyRepo.FindByID(keyID)
+	if err != nil {
+		return nil, errcode.ErrAPIKeyNotFound
+	}
+
+	// 权限校验：普通用户只能复制自己的 Key
+	if operatorRole == model.RoleUser && key.UserID != operatorID {
+		return nil, errcode.ErrForbidden
+	}
+
+	if s.encryptor == nil || key.KeyEncrypted == "" {
+		return nil, errcode.ErrInternal
+	}
+
+	fullKey, err := s.encryptor.Decrypt(key.KeyEncrypted)
+	if err != nil {
+		s.logger.Error("解密 API Key 失败", zap.Error(err))
+		return nil, errcode.ErrInternal
+	}
+
+	// 记录审计日志
+	s.recordAudit(operatorID, model.AuditActionCopyKey, model.AuditTargetAPIKey, &keyID,
+		map[string]string{"name": key.Name, "prefix": key.KeyPrefix}, clientIP)
+
+	return &dto.APIKeyCopyResponse{Key: fullKey}, nil
 }
 
 // List 获取用户的 API Key 列表

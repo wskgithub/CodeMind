@@ -24,6 +24,13 @@ const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
   </span>
 );
 
+/** 将完整 Key 掩码显示（如 cm-a1b2c3d4************************） */
+const maskKey = (key: string | null): string => {
+  if (!key) return '';
+  const visible = key.slice(0, 12);
+  return visible + '************************';
+};
+
 /** API Key 管理页面 — 与首页/登录页新设计风格统一 */
 const KeysPage: React.FC = () => {
   const themeMode = useAppStore((s) => s.themeMode);
@@ -64,6 +71,20 @@ const KeysPage: React.FC = () => {
       form.resetFields();
       message.success('API Key 创建成功');
       loadKeys();
+    } catch {
+      // 错误已在拦截器中处理
+    }
+  };
+
+  // 复制 Key
+  const handleCopy = async (record: APIKey) => {
+    try {
+      const resp = await keyService.copy(record.id);
+      const fullKey = resp.data.data?.key;
+      if (fullKey) {
+        await navigator.clipboard.writeText(fullKey);
+        message.success('API Key 已复制到剪贴板');
+      }
     } catch {
       // 错误已在拦截器中处理
     }
@@ -154,6 +175,15 @@ const KeysPage: React.FC = () => {
       key: 'action',
       render: (_, record) => (
         <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<CopyOutlined />}
+            onClick={() => handleCopy(record)}
+            style={{ color: '#00D9FF' }}
+          >
+            复制
+          </Button>
           <Button
             type="link"
             size="small"
@@ -307,7 +337,7 @@ const KeysPage: React.FC = () => {
             ⚠️ 请立即复制此 Key，关闭后将无法再次查看！
           </p>
           <Paragraph
-            copyable={{ icon: <CopyOutlined style={{ color: '#00D9FF' }} />, tooltips: ['复制', '已复制'] }}
+            copyable={{ text: newKey || '', icon: <CopyOutlined style={{ color: '#00D9FF' }} />, tooltips: ['复制', '已复制'] }}
             style={{
               background: 'rgba(0, 217, 255, 0.08)',
               backdropFilter: 'blur(12px)',
@@ -321,7 +351,7 @@ const KeysPage: React.FC = () => {
               fontSize: 14,
             }}
           >
-            {newKey}
+            {maskKey(newKey)}
           </Paragraph>
         </Modal>
       </div>

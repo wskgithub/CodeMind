@@ -34,6 +34,7 @@ type AuthService interface {
 type APIKeyService interface {
 	List(userID int64) ([]dto.APIKeyResponse, error)
 	Create(req *dto.CreateAPIKeyRequest, userID int64, clientIP string) (*dto.APIKeyCreateResponse, error)
+	Copy(keyID int64, operatorID int64, operatorRole string, clientIP string) (*dto.APIKeyCopyResponse, error)
 	UpdateStatus(keyID int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error
 	Delete(keyID int64, operatorID int64, operatorRole string, clientIP string) error
 }

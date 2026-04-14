@@ -89,6 +89,7 @@ func Setup(
 		{
 			keys.GET("", handlers.APIKey.List)
 			keys.POST("", handlers.APIKey.Create)
+			keys.POST("/:id/copy", handlers.APIKey.Copy)
 			keys.PUT("/:id/status", handlers.APIKey.UpdateStatus)
 			keys.DELETE("/:id", handlers.APIKey.Delete)
 		}

@@ -9,7 +9,7 @@ import (
 type TokenUsage struct {
 	ID                       int64     `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID                   int64     `gorm:"not null;index:idx_token_usage_user_created" json:"user_id"`
-	APIKeyID                 int64     `gorm:"not null;index" json:"api_key_id"`
+	APIKeyID                 int64     `gorm:"index" json:"api_key_id"`
 	Model                    string    `gorm:"size:100;not null;index" json:"model"`
 	PromptTokens             int       `gorm:"not null;default:0" json:"prompt_tokens"`
 	CompletionTokens         int       `gorm:"not null;default:0" json:"completion_tokens"`
@@ -71,7 +71,7 @@ func (TokenUsageDailyKey) TableName() string {
 type RequestLog struct {
 	ID           int64     `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID       int64     `gorm:"not null;index:idx_request_logs_user_created" json:"user_id"`
-	APIKeyID     int64     `gorm:"not null" json:"api_key_id"`
+	APIKeyID     int64     `json:"api_key_id"`
 	RequestType  string    `gorm:"size:30;not null" json:"request_type"`
 	Model        *string   `gorm:"size:100" json:"model"`
 	StatusCode   int       `gorm:"not null" json:"status_code"`
@@ -92,7 +92,7 @@ func (RequestLog) TableName() string {
 type LLMTrainingData struct {
 	ID                   int64           `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID               int64           `gorm:"not null;index:idx_training_data_user_created" json:"user_id"`
-	APIKeyID             int64           `gorm:"not null" json:"api_key_id"`
+	APIKeyID             int64           `json:"api_key_id"`
 	RequestType          string          `gorm:"size:30;not null;index:idx_training_data_type" json:"request_type"`
 	Model                string          `gorm:"size:100;not null;index:idx_training_data_model" json:"model"`
 	IsStream             bool            `gorm:"not null;default:false" json:"is_stream"`

@@ -87,6 +87,14 @@ func (m *MockAPIKeyService) Create(req *dto.CreateAPIKeyRequest, userID int64, c
 	return args.Get(0).(*dto.APIKeyCreateResponse), args.Error(1)
 }
 
+func (m *MockAPIKeyService) Copy(keyID int64, operatorID int64, operatorRole string, clientIP string) (*dto.APIKeyCopyResponse, error) {
+	args := m.Called(keyID, operatorID, operatorRole, clientIP)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.APIKeyCopyResponse), args.Error(1)
+}
+
 func (m *MockAPIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
 	args := m.Called(keyID, status, operatorID, operatorRole, operatorDeptID, clientIP)
 	return args.Error(0)
@@ -232,6 +240,11 @@ func (m *MockLimitService) GetLimitProgress(userID int64, deptID *int64) (*dto.L
 // MockSystemService 系统服务 Mock
 type MockSystemService struct {
 	mock.Mock
+}
+
+func (m *MockSystemService) GetPlatformServiceURL() string {
+	args := m.Called()
+	return args.String(0)
 }
 
 func (m *MockSystemService) GetConfigs() ([]model.SystemConfig, error) {

@@ -906,7 +906,8 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 	rdb := setupRedisClient(mr)
 	
 	// Create service
-	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger)
+	encryptor := crypto.NewEncryptor(testJWTSecret)
+	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger, encryptor)
 	
 	// Test create API key
 	t.Run("Create_Success", func(t *testing.T) {
@@ -2075,7 +2076,8 @@ func TestAPIKeyLimit(t *testing.T) {
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
 	
-	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger)
+	encryptor := crypto.NewEncryptor(testJWTSecret)
+	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger, encryptor)
 	
 	// Note: This test assumes config.Get() returns a valid config
 	// In a real scenario, you'd need to initialize the config properly

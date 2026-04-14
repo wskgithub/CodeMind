@@ -79,6 +79,27 @@ func (h *APIKeyHandler) UpdateStatus(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// Copy 复制 API Key（返回完整 Key，但不展示在界面上）
+// POST /api/v1/keys/:id/copy
+func (h *APIKeyHandler) Copy(c *gin.Context) {
+	id, err := parseID(c)
+	if err != nil {
+		response.BadRequest(c, "无效的 Key ID")
+		return
+	}
+
+	operatorID := middleware.GetUserID(c)
+	operatorRole := middleware.GetUserRole(c)
+
+	resp, err := h.keyService.Copy(id, operatorID, operatorRole, c.ClientIP())
+	if err != nil {
+		handleServiceError(c, err)
+		return
+	}
+
+	response.Success(c, resp)
+}
+
 // Delete 删除 API Key
 // DELETE /api/v1/keys/:id
 func (h *APIKeyHandler) Delete(c *gin.Context) {

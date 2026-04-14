@@ -42,6 +42,7 @@ const (
 	AuditActionDeleteKey      = "delete_api_key"
 	AuditActionDisableKey     = "disable_api_key"
 	AuditActionEnableKey      = "enable_api_key"
+	AuditActionCopyKey        = "copy_api_key"
 	AuditActionUpdateLimit    = "update_limit"
 	AuditActionDeleteLimit    = "delete_limit"
 	AuditActionUpdateConfig   = "update_config"

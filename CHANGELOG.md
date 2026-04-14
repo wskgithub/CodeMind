@@ -4,6 +4,19 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.7.0] - 2026-04-14
+
+### 新增
+
+- **API Key 复制功能**: 后端新增 `/keys/:id/copy` 接口，支持 AES-256-GCM 解密后返回完整 Key
+- **API Key 安全展示**: 创建 Key 后弹窗改为掩码展示，防止完整 Key 被截屏泄露
+- **前端复制按钮**: API Key 列表页新增「复制」操作按钮，支持一键复制完整 Key
+
+### 修复
+
+- **外键约束**: 修复删除 API Key 时因外键约束导致的数据库错误（migration 017）
+- **字段约束**: 放宽 token_usage、request_logs、llm_training_data 等表的 api_key_id 非空约束
+
 ---
 
 ## [0.3.0] - 2026-02-20

@@ -73,6 +73,7 @@ func main() {
 
 	// 自动迁移：确保新增字段和表结构存在，对已有表只做增量变更不删除数据
 	if err := db.AutoMigrate(
+		&model.APIKey{},
 		&model.LLMBackend{},
 		&model.RateLimit{},
 		&monitor.SystemMetric{},
@@ -140,7 +141,8 @@ func main() {
 	authService := service.NewAuthService(userRepo, auditRepo, jwtManager, logger)
 	userService := service.NewUserService(userRepo, deptRepo, auditRepo, logger)
 	deptService := service.NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
-	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, rdb, logger)
+	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
+	apiKeyService := service.NewAPIKeyService(apiKeyRepo, auditRepo, rdb, logger, encryptor)
 	limitService := service.NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
 	trainingDataBuffer := service.NewTrainingDataBuffer(trainingDataRepo, logger)
 	trainingDataArchiver := service.NewTrainingDataArchiver(trainingDataRepo, logger, "")
@@ -156,7 +158,6 @@ func main() {
 	trainingDataService := service.NewTrainingDataService(trainingDataRepo, logger)
 
 	// 第三方模型服务（使用 JWT secret 派生 AES 加密密钥）
-	encryptor := crypto.NewEncryptor(cfg.JWT.Secret)
 	thirdPartyService := service.NewThirdPartyProviderService(thirdPartyRepo, backendRepo, encryptor, rdb, logger)
 	llmProxyService.SetThirdPartyService(thirdPartyService)
 
