@@ -321,12 +321,14 @@ func (s *LimitService) GetLimitProgress(userID int64, deptID *int64) (*dto.Limit
 		resp.Limits = append(resp.Limits, item)
 	}
 
-	// 并发信息
+	// 并发信息（与 AcquireConcurrency 保持一致：取所有生效规则中的最大值）
 	concurrencyKey := fmt.Sprintf("codemind:concurrency:%d", userID)
 	current, _ := s.rdb.Get(ctx, concurrencyKey).Int()
 	maxConcurrency := 5
-	if len(limits) > 0 {
-		maxConcurrency = limits[0].MaxConcurrency
+	for _, l := range limits {
+		if l.MaxConcurrency > maxConcurrency {
+			maxConcurrency = l.MaxConcurrency
+		}
 	}
 	resp.Concurrency = dto.ConcurrencyInfo{
 		Max:     maxConcurrency,

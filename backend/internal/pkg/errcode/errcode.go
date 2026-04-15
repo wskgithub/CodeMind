@@ -79,6 +79,7 @@ var (
 	ErrRecordNotFound                = &ErrCode{Code: 40309, Message: "记录不存在", HTTP: http.StatusNotFound}
 	ErrProviderNameExists            = &ErrCode{Code: 40310, Message: "服务名称已存在", HTTP: http.StatusConflict}
 	ErrProviderTemplateNameExists    = &ErrCode{Code: 40311, Message: "模板名称已存在", HTTP: http.StatusConflict}
+	ErrAPIKeyNotCopyable             = &ErrCode{Code: 40312, Message: "该 API Key 不支持复制，请删除后重新创建", HTTP: http.StatusBadRequest}
 )
 
 // ──────────────────────────────────

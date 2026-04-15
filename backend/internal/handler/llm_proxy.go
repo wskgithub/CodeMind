@@ -395,6 +395,16 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 		return
 	}
 
+	acquired, err := h.proxyService.AcquireConcurrency(c.Request.Context(), userID, deptID)
+	if err != nil {
+		h.logger.Error("并发控制失败", zap.Error(err))
+	}
+	if !acquired {
+		h.sendOpenAIError(c, http.StatusTooManyRequests, "rate_limit_exceeded", errcode.ErrConcurrencyExceeded.Message)
+		return
+	}
+	defer h.proxyService.ReleaseConcurrency(c.Request.Context(), userID)
+
 	modelName := meta.Model
 	ctx := c.Request.Context()
 	provider, err := h.proxyService.GetProviderForModel(ctx, userID, modelName)

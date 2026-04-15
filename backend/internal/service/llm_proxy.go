@@ -16,6 +16,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// 原子性增加并发计数并设置过期时间
+var acquireConcurrencyScript = redis.NewScript(`
+	local current = redis.call('INCR', KEYS[1])
+	redis.call('EXPIRE', KEYS[1], ARGV[1])
+	return current
+`)
+
 // LLMProxyService LLM 代理业务逻辑
 // 集成负载均衡器和基于周期的限额系统
 type LLMProxyService struct {
@@ -130,14 +137,12 @@ func (s *LLMProxyService) AcquireConcurrency(ctx context.Context, userID int64, 
 	}
 
 	key := fmt.Sprintf("codemind:concurrency:%d", userID)
-	current, err := s.rdb.Incr(ctx, key).Result()
+	current, err := acquireConcurrencyScript.Run(ctx, s.rdb, []string{key}, int(5*time.Minute.Seconds())).Int64()
 	if err != nil {
 		// 安全策略：Redis 故障时拒绝请求（fail-closed），防止绕过并发限制
-		s.logger.Error("Redis INCR 失败，拒绝请求", zap.Error(err))
+		s.logger.Error("Redis 并发槽位获取失败，拒绝请求", zap.Error(err))
 		return false, fmt.Errorf("并发控制服务暂不可用")
 	}
-
-	s.rdb.Expire(ctx, key, 5*time.Minute)
 
 	if current > int64(maxConcurrency) {
 		s.rdb.Decr(ctx, key)

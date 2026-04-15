@@ -984,6 +984,38 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 		_, err = keyRepo.FindByID(keyToDelete.ID)
 		assert.Error(t, err) // Should return error (not found)
 	})
+	
+	// Test copy API key - success
+	t.Run("Copy_Success", func(t *testing.T) {
+		req := &dto.CreateAPIKeyRequest{
+			Name: "Copy Test Key",
+		}
+		createResp, err := keyService.Create(req, testUser.ID, "127.0.0.1")
+		assert.NoError(t, err)
+		assert.NotNil(t, createResp)
+		
+		copyResp, err := keyService.Copy(createResp.ID, testUser.ID, model.RoleUser, "127.0.0.1")
+		assert.NoError(t, err)
+		assert.NotNil(t, copyResp)
+		assert.Equal(t, createResp.Key, copyResp.Key)
+	})
+	
+	// Test copy API key - not copyable (old data without key_encrypted)
+	t.Run("Copy_NotCopyable", func(t *testing.T) {
+		// Create a key without KeyEncrypted (simulating old data)
+		oldKey := &model.APIKey{
+			UserID:    testUser.ID,
+			Name:      "Old Key",
+			KeyPrefix: "cm-old",
+			KeyHash:   "unique_hash_for_old_test_" + time.Now().Format("20060102150405"),
+			Status:    model.StatusEnabled,
+		}
+		err := keyRepo.Create(oldKey)
+		assert.NoError(t, err)
+		
+		_, err = keyService.Copy(oldKey.ID, testUser.ID, model.RoleUser, "127.0.0.1")
+		assert.Equal(t, errcode.ErrAPIKeyNotCopyable, err)
+	})
 }
 
 // TestLimitService_WithSQLite tests LimitService with a real SQLite database

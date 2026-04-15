@@ -23,11 +23,12 @@ import (
 
 // MonitorService 监控服务
 type MonitorService struct {
-	monitorRepo *repository.MonitorRepository
-	usageRepo   *repository.UsageRepository
-	rdb         *redis.Client
-	logger      *zap.Logger
-	hostname    string
+	monitorRepo  *repository.MonitorRepository
+	usageRepo    *repository.UsageRepository
+	backendRepo  *repository.LLMBackendRepository
+	rdb          *redis.Client
+	logger       *zap.Logger
+	hostname     string
 	
 	// 性能统计数据
 	requestStats *RequestStatsCollector
@@ -46,6 +47,7 @@ type RequestStatsCollector struct {
 func NewMonitorService(
 	monitorRepo *repository.MonitorRepository,
 	usageRepo *repository.UsageRepository,
+	backendRepo *repository.LLMBackendRepository,
 	rdb *redis.Client,
 	logger *zap.Logger,
 ) *MonitorService {
@@ -55,11 +57,12 @@ func NewMonitorService(
 	}
 
 	svc := &MonitorService{
-		monitorRepo: monitorRepo,
-		usageRepo:   usageRepo,
-		rdb:         rdb,
-		logger:      logger,
-		hostname:    hostname,
+		monitorRepo:  monitorRepo,
+		usageRepo:    usageRepo,
+		backendRepo:  backendRepo,
+		rdb:          rdb,
+		logger:       logger,
+		hostname:     hostname,
 		requestStats: &RequestStatsCollector{
 			responseTimes: make([]float64, 0, 1000),
 			statusCodes:   make(map[int]int64),
@@ -392,14 +395,14 @@ func (s *MonitorService) GetDashboardSummary(ctx context.Context) (*monitor.Dash
 
 	go func() {
 		defer wg.Done()
-		if count, err := s.monitorRepo.GetActiveNodeCount(ctx); err == nil {
+		if count, err := s.backendRepo.CountEnabled(); err == nil {
 			summary.ActiveNodes = int(count)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		if count, err := s.monitorRepo.GetTotalNodeCount(ctx); err == nil {
+		if count, err := s.backendRepo.CountAll(); err == nil {
 			summary.TotalNodes = int(count)
 		}
 	}()

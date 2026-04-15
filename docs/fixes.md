@@ -96,11 +96,30 @@ psql -U codemind -d codemind -f /docker-entrypoint-initdb.d/migrate_key_prefix.s
 | `system.site_logo` | 站点 Logo | 站点 Logo 的 URL |
 | `system.contact_email` | 联系邮箱 | 系统管理员联系邮箱 |
 
+## 7. 修复 API Key 复制功能提示"系统内部错误"
+
+**问题描述：** 部署到生产环境后，在 API Key 页面点击「复制」按钮，提示"系统内部错误"
+
+**原因：**
+1. `deploy/docker/postgres/init.sql` 中 `api_keys` 表缺少 `key_encrypted` 字段，导致某些部署场景下（如 `AutoMigrate` 失败）表结构不完整
+2. 对于 `key_encrypted` 为空的旧数据（如升级前创建的 API Key），`Copy` 方法直接返回 `ErrInternal`，用户提示不友好
+
+**修复内容：**
+- 修改数据库初始化脚本：`deploy/docker/postgres/init.sql` 中为 `api_keys` 表添加 `key_encrypted VARCHAR(255)` 字段
+- 优化后端服务：`backend/internal/service/apikey.go` 的 `Copy` 方法中，当 `key_encrypted` 为空时返回业务错误 `ErrAPIKeyNotCopyable`，提示"该 API Key 不支持复制，请删除后重新创建"
+- 新增错误码：`backend/internal/pkg/errcode/errcode.go` 添加 `ErrAPIKeyNotCopyable`（40312）
+- 补充单元测试：`backend/internal/service/service_test.go` 添加 `Copy_Success` 和 `Copy_NotCopyable` 测试用例
+
+**效果：**
+- 全新部署时数据库表结构完整
+- 用户遇到无法复制的旧 Key 时，能看到明确的业务提示，而非"系统内部错误"
+
 ## 测试建议
 
-1. **API Key 创建测试**
+1. **API Key 创建与复制测试**
    - 应用数据库迁移后，尝试创建新的 API Key
    - 验证创建成功且前缀正常显示
+   - 点击复制按钮，验证能正常复制完整 Key
 
 2. **部门管理测试**
    - 创建新部门，选择部门经理和上级部门

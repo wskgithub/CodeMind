@@ -54,6 +54,7 @@ func TestHTTPStatusMapping(t *testing.T) {
 		{"Token 超限", ErrTokenQuotaExceeded, http.StatusTooManyRequests},
 		{"内部错误", ErrInternal, http.StatusInternalServerError},
 		{"LLM 不可用", ErrLLMUnavailable, http.StatusBadGateway},
+		{"API Key 不可复制", ErrAPIKeyNotCopyable, http.StatusBadRequest},
 	}
 
 	for _, tt := range tests {

@@ -70,6 +70,7 @@ CREATE TABLE api_keys (
     name          VARCHAR(100)    NOT NULL,
     key_prefix    VARCHAR(20)     NOT NULL,
     key_hash      VARCHAR(255)    NOT NULL UNIQUE,
+    key_encrypted VARCHAR(255),
     status        SMALLINT        NOT NULL DEFAULT 1,
     last_used_at  TIMESTAMPTZ,
     expires_at    TIMESTAMPTZ,

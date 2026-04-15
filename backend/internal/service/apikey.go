@@ -114,8 +114,12 @@ func (s *APIKeyService) Copy(keyID int64, operatorID int64, operatorRole string,
 		return nil, errcode.ErrForbidden
 	}
 
-	if s.encryptor == nil || key.KeyEncrypted == "" {
+	if s.encryptor == nil {
+		s.logger.Error("API Key 加密器未初始化")
 		return nil, errcode.ErrInternal
+	}
+	if key.KeyEncrypted == "" {
+		return nil, errcode.ErrAPIKeyNotCopyable
 	}
 
 	fullKey, err := s.encryptor.Decrypt(key.KeyEncrypted)

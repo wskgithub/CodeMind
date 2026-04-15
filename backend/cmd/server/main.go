@@ -153,7 +153,7 @@ func main() {
 	mcpProxy := mcpPkg.NewProxy(logger)
 	mcpService := service.NewMCPService(mcpRepo, mcpProxy, logger)
 	llmBackendService := service.NewLLMBackendService(backendRepo, auditRepo, loadBalancer, logger)
-	monitorService := service.NewMonitorService(monitorRepo, usageRepo, rdb, logger)
+	monitorService := service.NewMonitorService(monitorRepo, usageRepo, backendRepo, rdb, logger)
 	docService := service.NewDocumentService(docRepo, logger)
 	trainingDataService := service.NewTrainingDataService(trainingDataRepo, logger)
 

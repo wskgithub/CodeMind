@@ -65,3 +65,17 @@ func (r *LLMBackendRepository) Update(backend *model.LLMBackend) error {
 func (r *LLMBackendRepository) Delete(id int64) error {
 	return r.db.Delete(&model.LLMBackend{}, id).Error
 }
+
+// CountAll 查询所有后端节点数量
+func (r *LLMBackendRepository) CountAll() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.LLMBackend{}).Count(&count).Error
+	return count, err
+}
+
+// CountEnabled 查询启用的后端节点数量
+func (r *LLMBackendRepository) CountEnabled() (int64, error) {
+	var count int64
+	err := r.db.Model(&model.LLMBackend{}).Where("status = ?", model.LLMBackendEnabled).Count(&count).Error
+	return count, err
+}
