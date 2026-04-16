@@ -11,6 +11,7 @@ import type { PlatformModelInfo, UserThirdPartyProvider, ProviderTemplate } from
 import modelService from '@/services/modelService';
 import { getPlatformSettings } from '@/services/systemService';
 import useAppStore from '@/store/appStore';
+import { copyToClipboard } from '@/utils/copy';
 
 /** 渲染协议格式标签 */
 const FormatTags = ({ format }: { format: string }) => {
@@ -396,7 +397,11 @@ const ModelsPage: React.FC = () => {
                           <Tooltip title="复制">
                             <Button type="text" size="small" icon={<CopyOutlined />}
                               style={{ color: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)' }}
-                              onClick={() => { navigator.clipboard.writeText(item.url); message.success('已复制'); }} />
+                              onClick={async () => {
+                                const ok = await copyToClipboard(item.url);
+                                if (ok) message.success('已复制');
+                                else message.error('复制失败，请手动复制');
+                              }} />
                           </Tooltip>
                         </div>
                       ))}

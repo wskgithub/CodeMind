@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import type { APIKey } from '@/types';
 import keyService from '@/services/keyService';
 import useAppStore from '@/store/appStore';
+import { copyToClipboard } from '@/utils/copy';
 
 const { Paragraph } = Typography;
 
@@ -82,8 +83,12 @@ const KeysPage: React.FC = () => {
       const resp = await keyService.copy(record.id);
       const fullKey = resp.data.data?.key;
       if (fullKey) {
-        await navigator.clipboard.writeText(fullKey);
-        message.success('API Key 已复制到剪贴板');
+        const ok = await copyToClipboard(fullKey);
+        if (ok) {
+          message.success('API Key 已复制到剪贴板');
+        } else {
+          message.error('复制失败，请手动复制');
+        }
       }
     } catch {
       // 错误已在拦截器中处理

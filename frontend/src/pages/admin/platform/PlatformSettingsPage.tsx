@@ -4,6 +4,7 @@ import { GlobalOutlined, CopyOutlined, SaveOutlined } from '@ant-design/icons';
 import { getConfigs, updateConfigs } from '@/services/systemService';
 import type { SystemConfig } from '@/types';
 import useAppStore from '@/store/appStore';
+import { copyToClipboard } from '@/utils/copy';
 
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
   <span
@@ -54,9 +55,10 @@ const PlatformSettingsPage: React.FC = () => {
     finally { setSaving(false); }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    message.success('已复制到剪贴板');
+  const handleCopy = async (text: string) => {
+    const ok = await copyToClipboard(text);
+    if (ok) message.success('已复制到剪贴板');
+    else message.error('复制失败，请手动复制');
   };
 
   const openaiURL = serviceUrl ? `${serviceUrl}/api/openai/v1` : '';
@@ -153,7 +155,7 @@ const PlatformSettingsPage: React.FC = () => {
                       <Button
                         type="text"
                         icon={<CopyOutlined />}
-                        onClick={() => copyToClipboard(item.url)}
+                        onClick={() => handleCopy(item.url)}
                         style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)' }}
                       />
                     </div>
