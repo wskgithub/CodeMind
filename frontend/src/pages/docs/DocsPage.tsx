@@ -1,6 +1,3 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Layout, Menu, Skeleton, Empty, Button, Input, Typography } from 'antd';
 import {
   BookOutlined,
   EditOutlined,
@@ -9,14 +6,18 @@ import {
   SearchOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
+import { Layout, Menu, Skeleton, Empty, Button, Input, Typography } from 'antd';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useNavigate, useParams } from 'react-router-dom';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
+import remarkGfm from 'remark-gfm';
+
 import { documentService, Document, DocumentListItem } from '@/services/documentService';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 import '@/assets/styles/docs.css';
 
 const { Sider, Content } = Layout;
@@ -41,6 +42,7 @@ const CodeBlock = React.memo<{ language: string; value: string; isDark: boolean 
     {value}
   </SyntaxHighlighter>
 ));
+CodeBlock.displayName = 'CodeBlock';
 
 // 图片渲染组件：默认居中，支持尺寸调整
 const MarkdownImage: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = ({ src, alt, width, height, style, ...rest }) => (

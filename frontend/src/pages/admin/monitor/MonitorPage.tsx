@@ -1,9 +1,3 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  Card, Row, Col, Statistic, Table, Tag, Progress, Space,
-  Typography, Alert, Spin, Badge, Tooltip, Segmented,
-} from 'antd';
 import {
   DashboardOutlined,
   DesktopOutlined,
@@ -14,8 +8,15 @@ import {
   WarningOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import { getDashboardSummary, getSystemMetrics, getRequestMetrics, getLLMNodeMetrics } from '@/services/monitorService';
+import {
+  Card, Row, Col, Statistic, Table, Tag, Progress, Space,
+  Typography, Alert, Spin, Badge, Tooltip, Segmented,
+} from 'antd';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { useInterval } from '@/hooks/useInterval';
+import { getDashboardSummary, getSystemMetrics, getRequestMetrics, getLLMNodeMetrics } from '@/services/monitorService';
 import useAppStore from '@/store/appStore';
 import type { DashboardSummary, SystemMetricsSummary, RequestMetricsSummary, LLMNodeSummary } from '@/types';
 

@@ -17,12 +17,8 @@ run:
 
 # 输出配置
 output:
-  # 输出格式: colored-line-number|line-number|json|tab|checkstyle|code-climate
-  format: colored-line-number
   # 打印检查的 linter
   print-linter-name: true
-  # 打印统计信息
-  print-stats: true
 
 # Linter 配置
 linters:
@@ -42,7 +38,7 @@ linters:
     - gocritic        # 代码质量检查
     - gofmt           # 代码格式化检查
     - goimports       # import 序检查和格式化
-    - gomnd           # 魔法数字检测
+    - mnd             # 魔法数字检测 (原 gomnd)
     - misspell        # 拼写检查
 
     # 性能
@@ -70,11 +66,9 @@ linters-settings:
     # 最小出现次数
     min-occurrences: 3
 
-  gomnd:
+  mnd:
     # 魔法数字检查
-    settings:
-      mnd:
-        checks: argument,case,condition,operation,return,assign
+    checks: argument,case,condition,operation,return,assign
 
   revive:
     # 启用的规则
@@ -103,7 +97,7 @@ linters-settings:
       - name: superfluous-else
       - name: unused-parameter
       - name: unreachable-code
-      - name: redefines
+      - name: redefines-builtin-id
 
   misspell:
     # 区域设置
@@ -136,4 +130,3 @@ issues:
 
 # 速度配置
 # 性能优化
-fast: false

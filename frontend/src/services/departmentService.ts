@@ -1,4 +1,5 @@
 import request from './request';
+
 import type { ApiResponse, DeptTree } from '@/types';
 
 export interface CreateDepartmentParams {

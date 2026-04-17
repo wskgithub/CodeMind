@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 import { changeLanguage, type SupportedLanguage } from '@/i18n';
 
 export type ThemeMode = 'dark' | 'light';

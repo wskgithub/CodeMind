@@ -40,7 +40,7 @@ type DashboardSummary struct {
 	RequestMetrics *RequestMetricsSummary `json:"request_metrics"`
 	LLMNodes       []LLMNodeSummary       `json:"llm_nodes"`
 	ActiveNodes    int                    `json:"active_nodes"`
-	TotalNodes     int                    `json:"total_nodes""`
+	TotalNodes     int                    `json:"total_nodes"`
 	UpdatedAt      time.Time              `json:"updated_at"`
 }
 

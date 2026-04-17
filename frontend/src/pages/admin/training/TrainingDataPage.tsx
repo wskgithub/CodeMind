@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  Table, Button, Select, Space, Tag, message, DatePicker, Drawer,
-  Card, Statistic, Row, Col, Popconfirm, Tooltip,
-} from 'antd';
 import {
   DatabaseOutlined, DownloadOutlined, ReloadOutlined,
   CheckCircleOutlined, StopOutlined, EyeOutlined,
 } from '@ant-design/icons';
+import {
+  Table, Button, Select, Space, Tag, message, DatePicker, Drawer,
+  Card, Statistic, Row, Col, Popconfirm, Tooltip,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import type { TrainingDataItem, TrainingDataDetail, TrainingDataStats } from '@/types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import {
   listTrainingData,
   getTrainingDataDetail,
@@ -20,6 +20,7 @@ import {
   type TrainingDataListParams,
 } from '@/services/trainingDataService';
 import useAppStore from '@/store/appStore';
+import type { TrainingDataItem, TrainingDataDetail, TrainingDataStats } from '@/types';
 
 const { RangePicker } = DatePicker;
 

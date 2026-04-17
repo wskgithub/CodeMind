@@ -1,7 +1,8 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
 import { readFileSync } from 'fs';
+import path from 'path';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 // 统一从根目录 VERSION 文件读取版本号
 const appVersion = readFileSync(path.resolve(__dirname, '../VERSION'), 'utf-8').trim();

@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Progress, Tooltip, Spin } from 'antd';
 import {
   ThunderboltOutlined,
   ClockCircleOutlined,
   WarningOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
+import { Progress, Tooltip, Spin } from 'antd';
 import type { TFunction } from 'i18next';
+import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { getMyLimitProgress } from '@/services/limitService';
 import useAppStore from '@/store/appStore';
 import type { LimitProgressItem, LimitProgressResponse } from '@/types';

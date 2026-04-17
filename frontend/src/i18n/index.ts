@@ -1,9 +1,9 @@
 import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { initReactI18next } from 'react-i18next';
 
-import zhCN from './locales/zh-CN';
 import enUS from './locales/en-US';
+import zhCN from './locales/zh-CN';
 
 // 支持的语言列表（用于 UI 切换器与校验）
 export const SUPPORTED_LANGUAGES = [

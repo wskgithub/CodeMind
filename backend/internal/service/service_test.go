@@ -403,8 +403,8 @@ func (m *MockUsageRepository) CreateUsage(usage *model.TokenUsage) error {
 	return args.Error(0)
 }
 
-func (m *MockUsageRepository) UpsertDaily(userID int64, date time.Time, promptTokens, completionTokens, totalTokens int) error {
-	args := m.Called(userID, date, promptTokens, completionTokens, totalTokens)
+func (m *MockUsageRepository) UpsertDaily(userID int64, date time.Time, promptTokens, completionTokens, totalTokens int, cacheCreationTokens, cacheReadTokens int) error {
+	args := m.Called(userID, date, promptTokens, completionTokens, totalTokens, cacheCreationTokens, cacheReadTokens)
 	return args.Error(0)
 }
 

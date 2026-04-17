@@ -76,7 +76,7 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Cl
 	// 注意：这会导致 handler 路由返回 500，但可以用来验证路由存在和中间件
 	handlers := &Handlers{} // 空 handlers
 	// corsOrigins 为 nil 时 CORS 为 AllowAllOrigins，响应头 Access-Control-Allow-Origin 为 *
-	Setup(engine, handlers, jwtManager, db, rdb, logger, nil)
+	Setup(engine, handlers, jwtManager, db, rdb, logger, nil, "")
 
 	return engine, mr, rdb, db, jwtManager
 }
@@ -107,7 +107,7 @@ func setupTestRouterWithMonitor(t *testing.T) (*gin.Engine, *miniredis.Miniredis
 	engine := setupTestGin()
 	// 使用空的 handlers 结构体，但 Monitor 为 nil
 	handlers := &Handlers{}
-	Setup(engine, handlers, jwtManager, db, rdb, logger, nil)
+	Setup(engine, handlers, jwtManager, db, rdb, logger, nil, "")
 
 	return engine, mr, rdb, db, jwtManager
 }

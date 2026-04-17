@@ -1,7 +1,8 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { message } from 'antd';
-import type { ApiResponse } from '@/types';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+
 import i18n from '@/i18n';
+import type { ApiResponse } from '@/types';
 
 const request = axios.create({
   baseURL: '/api/v1',

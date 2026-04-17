@@ -1,6 +1,12 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import {
+  SaveOutlined,
+  ArrowLeftOutlined,
+  SendOutlined,
+  CloudOutlined,
+  LoadingOutlined,
+  PictureOutlined,
+} from '@ant-design/icons';
+import MDEditor from '@uiw/react-md-editor';
 import {
   Form,
   Input,
@@ -15,16 +21,11 @@ import {
   Tag,
   Tooltip,
 } from 'antd';
-import {
-  SaveOutlined,
-  ArrowLeftOutlined,
-  SendOutlined,
-  CloudOutlined,
-  LoadingOutlined,
-  PictureOutlined,
-} from '@ant-design/icons';
-import MDEditor from '@uiw/react-md-editor';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
 import rehypeSanitize from 'rehype-sanitize';
+
 import { documentService, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/documentService';
 import { uploadService } from '@/services/uploadService';
 import useAppStore from '@/store/appStore';

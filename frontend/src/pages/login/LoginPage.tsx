@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert, Dropdown } from 'antd';
 import { UserOutlined, LockOutlined, LockFilled, PlayCircleOutlined, SunOutlined, MoonOutlined, TranslationOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/i18n';
+import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert, Dropdown } from 'antd';
 import axios from 'axios';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/i18n';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
+
 
 // theme config for login page
 const getLoginTheme = (isDark: boolean): ThemeConfig => ({

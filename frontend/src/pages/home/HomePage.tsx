@@ -1,6 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from 'antd';
 import {
   ApiOutlined,
   RobotOutlined,
@@ -16,10 +13,14 @@ import {
   SunOutlined,
   MoonOutlined,
 } from '@ant-design/icons';
+import { Button } from 'antd';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
+import { useNavigate } from 'react-router-dom';
+
 import { type SupportedLanguage } from '@/i18n';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 
 // features/stats 数据移到组件内使用 t() 函数
 const FEATURE_KEYS = [

@@ -1,10 +1,11 @@
+import { GlobalOutlined, CopyOutlined, SaveOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, Alert } from 'antd';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Form, Input, Button, message, Alert } from 'antd';
-import { GlobalOutlined, CopyOutlined, SaveOutlined } from '@ant-design/icons';
+
 import { getConfigs, updateConfigs } from '@/services/systemService';
-import type { SystemConfig } from '@/types';
 import useAppStore from '@/store/appStore';
+import type { SystemConfig } from '@/types';
 import { copyToClipboard } from '@/utils/copy';
 
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (

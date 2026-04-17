@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import {
   getDashboardSummary,
   getSystemMetrics,
@@ -6,6 +7,7 @@ import {
   getLLMNodeMetrics,
   healthCheck,
 } from '../monitorService';
+
 import type {
   ApiResponse,
   DashboardSummary,
@@ -21,6 +23,7 @@ vi.mock('../request', () => ({
   },
 }));
 
+// eslint-disable-next-line import/first
 import request from '../request';
 
 const mockRequest = request as unknown as {

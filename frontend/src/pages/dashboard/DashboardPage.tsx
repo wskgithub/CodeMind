@@ -1,6 +1,3 @@
-import { useEffect, useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Col, Row, Statistic, Spin, Tag, Empty } from 'antd';
 import {
   ThunderboltOutlined,
   MessageOutlined,
@@ -8,14 +5,18 @@ import {
   KeyOutlined,
   ArrowUpOutlined,
 } from '@ant-design/icons';
+import { Col, Row, Statistic, Spin, Tag, Empty } from 'antd';
 import * as echarts from 'echarts';
+import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import UsageProgressCards from '@/components/common/UsageProgressCards';
 import { getOverview } from '@/services/statsService';
 import { getUsageStats } from '@/services/statsService';
 import { listAnnouncements } from '@/services/systemService';
-import useAuthStore from '@/store/authStore';
 import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 import type { StatsOverview, UsageItem, Announcement } from '@/types';
-import UsageProgressCards from '@/components/common/UsageProgressCards';
 
 const StatIcon = ({
   icon,

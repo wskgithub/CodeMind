@@ -1,12 +1,13 @@
+import { ConfigProvider, App as AntApp, theme } from 'antd';
+import enUS from 'antd/locale/en_US';
+import zhCN from 'antd/locale/zh_CN';
 import { useEffect, useMemo } from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { ConfigProvider, App as AntApp, theme } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
-import enUS from 'antd/locale/en_US';
-import router from '@/router';
-import useAuthStore from '@/store/authStore';
-import useAppStore, { ThemeMode } from '@/store/appStore';
+
 import { changeLanguage } from '@/i18n';
+import router from '@/router';
+import useAppStore, { ThemeMode } from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 
 // Ant Design theme tokens for light/dark mode
 const getThemeTokens = (themeMode: ThemeMode) => {

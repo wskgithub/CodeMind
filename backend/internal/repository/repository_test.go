@@ -2491,7 +2491,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_UpsertDaily() {
 	today := time.Now().Truncate(24 * time.Hour)
 
 	// 第一次插入
-	err := repo.UpsertDaily(1, today, 100, 50, 150)
+	err := repo.UpsertDaily(1, today, 100, 50, 150, 0, 0)
 	// SQLite 可能不支持 NOW() 函数，导致错误
 	if err != nil && (err.Error() == "no such function: NOW" || 
 		containsStr(err.Error(), "no such function")) {
@@ -2501,7 +2501,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_UpsertDaily() {
 	assert.NoError(s.T(), err)
 
 	// 第二次更新
-	err = repo.UpsertDaily(1, today, 200, 100, 300)
+	err = repo.UpsertDaily(1, today, 200, 100, 300, 0, 0)
 	if err != nil && containsStr(err.Error(), "no such function") {
 		s.T().Skip("跳过测试：SQLite 不支持 NOW() 函数")
 		return
@@ -2547,7 +2547,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetUserRanking() {
 
 	// 创建用量记录
 	for i := 1; i <= 3; i++ {
-		repo.UpsertDaily(int64(i), time.Now().AddDate(0, 0, -i), 100*i, 50*i, 150*i)
+		repo.UpsertDaily(int64(i), time.Now().AddDate(0, 0, -i), 100*i, 50*i, 150*i, 0, 0)
 	}
 
 	// 由于需要关联 users 表，先创建用户
@@ -2590,7 +2590,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDeptRanking() {
 	userRepo.Create(user)
 
 	// 创建用量记录
-	repo.UpsertDaily(user.ID, time.Now(), 1000, 500, 1500)
+	repo.UpsertDaily(user.ID, time.Now(), 1000, 500, 1500, 0, 0)
 
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now()
@@ -2617,7 +2617,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDetailedUsageStats() {
 
 	// 创建用量记录
 	for i := 0; i < 3; i++ {
-		repo.UpsertDaily(user.ID, time.Now().AddDate(0, 0, -i), 100, 50, 150)
+		repo.UpsertDaily(user.ID, time.Now().AddDate(0, 0, -i), 100, 50, 150, 0, 0)
 	}
 
 	startDate := time.Now().AddDate(0, 0, -7)
