@@ -29,7 +29,7 @@ func CheckPassword(password, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-// GenerateAPIKey 生成一个新的 API Key，返回完整密钥、显示前缀和 SHA-256 哈希值。
+// GenerateAPIKey generates a new API key, returning the full key, display prefix, and SHA-256 hash.
 func GenerateAPIKey() (fullKey, prefix, hash string, err error) {
 	randomBytes := make([]byte, apiKeyLength)
 	if _, err = rand.Read(randomBytes); err != nil {

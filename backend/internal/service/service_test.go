@@ -24,7 +24,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）.
+// testJWTSecret is the JWT secret for tests (min 32 chars, required by jwt.NewManager).
 const testJWTSecret = "01234567890123456789012345678901"
 
 // ==================== Mock Repository Types ====================

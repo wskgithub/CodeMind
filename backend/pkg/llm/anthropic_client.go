@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Anthropic API 版本常量。
+// Anthropic API version constant.
 const (
 	AnthropicAPIVersion = "2023-06-01"
 )

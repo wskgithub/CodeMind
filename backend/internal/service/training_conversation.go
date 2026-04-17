@@ -83,10 +83,10 @@ func (e *ConversationExtractor) extractFirstUserMessage(body json.RawMessage) st
 	return ""
 }
 
-// messageRoleUser 是 LLM 消息中用户角色的标识符。
+// messageRoleUser is the identifier for the user role in LLM messages.
 const messageRoleUser = "user"
 
-// contentTypeText 是多模态内容数组中文本类型的标识符。
+// contentTypeText is the identifier for text type in multimodal content arrays.
 const contentTypeText = "text"
 
 func (e *ConversationExtractor) contentToString(content interface{}) string {

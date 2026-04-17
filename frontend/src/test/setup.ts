@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom';
-import i18n from '@/i18n'; // 初始化 i18n 用于测试
+import i18n from '@/i18n';
 
-// 确保测试环境使用中文
-i18n.changeLanguage('zh-CN');
+// Use English locale for tests
+i18n.changeLanguage('en-US');
 
 // mock matchMedia for Ant Design
 Object.defineProperty(window, 'matchMedia', {

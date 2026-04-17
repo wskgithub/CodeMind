@@ -42,7 +42,7 @@ describe('systemService', () => {
         id: 1,
         config_key: 'site_name',
         config_value: 'CodeMind',
-        description: '站点名称',
+        description: 'Site name',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       },
@@ -50,7 +50,7 @@ describe('systemService', () => {
         id: 2,
         config_key: 'max_upload_size',
         config_value: '10485760',
-        description: '最大上传文件大小',
+        description: 'Maximum upload file size',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
       },
@@ -118,8 +118,8 @@ describe('systemService', () => {
     const mockAnnouncements: Announcement[] = [
       {
         id: 1,
-        title: '系统维护通知',
-        content: '系统将于今晚进行维护',
+        title: 'System Maintenance Notice',
+        content: 'System maintenance scheduled for tonight',
         author_id: 1,
         status: 1,
         pinned: true,
@@ -128,8 +128,8 @@ describe('systemService', () => {
       },
       {
         id: 2,
-        title: '新功能发布',
-        content: '我们发布了新功能',
+        title: 'New Feature Release',
+        content: 'We released new features',
         author_id: 1,
         status: 1,
         pinned: false,
@@ -159,8 +159,8 @@ describe('systemService', () => {
         {
           desc: 'full data',
           data: {
-            title: '新公告',
-            content: '公告内容',
+            title: 'New Announcement',
+            content: 'Announcement content',
             pinned: true,
             status: 1,
           },
@@ -168,15 +168,15 @@ describe('systemService', () => {
         {
           desc: 'minimal data',
           data: {
-            title: '简单公告',
-            content: '内容',
+            title: 'Simple Announcement',
+            content: 'Content',
           },
         },
         {
           desc: 'not pinned',
           data: {
-            title: '普通公告',
-            content: '内容',
+            title: 'Regular Announcement',
+            content: 'Content',
             pinned: false,
           },
         },
@@ -197,11 +197,11 @@ describe('systemService', () => {
 
     describe('updateAnnouncement', () => {
       it.each([
-        { desc: 'title only', data: { title: '新标题' } },
-        { desc: 'content only', data: { content: '新内容' } },
+        { desc: 'title only', data: { title: 'New Title' } },
+        { desc: 'content only', data: { content: 'New Content' } },
         { desc: 'pinned only', data: { pinned: true } },
         { desc: 'status only', data: { status: 0 } },
-        { desc: 'multiple fields', data: { title: '新标题', content: '新内容', pinned: false } },
+        { desc: 'multiple fields', data: { title: 'New Title', content: 'New Content', pinned: false } },
       ])('should update announcement with $desc', async ({ data }) => {
         const announcementId = 1;
         const mockResponse: ApiResponse<null> = {

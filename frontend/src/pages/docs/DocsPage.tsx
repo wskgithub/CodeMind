@@ -22,7 +22,7 @@ import '@/assets/styles/docs.css';
 
 const { Sider, Content } = Layout;
 
-// 代码块渲染组件
+// Code block renderer component
 const CodeBlock = React.memo<{ language: string; value: string; isDark: boolean }>(({
   language,
   value,
@@ -44,7 +44,7 @@ const CodeBlock = React.memo<{ language: string; value: string; isDark: boolean 
 ));
 CodeBlock.displayName = 'CodeBlock';
 
-// 图片渲染组件：默认居中，支持尺寸调整
+// Image renderer: centered by default, supports size adjustment
 const MarkdownImage: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = ({ src, alt, width, height, style, ...rest }) => (
   <span style={{ display: 'block', textAlign: 'center', margin: '16px 0' }}>
     <img
@@ -104,7 +104,7 @@ const DocsPage: React.FC = () => {
       const list = await documentService.list();
       setDocuments(list);
     } catch (err) {
-      console.error('加载文档列表失败:', err);
+      console.error('Failed to load document list:', err);
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ const DocsPage: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('加载文档失败:', err);
+      console.error('Failed to load document:', err);
     } finally {
       setContentLoading(false);
     }
@@ -135,7 +135,7 @@ const DocsPage: React.FC = () => {
     }
   }, []);
 
-  // 搜索过滤
+  // Search filter
   const filteredDocs = useMemo(() => {
     if (!searchText.trim()) return documents;
     const keyword = searchText.toLowerCase();
@@ -146,7 +146,7 @@ const DocsPage: React.FC = () => {
     );
   }, [documents, searchText]);
 
-  // 当前文档在列表中的位置，用于上/下篇导航
+  // Current document index for prev/next navigation
   const currentIndex = useMemo(() => {
     if (!currentDoc) return -1;
     return documents.findIndex((d) => d.slug === currentDoc.slug);
@@ -155,7 +155,7 @@ const DocsPage: React.FC = () => {
   const prevDoc = currentIndex > 0 ? documents[currentIndex - 1] : null;
   const nextDoc = currentIndex < documents.length - 1 ? documents[currentIndex + 1] : null;
 
-  // Markdown 组件配置
+  // Markdown component configuration
   const markdownComponents = useMemo(() => ({
     code({ inline, className, children, ...props }: any) {
       const match = /language-(\w+)/.exec(className || '');
@@ -224,7 +224,7 @@ const DocsPage: React.FC = () => {
             {!collapsed && <span className="docs-sider-title">{t('docs.sidebarTitle')}</span>}
           </div>
 
-          {/* 搜索框 */}
+          {/* Search box */}
           {!collapsed && (
             <div style={{ padding: '0 12px 8px' }}>
               <Input
@@ -257,7 +257,7 @@ const DocsPage: React.FC = () => {
             }))}
           />
 
-          {/* 管理员入口 */}
+          {/* Admin entry */}
           {isAdmin && !collapsed && (
             <div style={{ padding: '12px 16px', borderTop: '1px solid var(--ant-color-border)' }}>
               <Button
@@ -276,7 +276,7 @@ const DocsPage: React.FC = () => {
 
         <Layout className="docs-content-layout">
           <Content className="docs-content">
-            {/* 顶部栏 */}
+            {/* Top bar */}
             <div className="docs-content-header">
               <div className="docs-content-header-left">
                 <Button
@@ -308,7 +308,7 @@ const DocsPage: React.FC = () => {
               )}
             </div>
 
-            {/* 正文内容 */}
+            {/* Main content */}
             {contentLoading ? (
               <Skeleton active paragraph={{ rows: 20 }} />
             ) : currentDoc ? (
@@ -322,7 +322,7 @@ const DocsPage: React.FC = () => {
                   </ReactMarkdown>
                 </article>
 
-                {/* 底部信息 */}
+                {/* Footer info */}
                 <div className="docs-footer">
                   {currentDoc.updated_at && (
                     <span className="docs-update-time">
@@ -331,7 +331,7 @@ const DocsPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* 上/下篇导航 */}
+                {/* Prev/Next navigation */}
                 {(prevDoc || nextDoc) && (
                   <div className="docs-nav">
                     {prevDoc ? (

@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testJWTSecret 单元测试用 JWT 密钥（至少 32 字符，满足 NewManager 校验）.
+// testJWTSecret is the JWT secret for unit tests (min 32 chars, required by NewManager).
 const testJWTSecret = "test-secret-key-for-unit-testing-minimum-32-chars"
 
-// setupTestManager 创建测试用的 JWT Manager 和 miniredis.
+// setupTestManager creates a JWT Manager and miniredis for testing.
 func setupTestManager(t *testing.T, expireHours int) (*Manager, *miniredis.Miniredis) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{
@@ -28,7 +28,7 @@ func setupTestManager(t *testing.T, expireHours int) (*Manager, *miniredis.Minir
 }
 
 func TestNewManager(t *testing.T) {
-	t.Run("合法密钥创建成功", func(t *testing.T) {
+	t.Run("valid secret key creation succeeds", func(t *testing.T) {
 		mr := miniredis.RunT(t)
 		defer mr.Close()
 
@@ -45,7 +45,7 @@ func TestNewManager(t *testing.T) {
 		assert.Equal(t, rdb, manager.rdb)
 	})
 
-	t.Run("短密钥被拒绝", func(t *testing.T) {
+	t.Run("short secret key rejected", func(t *testing.T) {
 		mr := miniredis.RunT(t)
 		defer mr.Close()
 
@@ -72,21 +72,21 @@ func TestGenerateToken(t *testing.T) {
 		userID   int64
 	}{
 		{
-			name:     "生成带部门ID的Token",
+			name:     "generate token with department ID",
 			userID:   1,
 			username: "admin",
 			role:     "admin",
 			deptID:   func() *int64 { v := int64(100); return &v }(),
 		},
 		{
-			name:     "生成不带部门ID的Token",
+			name:     "generate token without department ID",
 			userID:   2,
 			username: "user",
 			role:     "user",
 			deptID:   nil,
 		},
 		{
-			name:     "生成空部门ID的Token",
+			name:     "generate token with nil department ID",
 			userID:   3,
 			username: "test",
 			role:     "viewer",
@@ -102,7 +102,7 @@ func TestGenerateToken(t *testing.T) {
 			assert.NotEmpty(t, tokenString)
 			assert.True(t, expiresAt.After(time.Now()))
 
-			// 验证 token 格式
+			// Verify token format
 			parts := strings.Split(tokenString, ".")
 			assert.Len(t, parts, 3, "JWT should have 3 parts")
 		})
@@ -130,7 +130,7 @@ func TestParseToken_Success(t *testing.T) {
 }
 
 func TestParseToken_Expired(t *testing.T) {
-	// 创建过期时间为 -1 小时的管理器
+	// Create manager with -1 hour expiration
 	manager, mr := setupTestManager(t, -1)
 	defer mr.Close()
 
@@ -153,10 +153,10 @@ func TestParseToken_InvalidSignature(t *testing.T) {
 	tokenString, _, err := manager.GenerateToken(1, "admin", "admin", &deptID)
 	require.NoError(t, err)
 
-	// 创建另一个使用不同 secret 的管理器来解析
+	// Create another manager with a different secret to parse
 	wrongManager, wrongMr := setupTestManager(t, 24)
 	defer wrongMr.Close()
-	// 修改 secret 为不同的值
+	// Change secret to a different value
 	wrongManager.secret = []byte("wrong-secret")
 
 	claims, err := wrongManager.ParseToken(tokenString)
@@ -176,22 +176,22 @@ func TestParseToken_Malformed(t *testing.T) {
 		wantErr     string
 	}{
 		{
-			name:        "空字符串",
+			name:        "empty string",
 			tokenString: "",
 			wantErr:     "failed to parse token",
 		},
 		{
-			name:        "非法格式",
+			name:        "invalid format",
 			tokenString: "not-a-valid-token",
 			wantErr:     "failed to parse token",
 		},
 		{
-			name:        "缺少部分",
+			name:        "missing parts",
 			tokenString: "header.payload",
 			wantErr:     "failed to parse token",
 		},
 		{
-			name:        "base64解码失败",
+			name:        "base64 decode failure",
 			tokenString: "invalid.base64.signature",
 			wantErr:     "failed to parse token",
 		},
@@ -212,21 +212,21 @@ func TestParseToken_Blacklisted(t *testing.T) {
 	manager, mr := setupTestManager(t, 24)
 	defer mr.Close()
 
-	// 生成 token
+	// Generate token
 	deptID := int64(100)
 	tokenString, expiresAt, err := manager.GenerateToken(1, "admin", "admin", &deptID)
 	require.NoError(t, err)
 
-	// 先解析一次获取 jti
+	// Parse once to get jti
 	claims, err := manager.ParseToken(tokenString)
 	require.NoError(t, err)
 	jti := claims.ID
 
-	// 将 token 加入黑名单
+	// Add token to blacklist
 	err = manager.Blacklist(context.Background(), jti, expiresAt)
 	require.NoError(t, err)
 
-	// 再次解析应该失败
+	// Parsing again should fail
 	claims, err = manager.ParseToken(tokenString)
 
 	assert.Error(t, err)
@@ -246,21 +246,21 @@ func TestBlacklist(t *testing.T) {
 		wantBlack  bool
 	}{
 		{
-			name:       "加入黑名单成功",
+			name:       "blacklist successfully",
 			jti:        "test-jti-1",
 			expiration: time.Now().Add(1 * time.Hour),
 			wantErr:    false,
 			wantBlack:  true,
 		},
 		{
-			name:       "已过期不需要加入黑名单",
+			name:       "expired token does not need blacklisting",
 			jti:        "test-jti-2",
 			expiration: time.Now().Add(-1 * time.Hour),
 			wantErr:    false,
 			wantBlack:  false,
 		},
 		{
-			name:       "剩余有效期为0不需要加入黑名单",
+			name:       "zero remaining TTL does not need blacklisting",
 			jti:        "test-jti-3",
 			expiration: time.Now(),
 			wantErr:    false,
@@ -278,7 +278,7 @@ func TestBlacklist(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// 检查是否在黑名单中
+			// Check if blacklisted
 			isBlacklisted := manager.IsBlacklisted(context.Background(), tt.jti)
 			assert.Equal(t, tt.wantBlack, isBlacklisted)
 		})
@@ -295,11 +295,11 @@ func TestBlacklist_TTL(t *testing.T) {
 	err := manager.Blacklist(context.Background(), jti, expiration)
 	require.NoError(t, err)
 
-	// 检查 TTL - miniredis 的 TTL 返回纳秒
+	// Check TTL - miniredis TTL returns nanoseconds
 	key := "codemind:jwt:blacklist:" + jti
 	ttlNs := mr.TTL(key)
 	ttlSec := ttlNs / 1e9
-	// TTL 应该接近 30 分钟（允许一些误差）
+	// TTL should be close to 30 minutes (allowing some tolerance)
 	assert.True(t, ttlSec > 29*60 && ttlSec <= 30*60, "TTL should be set correctly, got %d seconds", ttlSec)
 }
 
@@ -314,15 +314,15 @@ func TestIsBlacklisted(t *testing.T) {
 		expected bool
 	}{
 		{
-			name: "Token不在黑名单中",
+			name: "token not in blacklist",
 			setup: func() {
-				// 不做任何设置
+				// No setup needed
 			},
 			jti:      "not-blacklisted",
 			expected: false,
 		},
 		{
-			name: "Token在黑名单中",
+			name: "token in blacklist",
 			setup: func() {
 				key := "codemind:jwt:blacklist:blacklisted-token"
 				mr.Set(key, "1")
@@ -345,10 +345,10 @@ func TestIsBlacklisted(t *testing.T) {
 func TestIsBlacklisted_RedisError(t *testing.T) {
 	manager, mr := setupTestManager(t, 24)
 
-	// 关闭 Redis 连接以模拟错误
+	// Close Redis connection to simulate error
 	mr.Close()
 
-	// Redis 错误时 fail-closed，拒绝放行
+	// Fail-closed on Redis error, deny access
 	result := manager.IsBlacklisted(context.Background(), "any-token")
 	assert.True(t, result)
 }
@@ -360,12 +360,12 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 	ctx := context.Background()
 	deptID := int64(100)
 
-	// 1. 生成 Token
+	// 1. Generate Token
 	tokenString, expiresAt, err := manager.GenerateToken(1, "admin", "admin", &deptID)
 	require.NoError(t, err)
 	assert.NotEmpty(t, tokenString)
 
-	// 2. 解析 Token
+	// 2. Parse Token
 	claims, err := manager.ParseToken(tokenString)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), claims.UserID)
@@ -373,17 +373,17 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 	jti := claims.ID
 	assert.NotEmpty(t, jti)
 
-	// 3. 确认 Token 不在黑名单
+	// 3. Confirm Token is not blacklisted
 	assert.False(t, manager.IsBlacklisted(ctx, jti))
 
-	// 4. 将 Token 加入黑名单
+	// 4. Add Token to blacklist
 	err = manager.Blacklist(ctx, jti, expiresAt)
 	require.NoError(t, err)
 
-	// 5. 确认 Token 在黑名单中
+	// 5. Confirm Token is blacklisted
 	assert.True(t, manager.IsBlacklisted(ctx, jti))
 
-	// 6. 再次解析应该失败
+	// 6. Parsing again should fail
 	_, err = manager.ParseToken(tokenString)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "token has been revoked")
@@ -393,7 +393,7 @@ func TestClaims_WithDifferentSigningMethods(t *testing.T) {
 	manager, mr := setupTestManager(t, 24)
 	defer mr.Close()
 
-	// 创建一个使用错误签名算法的 token
+	// Create a token with wrong signing algorithm
 	claims := Claims{
 		UserID:   1,
 		Username: "admin",
@@ -406,9 +406,9 @@ func TestClaims_WithDifferentSigningMethods(t *testing.T) {
 		},
 	}
 
-	// 使用 RS256 而不是 HS256
+	// Use RS256 instead of HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	// 由于没有私钥，我们只能构造一个无效的 token
+	// Without a private key, we can only construct an invalid token
 	tokenString, _ := token.SigningString()
 
 	_, err := manager.ParseToken(tokenString + ".invalid")

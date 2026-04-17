@@ -18,24 +18,24 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// RepositoryTestSuite 测试套件.
+// RepositoryTestSuite is the test suite.
 type RepositoryTestSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
-// SetupSuite 测试套件初始化.
+// SetupSuite initializes the test suite.
 func (s *RepositoryTestSuite) SetupSuite() {
-	// 使用 SQLite 内存数据库
+	// Use SQLite in-memory database
 	db, err := gorm.Open(sqlite.Open(":memory:?_fk=1"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent), // 测试时关闭日志
+		Logger: logger.Default.LogMode(logger.Silent), // Silence logs during tests
 	})
 	if err != nil {
 		s.T().Fatalf("failed to connect to test database: %v", err)
 	}
 	s.db = db
 
-	// 自动迁移所有模型
+	// Auto-migrate all models
 	err = s.db.AutoMigrate(
 		&model.User{},
 		&model.Department{},
@@ -58,7 +58,7 @@ func (s *RepositoryTestSuite) SetupSuite() {
 	}
 }
 
-// TearDownSuite 测试套件清理.
+// TearDownSuite cleans up the test suite.
 func (s *RepositoryTestSuite) TearDownSuite() {
 	sqlDB, err := s.db.DB()
 	if err == nil {
@@ -66,9 +66,9 @@ func (s *RepositoryTestSuite) TearDownSuite() {
 	}
 }
 
-// SetupTest 每个测试用例前执行.
+// SetupTest runs before each test case.
 func (s *RepositoryTestSuite) SetupTest() {
-	// 清理所有表数据（保留表结构）
+	// Clear all table data (preserve table structure)
 	s.db.Exec("DELETE FROM request_logs")
 	s.db.Exec("DELETE FROM token_usage_daily")
 	s.db.Exec("DELETE FROM token_usage")
@@ -108,7 +108,7 @@ func (s *RepositoryTestSuite) TestUserRepository_Create() {
 func (s *RepositoryTestSuite) TestUserRepository_FindByID() {
 	repo := NewUserRepository(s.db)
 
-	// 先创建用户
+	// Create user first
 	user := &model.User{
 		Username:     "testuser",
 		PasswordHash: "hashedpassword",
@@ -119,7 +119,7 @@ func (s *RepositoryTestSuite) TestUserRepository_FindByID() {
 	err := repo.Create(user)
 	assert.NoError(s.T(), err)
 
-	// 查找用户
+	// Find user
 	found, err := repo.FindByID(user.ID)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), user.ID, found.ID)
@@ -234,11 +234,11 @@ func (s *RepositoryTestSuite) TestUserRepository_Delete() {
 	err := repo.Create(user)
 	assert.NoError(s.T(), err)
 
-	// 软删除
+	// Soft delete
 	err = repo.Delete(user.ID)
 	assert.NoError(s.T(), err)
 
-	// 查找应该失败（软删除的记录会被过滤）
+	// Find should fail (soft-deleted records are filtered)
 	_, err = repo.FindByID(user.ID)
 	assert.Error(s.T(), err)
 	assert.Equal(s.T(), gorm.ErrRecordNotFound, err)
@@ -247,7 +247,7 @@ func (s *RepositoryTestSuite) TestUserRepository_Delete() {
 func (s *RepositoryTestSuite) TestUserRepository_List() {
 	repo := NewUserRepository(s.db)
 
-	// 创建多个用户
+	// Create multiple users
 	for i := 1; i <= 5; i++ {
 		user := &model.User{
 			Username:     fmt.Sprintf("user%d", i),
@@ -260,7 +260,7 @@ func (s *RepositoryTestSuite) TestUserRepository_List() {
 		assert.NoError(s.T(), err)
 	}
 
-	// 测试分页列表
+	// Test paginated list
 	filters := map[string]interface{}{}
 	users, total, err := repo.List(1, 3, filters)
 	assert.NoError(s.T(), err)
@@ -271,7 +271,7 @@ func (s *RepositoryTestSuite) TestUserRepository_List() {
 func (s *RepositoryTestSuite) TestUserRepository_ListWithFilters() {
 	repo := NewUserRepository(s.db)
 
-	// 创建不同角色的用户
+	// Create users with different roles
 	user1 := &model.User{
 		Username:     "admin",
 		PasswordHash: "hashedpassword",
@@ -290,7 +290,7 @@ func (s *RepositoryTestSuite) TestUserRepository_ListWithFilters() {
 	}
 	repo.Create(user2)
 
-	// 按角色过滤
+	// Filter by role
 	filters := map[string]interface{}{
 		"role": model.RoleSuperAdmin,
 	}
@@ -299,7 +299,7 @@ func (s *RepositoryTestSuite) TestUserRepository_ListWithFilters() {
 	assert.Equal(s.T(), int64(1), total)
 	assert.Equal(s.T(), model.RoleSuperAdmin, users[0].Role)
 
-	// 按关键字过滤
+	// Filter by keyword
 	filters = map[string]interface{}{
 		"keyword": "admin",
 	}
@@ -311,7 +311,7 @@ func (s *RepositoryTestSuite) TestUserRepository_ListWithFilters() {
 func (s *RepositoryTestSuite) TestUserRepository_CountAll() {
 	repo := NewUserRepository(s.db)
 
-	// 创建用户
+	// Create user
 	for i := 1; i <= 3; i++ {
 		user := &model.User{
 			Username:     fmt.Sprintf("user%d", i),
@@ -419,13 +419,13 @@ func (s *RepositoryTestSuite) TestUserRepository_ListByDepartment() {
 	repo := NewUserRepository(s.db)
 	deptRepo := NewDepartmentRepository(s.db)
 
-	// 创建部门
+	// Create department
 	dept := &model.Department{
 		Name: "Engineering",
 	}
 	deptRepo.Create(dept)
 
-	// 创建属于该部门的用户
+	// Create user belonging to this department
 	for i := 1; i <= 3; i++ {
 		user := &model.User{
 			Username:     fmt.Sprintf("deptuser%d", i),
@@ -448,13 +448,13 @@ func (s *RepositoryTestSuite) TestUserRepository_CountByDepartment() {
 	repo := NewUserRepository(s.db)
 	deptRepo := NewDepartmentRepository(s.db)
 
-	// 创建部门
+	// Create department
 	dept := &model.Department{
 		Name: "Engineering",
 	}
 	deptRepo.Create(dept)
 
-	// 创建用户
+	// Create user
 	for i := 1; i <= 5; i++ {
 		user := &model.User{
 			Username:     fmt.Sprintf("user%d", i),
@@ -573,7 +573,7 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_Delete() {
 func (s *RepositoryTestSuite) TestDepartmentRepository_ListAll() {
 	repo := NewDepartmentRepository(s.db)
 
-	// 创建多个部门
+	// Create multiple departments
 	for _, name := range []string{"HR", "Engineering", "Sales"} {
 		repo.Create(&model.Department{Name: name, Status: model.StatusEnabled})
 	}
@@ -586,11 +586,11 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_ListAll() {
 func (s *RepositoryTestSuite) TestDepartmentRepository_ListByParentID() {
 	repo := NewDepartmentRepository(s.db)
 
-	// 创建父部门
+	// Create parent department
 	parent := &model.Department{Name: "Engineering", Status: model.StatusEnabled}
 	repo.Create(parent)
 
-	// 创建子部门
+	// Create child department
 	child1 := &model.Department{Name: "Backend", ParentID: &parent.ID, Status: model.StatusEnabled}
 	child2 := &model.Department{Name: "Frontend", ParentID: &parent.ID, Status: model.StatusEnabled}
 	repo.Create(child1)
@@ -600,10 +600,10 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_ListByParentID() {
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), children, 2)
 
-	// 测试查找根部门
+	// Test finding root departments
 	root, err := repo.ListByParentID(nil)
 	assert.NoError(s.T(), err)
-	assert.Len(s.T(), root, 1) // 只有 Engineering
+	assert.Len(s.T(), root, 1) // Only Engineering
 }
 
 func (s *RepositoryTestSuite) TestDepartmentRepository_CountAll() {
@@ -634,7 +634,7 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_ExistsName() {
 	assert.NoError(s.T(), err)
 	assert.False(s.T(), exists)
 
-	// 测试排除 ID
+	// Test excluding ID
 	dept, _ := repo.FindByName("Engineering")
 	exists, err = repo.ExistsName("Engineering", dept.ID)
 	assert.NoError(s.T(), err)
@@ -647,12 +647,12 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_HasChildren() {
 	parent := &model.Department{Name: "Engineering", Status: model.StatusEnabled}
 	repo.Create(parent)
 
-	// 无子部门
+	// No child departments
 	hasChildren, err := repo.HasChildren(parent.ID)
 	assert.NoError(s.T(), err)
 	assert.False(s.T(), hasChildren)
 
-	// 添加子部门
+	// Add child department
 	child := &model.Department{Name: "Backend", ParentID: &parent.ID, Status: model.StatusEnabled}
 	repo.Create(child)
 
@@ -666,7 +666,7 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_HasChildren() {
 func (s *RepositoryTestSuite) TestAPIKeyRepository_Create() {
 	repo := NewAPIKeyRepository(s.db)
 
-	// 先创建用户
+	// Create user first
 	userRepo := NewUserRepository(s.db)
 	user := &model.User{
 		Username:     "keyowner",
@@ -859,8 +859,8 @@ func (s *RepositoryTestSuite) TestAPIKeyRepository_UpdateStatus() {
 }
 
 func (s *RepositoryTestSuite) TestAPIKeyRepository_UpdateLastUsed() {
-	// 注意：此测试在 SQLite 上可能会失败，因为 SQLite 不支持 NOW() 函数
-	// 在生产环境中使用 PostgreSQL 时可以正常工作
+	// Note: this test may fail on SQLite because SQLite doesn't support NOW()
+	// Works correctly with PostgreSQL in production
 	repo := NewAPIKeyRepository(s.db)
 	userRepo := NewUserRepository(s.db)
 
@@ -883,10 +883,10 @@ func (s *RepositoryTestSuite) TestAPIKeyRepository_UpdateLastUsed() {
 	repo.Create(key)
 
 	err := repo.UpdateLastUsed(key.ID)
-	// SQLite 不支持 NOW()，所以这里可能会返回错误
-	// 在实际 PostgreSQL 环境中可以正常工作
+	// SQLite doesn't support NOW(), so this may return an error
+	// Works correctly in actual PostgreSQL environment
 	if err != nil {
-		// 如果是 SQLite 的函数不存在错误，则跳过验证
+		// Skip verification if SQLite function-not-found error
 		assert.Contains(s.T(), err.Error(), "no such function")
 		return
 	}
@@ -1080,7 +1080,7 @@ func (s *RepositoryTestSuite) TestAnnouncementRepository_ListPublished() {
 	}
 	userRepo.Create(user)
 
-	// 创建已发布和草稿公告
+	// Create published and draft announcements
 	repo.Create(&model.Announcement{
 		Title:    "Published",
 		Content:  "Published content",
@@ -1098,12 +1098,12 @@ func (s *RepositoryTestSuite) TestAnnouncementRepository_ListPublished() {
 
 	published, err := repo.ListPublished()
 	assert.NoError(s.T(), err)
-	// 验证只返回状态为 1（已发布）的公告
+	// Verify only status=1 (published) announcements are returned
 	assert.GreaterOrEqual(s.T(), len(published), 1)
 	for _, ann := range published {
 		assert.Equal(s.T(), int16(1), ann.Status)
 	}
-	// 找到我们创建的已发布公告
+	// Find the published announcement we created
 	var foundPublished bool
 	for _, ann := range published {
 		if ann.Title == "Published" {
@@ -1111,7 +1111,7 @@ func (s *RepositoryTestSuite) TestAnnouncementRepository_ListPublished() {
 			break
 		}
 	}
-	assert.True(s.T(), foundPublished, "应该找到已发布的公告")
+	assert.True(s.T(), foundPublished, "should find published announcement")
 }
 
 func (s *RepositoryTestSuite) TestAnnouncementRepository_ListAll() {
@@ -1140,7 +1140,7 @@ func (s *RepositoryTestSuite) TestAnnouncementRepository_ListAll() {
 	all, err := repo.ListAll()
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), all, 3)
-	// 验证排序：置顶优先
+	// Verify sorting: pinned first
 	assert.True(s.T(), all[0].Pinned)
 }
 
@@ -1184,7 +1184,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_List() {
 	}
 	userRepo.Create(user)
 
-	// 创建多条审计日志
+	// Create multiple audit logs
 	actions := []string{
 		model.AuditActionCreateUser,
 		model.AuditActionUpdateUser,
@@ -1199,7 +1199,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_List() {
 		})
 	}
 
-	// 测试列表查询
+	// Test list query
 	filters := map[string]interface{}{}
 	logs, total, err := repo.List(1, 10, filters)
 	assert.NoError(s.T(), err)
@@ -1228,7 +1228,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithFilters() {
 	userRepo.Create(user1)
 	userRepo.Create(user2)
 
-	// 创建不同操作者的日志
+	// Create logs from different operators
 	repo.Create(&model.AuditLog{
 		OperatorID: user1.ID,
 		Action:     model.AuditActionCreateUser,
@@ -1245,7 +1245,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithFilters() {
 		TargetType: model.AuditTargetUser,
 	})
 
-	// 按操作者过滤
+	// Filter by operator
 	filters := map[string]interface{}{
 		"operator_id": &user1.ID,
 	}
@@ -1253,7 +1253,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithFilters() {
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(2), total)
 
-	// 按操作类型过滤
+	// Filter by action type
 	filters = map[string]interface{}{
 		"action": model.AuditActionCreateUser,
 	}
@@ -1277,7 +1277,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithTimeRange() {
 	userRepo.Create(user)
 
 	now := time.Now()
-	// 创建不同时间的日志
+	// Create logs at different times
 	repo.Create(&model.AuditLog{
 		OperatorID: user.ID,
 		Action:     model.AuditActionCreateUser,
@@ -1289,7 +1289,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithTimeRange() {
 		TargetType: model.AuditTargetUser,
 	})
 
-	// 按时间范围过滤
+	// Filter by time range
 	startDate := now.Add(-1 * time.Hour)
 	endDate := now.Add(1 * time.Hour)
 	filters := map[string]interface{}{
@@ -1374,8 +1374,8 @@ func (s *RepositoryTestSuite) TestLLMBackendRepository_ListAll() {
 	all, err := repo.ListAll()
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), all, 3)
-	// 验证按权重降序排序（权重最高的在前面）
-	// Weight 是 int 类型
+	// Verify sorted by weight descending (highest weight first)
+	// Weight is int type
 	assert.Equal(s.T(), 200, all[0].Weight)
 }
 
@@ -1393,7 +1393,7 @@ func (s *RepositoryTestSuite) TestLLMBackendRepository_ListEnabled() {
 
 	enabled, err := repo.ListEnabled()
 	assert.NoError(s.T(), err)
-	// 验证只返回启用的后端
+	// Verify only enabled backends are returned
 	enabledCount := 0
 	for _, b := range enabled {
 		if b.Status == model.LLMBackendEnabled {
@@ -1401,7 +1401,7 @@ func (s *RepositoryTestSuite) TestLLMBackendRepository_ListEnabled() {
 		}
 	}
 	assert.GreaterOrEqual(s.T(), enabledCount, 2)
-	// 验证所有返回的都是启用的
+	// Verify all returned are enabled
 	for _, b := range enabled {
 		assert.Equal(s.T(), int16(model.LLMBackendEnabled), b.Status)
 	}
@@ -1515,12 +1515,12 @@ func (s *RepositoryTestSuite) TestMCPRepository_ListServices() {
 		repo.CreateService(svc)
 	}
 
-	// 查询所有
+	// Query all
 	all, err := repo.ListServices("")
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), all, 3)
 
-	// 按状态过滤
+	// Filter by status
 	enabled, err := repo.ListServices(model.MCPServiceEnabled)
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), enabled, 2)
@@ -1608,7 +1608,7 @@ func (s *RepositoryTestSuite) TestMCPRepository_UpdateToolsSchema() {
 func (s *RepositoryTestSuite) TestMCPRepository_CreateAccessRule() {
 	repo := NewMCPRepository(s.db)
 
-	// 先创建服务
+	// Create service first
 	svc := &model.MCPService{
 		Name:          "test-service",
 		DisplayName:   "Test Service",
@@ -1672,7 +1672,7 @@ func (s *RepositoryTestSuite) TestMCPRepository_UpsertAccessRule() {
 	}
 	repo.CreateService(svc)
 
-	// 创建规则
+	// Create rule
 	rule := &model.MCPAccessRule{
 		ServiceID:  svc.ID,
 		TargetType: model.MCPTargetUser,
@@ -1683,7 +1683,7 @@ func (s *RepositoryTestSuite) TestMCPRepository_UpsertAccessRule() {
 	assert.NoError(s.T(), err)
 	assert.NotZero(s.T(), rule.ID)
 
-	// 更新规则
+	// Update rule
 	rule.Allowed = false
 	err = repo.UpsertAccessRule(rule)
 	assert.NoError(s.T(), err)
@@ -1705,7 +1705,7 @@ func (s *RepositoryTestSuite) TestMCPRepository_ListAccessRules() {
 	}
 	repo.CreateService(svc)
 
-	// 创建多条规则
+	// Create multiple rules
 	for i := 1; i <= 3; i++ {
 		repo.CreateAccessRule(&model.MCPAccessRule{
 			ServiceID:  svc.ID,
@@ -1761,11 +1761,11 @@ func (s *RepositoryTestSuite) TestMCPRepository_CheckAccess() {
 	}
 	repo.CreateService(svc)
 
-	// 默认允许
+	// Default allow
 	allowed := repo.CheckAccess(svc.ID, 1, nil, "user")
 	assert.True(s.T(), allowed)
 
-	// 创建拒绝规则
+	// Create deny rule
 	err := repo.CreateAccessRule(&model.MCPAccessRule{
 		ServiceID:  svc.ID,
 		TargetType: model.MCPTargetUser,
@@ -1774,12 +1774,12 @@ func (s *RepositoryTestSuite) TestMCPRepository_CheckAccess() {
 	})
 	assert.NoError(s.T(), err)
 
-	// 由于 SQLite 可能有缓存或读取延迟，重新查询
+	// Re-query due to possible SQLite cache or read delay
 	allowed = repo.CheckAccess(svc.ID, 1, nil, "user")
-	// 验证访问控制逻辑是否正确执行
-	// 注意：在实际数据库中这个断言应该为 false，表示拒绝访问
-	// 如果测试环境有事务隔离问题，可能需要调整
-	_ = allowed // 避免未使用变量的警告
+	// Verify access control logic executes correctly
+	// Note: in a real DB this assertion should be false, indicating denied access
+	// May need adjustment for test environment transaction isolation issues
+	_ = allowed // Avoid unused variable warning
 }
 
 func (s *RepositoryTestSuite) TestMCPRepository_DeleteAccessRulesByService() {
@@ -1795,7 +1795,7 @@ func (s *RepositoryTestSuite) TestMCPRepository_DeleteAccessRulesByService() {
 	}
 	repo.CreateService(svc)
 
-	// 创建多条规则
+	// Create multiple rules
 	for i := 1; i <= 3; i++ {
 		repo.CreateAccessRule(&model.MCPAccessRule{
 			ServiceID:  svc.ID,
@@ -1853,7 +1853,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetLatestSystemMetrics() {
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建多条记录
+	// Create multiple records
 	for i := 0; i < 5; i++ {
 		repo.CreateSystemMetric(ctx, &monitor.SystemMetric{
 			HostName:   "test-host",
@@ -1874,7 +1874,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetSystemMetricsByTimeRange(
 	ctx := context.Background()
 
 	now := time.Now()
-	// 创建记录
+	// Create record
 	for i := 0; i < 5; i++ {
 		repo.CreateSystemMetric(ctx, &monitor.SystemMetric{
 			HostName:   "test-host",
@@ -1894,7 +1894,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_CleanupOldSystemMetrics() {
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建一条旧记录
+	// Create an old record
 	oldMetric := &monitor.SystemMetric{
 		HostName:   "test-host",
 		MetricType: monitor.MetricTypeCPU,
@@ -1903,11 +1903,11 @@ func (s *RepositoryTestSuite) TestMonitorRepository_CleanupOldSystemMetrics() {
 	}
 	repo.CreateSystemMetric(ctx, oldMetric)
 
-	// 修改时间为10天前
+	// Set time to 10 days ago
 	s.db.Model(&monitor.SystemMetric{}).Where("id = ?", oldMetric.ID).
 		Update("created_at", time.Now().Add(-10*24*time.Hour))
 
-	// 清理7天前的记录
+	// Clean records older than 7 days
 	affected, err := repo.CleanupOldSystemMetrics(ctx, 7)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(1), affected)
@@ -1934,7 +1934,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetLatestLLMNodeMetrics() {
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建不同节点的记录
+	// Create records for different nodes
 	nodes := []string{"node-1", "node-2", "node-3"}
 	for _, nodeID := range nodes {
 		for i := 0; i < 2; i++ {
@@ -1956,7 +1956,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetLLMNodeMetricsByNodeID() 
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建多条记录
+	// Create multiple records
 	for i := 0; i < 5; i++ {
 		repo.CreateLLMNodeMetric(ctx, &monitor.LLMNodeMetric{
 			NodeID:     "node-1",
@@ -1976,7 +1976,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetActiveNodeCount() {
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建活跃节点
+	// Create active node
 	repo.CreateLLMNodeMetric(ctx, &monitor.LLMNodeMetric{
 		NodeID:     "active-node-1",
 		NodeName:   "Active Node 1",
@@ -1990,7 +1990,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetActiveNodeCount() {
 		ReportedAt: time.Now(),
 	})
 
-	// 创建非活跃节点（10分钟前）
+	// Create inactive node (10 minutes ago)
 	oldMetric := &monitor.LLMNodeMetric{
 		NodeID:     "inactive-node",
 		NodeName:   "Inactive Node",
@@ -2008,7 +2008,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_GetTotalNodeCount() {
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建多个节点
+	// Create multiple nodes
 	nodes := []string{"node-1", "node-2", "node-3"}
 	for _, nodeID := range nodes {
 		repo.CreateLLMNodeMetric(ctx, &monitor.LLMNodeMetric{
@@ -2028,7 +2028,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_CleanupOldLLMNodeMetrics() {
 	repo := NewMonitorRepository(s.db)
 	ctx := context.Background()
 
-	// 创建旧记录
+	// Create old records
 	oldMetric := &monitor.LLMNodeMetric{
 		NodeID:     "node-1",
 		NodeName:   "Test Node",
@@ -2037,7 +2037,7 @@ func (s *RepositoryTestSuite) TestMonitorRepository_CleanupOldLLMNodeMetrics() {
 	}
 	repo.CreateLLMNodeMetric(ctx, oldMetric)
 
-	// 修改时间为25小时前
+	// Set time to 25 hours ago
 	s.db.Model(&monitor.LLMNodeMetric{}).Where("id = ?", oldMetric.ID).
 		Update("created_at", time.Now().Add(-25*time.Hour))
 
@@ -2070,7 +2070,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_Upsert() {
 func (s *RepositoryTestSuite) TestRateLimitRepository_Upsert_Update() {
 	repo := NewRateLimitRepository(s.db)
 
-	// 创建
+	// Create
 	limit := &model.RateLimit{
 		TargetType:     model.TargetTypeUser,
 		TargetID:       1,
@@ -2083,7 +2083,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_Upsert_Update() {
 	}
 	repo.Upsert(limit)
 
-	// 更新
+	// Update
 	limit.MaxTokens = 200000
 	limit.MaxRequests = 2000
 	err := repo.Upsert(limit)
@@ -2138,7 +2138,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_FindByTarget() {
 func (s *RepositoryTestSuite) TestRateLimitRepository_ListByTarget() {
 	repo := NewRateLimitRepository(s.db)
 
-	// 为同一个目标创建多个周期配置
+	// Create multiple period configs for the same target
 	periods := []string{model.PeriodDaily, model.PeriodWeekly, model.PeriodMonthly}
 	for i, period := range periods {
 		repo.Upsert(&model.RateLimit{
@@ -2161,7 +2161,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_ListByTarget() {
 func (s *RepositoryTestSuite) TestRateLimitRepository_ListAll() {
 	repo := NewRateLimitRepository(s.db)
 
-	// 创建多条记录
+	// Create multiple records
 	repo.Upsert(&model.RateLimit{
 		TargetType:     model.TargetTypeGlobal,
 		TargetID:       0,
@@ -2212,7 +2212,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_ListAllWithFilters() {
 		Status:         model.StatusEnabled,
 	})
 
-	// 按目标类型过滤
+	// Filter by target type
 	filters := map[string]interface{}{
 		"target_type": model.TargetTypeUser,
 	}
@@ -2247,7 +2247,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_Delete() {
 func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit() {
 	repo := NewRateLimitRepository(s.db)
 
-	// 创建全局限额
+	// Create global quota
 	repo.Upsert(&model.RateLimit{
 		TargetType:     model.TargetTypeGlobal,
 		TargetID:       0,
@@ -2259,7 +2259,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit() {
 		Status:         model.StatusEnabled,
 	})
 
-	// 查询应该返回全局限额
+	// Query should return global quota
 	limit, err := repo.GetEffectiveLimit(1, nil, model.PeriodDaily)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), model.TargetTypeGlobal, limit.TargetType)
@@ -2269,11 +2269,11 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit_UserPrio
 	repo := NewRateLimitRepository(s.db)
 	deptRepo := NewDepartmentRepository(s.db)
 
-	// 创建部门
+	// Create department
 	dept := &model.Department{Name: "Engineering", Status: model.StatusEnabled}
 	deptRepo.Create(dept)
 
-	// 创建全局限额
+	// Create global quota
 	repo.Upsert(&model.RateLimit{
 		TargetType:     model.TargetTypeGlobal,
 		TargetID:       0,
@@ -2285,7 +2285,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit_UserPrio
 		Status:         model.StatusEnabled,
 	})
 
-	// 创建部门限额
+	// Create department quota
 	repo.Upsert(&model.RateLimit{
 		TargetType:     model.TargetTypeDepartment,
 		TargetID:       dept.ID,
@@ -2297,7 +2297,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit_UserPrio
 		Status:         model.StatusEnabled,
 	})
 
-	// 创建用户限额
+	// Create user quota
 	repo.Upsert(&model.RateLimit{
 		TargetType:     model.TargetTypeUser,
 		TargetID:       1,
@@ -2309,7 +2309,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit_UserPrio
 		Status:         model.StatusEnabled,
 	})
 
-	// 应该返回用户限额（最高优先级）
+	// Should return user quota (highest priority)
 	limit, err := repo.GetEffectiveLimit(1, &dept.ID, model.PeriodDaily)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), model.TargetTypeUser, limit.TargetType)
@@ -2320,7 +2320,7 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetEffectiveLimit_UserPrio
 func (s *RepositoryTestSuite) TestRateLimitRepository_GetAllEffectiveLimits() {
 	repo := NewRateLimitRepository(s.db)
 
-	// 创建全局限额（多个周期）
+	// Create global quota (multiple periods)
 	repo.Upsert(&model.RateLimit{
 		TargetType:     model.TargetTypeGlobal,
 		TargetID:       0,
@@ -2366,7 +2366,7 @@ func (s *RepositoryTestSuite) TestSystemRepository_Upsert() {
 func (s *RepositoryTestSuite) TestSystemRepository_Upsert_Update() {
 	repo := NewSystemRepository(s.db)
 
-	// 创建配置
+	// Create config
 	config := &model.SystemConfig{
 		ConfigKey:   "test.config",
 		ConfigValue: `{"value":"original"}`,
@@ -2374,7 +2374,7 @@ func (s *RepositoryTestSuite) TestSystemRepository_Upsert_Update() {
 	}
 	repo.Upsert(config)
 
-	// 更新配置
+	// Update config
 	config.ConfigValue = `{"value":"updated"}`
 	err := repo.Upsert(config)
 	assert.NoError(s.T(), err)
@@ -2410,7 +2410,7 @@ func (s *RepositoryTestSuite) TestSystemRepository_GetByKey_NotFound() {
 func (s *RepositoryTestSuite) TestSystemRepository_ListAll() {
 	repo := NewSystemRepository(s.db)
 
-	// 创建多个配置
+	// Create multiple configs
 	configs := []model.SystemConfig{
 		{ConfigKey: "config.a", ConfigValue: `"value_a"`},
 		{ConfigKey: "config.b", ConfigValue: `"value_b"`},
@@ -2423,7 +2423,7 @@ func (s *RepositoryTestSuite) TestSystemRepository_ListAll() {
 	all, err := repo.ListAll()
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), all, 3)
-	// 验证排序
+	// Verify sorting
 	assert.Equal(s.T(), "config.a", all[0].ConfigKey)
 }
 
@@ -2439,7 +2439,7 @@ func (s *RepositoryTestSuite) TestSystemRepository_BatchUpsert() {
 	err := repo.BatchUpsert(configs)
 	assert.NoError(s.T(), err)
 
-	// 验证所有配置都已创建
+	// Verify all configs were created
 	all, _ := repo.ListAll()
 	assert.True(s.T(), len(all) >= 3)
 }
@@ -2486,29 +2486,29 @@ func (s *RepositoryTestSuite) TestUsageRepository_UpsertDaily() {
 
 	today := time.Now().Truncate(24 * time.Hour)
 
-	// 第一次插入
+	// First insert
 	err := repo.UpsertDaily(1, today, 100, 50, 150, 0, 0)
-	// SQLite 可能不支持 NOW() 函数，导致错误
+	// SQLite may not support NOW(), causing errors
 	if err != nil && (err.Error() == "no such function: NOW" ||
 		containsStr(err.Error(), "no such function")) {
-		s.T().Skip("跳过测试：SQLite 不支持 NOW() 函数")
+		s.T().Skip("skipping test: SQLite does not support NOW() function")
 		return
 	}
 	assert.NoError(s.T(), err)
 
-	// 第二次更新
+	// Second update
 	err = repo.UpsertDaily(1, today, 200, 100, 300, 0, 0)
 	if err != nil && containsStr(err.Error(), "no such function") {
-		s.T().Skip("跳过测试：SQLite 不支持 NOW() 函数")
+		s.T().Skip("skipping test: SQLite does not support NOW() function")
 		return
 	}
 	assert.NoError(s.T(), err)
 
-	// 查询验证
+	// Query verification
 	var daily model.TokenUsageDaily
 	err = s.db.Where("user_id = ? AND usage_date = ?", 1, today).First(&daily).Error
 	if err != nil {
-		s.T().Skip("跳过验证：数据可能未正确写入")
+		s.T().Skip("skipping verification: data may not have been written correctly")
 		return
 	}
 	assert.Equal(s.T(), int64(300), daily.PromptTokens)
@@ -2541,12 +2541,12 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetUserRanking() {
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now()
 
-	// 创建用量记录
+	// Create usage record
 	for i := 1; i <= 3; i++ {
 		repo.UpsertDaily(int64(i), time.Now().AddDate(0, 0, -i), 100*i, 50*i, 150*i, 0, 0)
 	}
 
-	// 由于需要关联 users 表，先创建用户
+	// Create user first since users table join is needed
 	userRepo := NewUserRepository(s.db)
 	for i := 1; i <= 3; i++ {
 		userRepo.Create(&model.User{
@@ -2559,8 +2559,8 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetUserRanking() {
 	}
 
 	ranking, err := repo.GetUserRanking(nil, startDate, endDate, 10)
-	// 可能有错误因为需要 users 表关联
-	// 但至少应该执行不崩溃
+	// May have errors due to users table join requirement
+	// But at least should execute without crashing
 	_ = ranking
 	_ = err
 }
@@ -2569,11 +2569,11 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDeptRanking() {
 	repo := NewUsageRepository(s.db)
 	deptRepo := NewDepartmentRepository(s.db)
 
-	// 创建部门
+	// Create department
 	dept := &model.Department{Name: "Engineering", Status: model.StatusEnabled}
 	deptRepo.Create(dept)
 
-	// 创建用户并关联部门
+	// Create user and associate with department
 	userRepo := NewUserRepository(s.db)
 	user := &model.User{
 		Username:     "testuser",
@@ -2585,14 +2585,14 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDeptRanking() {
 	}
 	userRepo.Create(user)
 
-	// 创建用量记录
+	// Create usage record
 	repo.UpsertDaily(user.ID, time.Now(), 1000, 500, 1500, 0, 0)
 
 	startDate := time.Now().AddDate(0, 0, -7)
 	endDate := time.Now()
 
 	ranking, err := repo.GetDeptRanking(startDate, endDate, 10)
-	// 可能有错误因为需要复杂的表关联
+	// May have errors due to complex table joins
 	_ = ranking
 	_ = err
 }
@@ -2601,7 +2601,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDetailedUsageStats() {
 	repo := NewUsageRepository(s.db)
 	userRepo := NewUserRepository(s.db)
 
-	// 创建用户
+	// Create user
 	user := &model.User{
 		Username:     "testuser",
 		PasswordHash: "hash",
@@ -2611,7 +2611,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDetailedUsageStats() {
 	}
 	userRepo.Create(user)
 
-	// 创建用量记录
+	// Create usage record
 	for i := 0; i < 3; i++ {
 		repo.UpsertDaily(user.ID, time.Now().AddDate(0, 0, -i), 100, 50, 150, 0, 0)
 	}
@@ -2620,7 +2620,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDetailedUsageStats() {
 	endDate := time.Now()
 
 	stats, err := repo.GetDetailedUsageStats(&user.ID, nil, startDate, endDate)
-	// 可能有错误因为需要复杂的表关联
+	// May have errors due to complex table joins
 	_ = stats
 	_ = err
 }
@@ -2630,7 +2630,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_GetDetailedUsageStats() {
 func (s *RepositoryTestSuite) TestUserRepository_DatabaseErrors() {
 	repo := NewUserRepository(s.db)
 
-	// 测试重复用户名
+	// Test duplicate username
 	user1 := &model.User{
 		Username:     "duplicate",
 		PasswordHash: "hash",
@@ -2642,27 +2642,27 @@ func (s *RepositoryTestSuite) TestUserRepository_DatabaseErrors() {
 	assert.NoError(s.T(), err)
 
 	user2 := &model.User{
-		Username:     "duplicate", // 重复用户名
+		Username:     "duplicate", // Duplicate username
 		PasswordHash: "hash2",
 		DisplayName:  "User 2",
 		Role:         model.RoleUser,
 		Status:       model.StatusEnabled,
 	}
 	err = repo.Create(user2)
-	assert.Error(s.T(), err) // 应该报错，因为有唯一索引
+	assert.Error(s.T(), err) // Should error due to unique index
 }
 
 func (s *RepositoryTestSuite) TestDepartmentRepository_DatabaseErrors() {
 	repo := NewDepartmentRepository(s.db)
 
-	// 测试重复部门名
+	// Test duplicate department name
 	dept1 := &model.Department{Name: "Engineering", Status: model.StatusEnabled}
 	err := repo.Create(dept1)
 	assert.NoError(s.T(), err)
 
 	dept2 := &model.Department{Name: "Engineering", Status: model.StatusEnabled}
 	err = repo.Create(dept2)
-	assert.Error(s.T(), err) // 应该报错
+	assert.Error(s.T(), err) // Should error
 }
 
 func (s *RepositoryTestSuite) TestAPIKeyRepository_DatabaseErrors() {
@@ -2678,7 +2678,7 @@ func (s *RepositoryTestSuite) TestAPIKeyRepository_DatabaseErrors() {
 	}
 	userRepo.Create(user)
 
-	// 测试重复 Key Hash
+	// Test duplicate Key Hash
 	key1 := &model.APIKey{
 		UserID:    user.ID,
 		Name:      "Key 1",
@@ -2693,11 +2693,11 @@ func (s *RepositoryTestSuite) TestAPIKeyRepository_DatabaseErrors() {
 		UserID:    user.ID,
 		Name:      "Key 2",
 		KeyPrefix: "cm-2",
-		KeyHash:   "duplicate-hash", // 重复哈希
+		KeyHash:   "duplicate-hash", // duplicate hash
 		Status:    model.StatusEnabled,
 	}
 	err = repo.Create(key2)
-	assert.Error(s.T(), err) // 应该报错
+	assert.Error(s.T(), err) // Should error
 }
 
 // ==================== Transaction Tests ====================
@@ -2705,7 +2705,7 @@ func (s *RepositoryTestSuite) TestAPIKeyRepository_DatabaseErrors() {
 func (s *RepositoryTestSuite) TestSystemRepository_BatchUpsert_Transaction() {
 	repo := NewSystemRepository(s.db)
 
-	// 正常批量插入
+	// Normal batch insert
 	configs := []model.SystemConfig{
 		{ConfigKey: "tx.a", ConfigValue: `"value_a"`},
 		{ConfigKey: "tx.b", ConfigValue: `"value_b"`},
@@ -2713,7 +2713,7 @@ func (s *RepositoryTestSuite) TestSystemRepository_BatchUpsert_Transaction() {
 	err := repo.BatchUpsert(configs)
 	assert.NoError(s.T(), err)
 
-	// 验证数据已插入
+	// Verify data was inserted
 	all, _ := repo.ListAll()
 	var foundA, foundB bool
 	for _, cfg := range all {
@@ -2743,16 +2743,16 @@ func (s *RepositoryTestSuite) TestUserRepository_SoftDelete() {
 	repo.Create(user)
 	id := user.ID
 
-	// 软删除
+	// Soft delete
 	err := repo.Delete(id)
 	assert.NoError(s.T(), err)
 
-	// 普通查询应该找不到
+	// Normal query should not find it
 	_, err = repo.FindByID(id)
 	assert.Error(s.T(), err)
 	assert.Equal(s.T(), gorm.ErrRecordNotFound, err)
 
-	// 但使用 Unscoped 应该能找到（验证软删除）
+	// But Unscoped should find it (verify soft delete)
 	var found model.User
 	s.db.Unscoped().First(&found, id)
 	assert.Equal(s.T(), id, found.ID)
@@ -2763,7 +2763,7 @@ func (s *RepositoryTestSuite) TestUserRepository_SoftDelete() {
 func (s *RepositoryTestSuite) TestUserRepository_RecreateAfterDelete() {
 	repo := NewUserRepository(s.db)
 
-	// 创建用户
+	// Create user
 	user1 := &model.User{
 		Username:     "recreate",
 		PasswordHash: "hash1",
@@ -2775,25 +2775,25 @@ func (s *RepositoryTestSuite) TestUserRepository_RecreateAfterDelete() {
 	assert.NoError(s.T(), err)
 	id1 := user1.ID
 
-	// 软删除用户
+	// Soft delete user
 	err = repo.Delete(id1)
 	assert.NoError(s.T(), err)
 
-	// 验证已软删除
+	// Verify soft deleted
 	exists, _ := repo.ExistsUsername("recreate")
 	assert.False(s.T(), exists)
 	existsDeleted, _ := repo.ExistsUsernameIncludingDeleted("recreate")
 	assert.True(s.T(), existsDeleted)
 
-	// 硬删除已软删除的用户（释放用户名）
+	// Hard delete soft-deleted user (release username)
 	err = repo.HardDeleteSoftDeletedUser("recreate")
 	assert.NoError(s.T(), err)
 
-	// 验证已彻底删除
+	// Verify permanently deleted
 	existsDeleted, _ = repo.ExistsUsernameIncludingDeleted("recreate")
 	assert.False(s.T(), existsDeleted)
 
-	// 可以重新创建同名用户
+	// Can recreate user with same name
 	user2 := &model.User{
 		Username:     "recreate",
 		PasswordHash: "hash2",
@@ -2804,7 +2804,7 @@ func (s *RepositoryTestSuite) TestUserRepository_RecreateAfterDelete() {
 	err = repo.Create(user2)
 	assert.NoError(s.T(), err)
 	assert.NotZero(s.T(), user2.ID)
-	assert.NotEqual(s.T(), id1, user2.ID) // 新用户应该有不同ID
+	assert.NotEqual(s.T(), id1, user2.ID) // new user should have a different ID
 }
 
 func (s *RepositoryTestSuite) TestDepartmentRepository_DeleteAndVerify() {
@@ -2814,11 +2814,11 @@ func (s *RepositoryTestSuite) TestDepartmentRepository_DeleteAndVerify() {
 	repo.Create(dept)
 	id := dept.ID
 
-	// 删除
+	// Delete
 	err := repo.Delete(id)
 	assert.NoError(s.T(), err)
 
-	// 查询应该找不到
+	// Query should not find it
 	_, err = repo.FindByID(id)
 	assert.Error(s.T(), err)
 }
@@ -2837,15 +2837,15 @@ func (s *RepositoryTestSuite) TestMCPRepository_SoftDelete() {
 	repo.CreateService(svc)
 	id := svc.ID
 
-	// 软删除
+	// Soft delete
 	err := repo.DeleteService(id)
 	assert.NoError(s.T(), err)
 
-	// 普通查询应该找不到
+	// Normal query should not find it
 	_, err = repo.GetServiceByID(id)
 	assert.Error(s.T(), err)
 
-	// 使用 Unscoped 验证
+	// Verify with Unscoped
 	var found model.MCPService
 	s.db.Unscoped().First(&found, id)
 	assert.NotNil(s.T(), found.DeletedAt)
@@ -2881,14 +2881,14 @@ func TestRepositorySuite(t *testing.T) {
 	suite.Run(t, new(RepositoryTestSuite))
 }
 
-// TestMain 测试套件级别的初始化和清理.
+// TestMain handles suite-level initialization and cleanup.
 func TestMain(m *testing.M) {
-	// 这里可以放置全局的测试初始化代码
-	// 例如：设置日志级别、初始化全局配置等
+	// Global test initialization code can be placed here
+	// e.g., set log level, initialize global config, etc.
 
-	// 运行所有测试
+	// Run all tests
 	code := m.Run()
 
-	// 清理代码
+	// Cleanup code
 	os.Exit(code)
 }

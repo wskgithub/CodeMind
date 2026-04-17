@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// createTempConfigFile 创建临时配置文件，返回文件路径和清理函数
+// createTempConfigFile creates a temp config file, returns file path and cleanup function
 func createTempConfigFile(t *testing.T, content string) (string, func()) {
 	t.Helper()
 	tmpDir := t.TempDir()
@@ -21,7 +21,7 @@ func createTempConfigFile(t *testing.T, content string) (string, func()) {
 	return configPath, func() {}
 }
 
-// TestLoad_WithValidConfigFile 测试正常加载配置文件
+// TestLoad_WithValidConfigFile tests loading a valid config file
 func TestLoad_WithValidConfigFile(t *testing.T) {
 	configContent := `
 server:
@@ -73,19 +73,19 @@ log:
 	configPath, cleanup := createTempConfigFile(t, configContent)
 	defer cleanup()
 
-	// 重置全局配置
+	// Reset global config
 	globalConfig = nil
 
 	cfg, err := Load(configPath)
 	require.NoError(t, err)
 	assert.NotNil(t, cfg)
 
-	// 验证服务器配置
+	// Verify server config
 	assert.Equal(t, "127.0.0.1", cfg.Server.Host)
 	assert.Equal(t, 3000, cfg.Server.Port)
 	assert.Equal(t, "release", cfg.Server.Mode)
 
-	// 验证数据库配置
+	// Verify database config
 	assert.Equal(t, "db.example.com", cfg.Database.Host)
 	assert.Equal(t, 5433, cfg.Database.Port)
 	assert.Equal(t, "testdb", cfg.Database.Name)
@@ -95,59 +95,59 @@ log:
 	assert.Equal(t, 20, cfg.Database.MaxIdleConns)
 	assert.Equal(t, 120, cfg.Database.ConnMaxLifetimeMin)
 
-	// 验证 Redis 配置
+	// Verify Redis config
 	assert.Equal(t, "redis.example.com", cfg.Redis.Host)
 	assert.Equal(t, 6380, cfg.Redis.Port)
 	assert.Equal(t, "redispass", cfg.Redis.Password)
 	assert.Equal(t, 1, cfg.Redis.DB)
 	assert.Equal(t, 50, cfg.Redis.PoolSize)
 
-	// 验证 JWT 配置
+	// Verify JWT config
 	assert.Equal(t, "test-secret-key", cfg.JWT.Secret)
 	assert.Equal(t, 48, cfg.JWT.ExpireHours)
 
-	// 验证 LLM 配置
+	// Verify LLM config
 	assert.Equal(t, "https://api.example.com", cfg.LLM.BaseURL)
 	assert.Equal(t, "test-api-key", cfg.LLM.APIKey)
 	assert.Equal(t, 60, cfg.LLM.TimeoutSeconds)
 	assert.Equal(t, 120, cfg.LLM.StreamTimeoutSeconds)
 	assert.Equal(t, 3, cfg.LLM.MaxRetries)
 
-	// 验证系统配置
+	// Verify system config
 	assert.Equal(t, 20, cfg.System.MaxKeysPerUser)
 	assert.Equal(t, 10, cfg.System.DefaultConcurrency)
 	assert.Equal(t, 2000000, cfg.System.DefaultDailyTokens)
 	assert.Equal(t, 50000000, cfg.System.DefaultMonthlyTokens)
 	assert.Equal(t, false, cfg.System.ForceChangePassword)
 
-	// 验证日志配置
+	// Verify log config
 	assert.Equal(t, "debug", cfg.Log.Level)
 	assert.Equal(t, "console", cfg.Log.Format)
 	assert.Equal(t, "stdout", cfg.Log.Output)
 	assert.Equal(t, "./logs/test.log", cfg.Log.FilePath)
 }
 
-// TestLoad_ConfigFileNotFound 测试配置文件不存在时使用默认值
+// TestLoad_ConfigFileNotFound tests using defaults when config file not found
 func TestLoad_ConfigFileNotFound(t *testing.T) {
-	// 当使用空路径时，viper 会使用默认搜索路径
-	// 这种情况下如果没有找到配置文件，会使用默认值 + 环境变量
+	// When using empty path, viper uses default search paths
+	// In this case, defaults + env vars are used when no config file is found
 
-	// 重置全局配置
+	// Reset global config
 	globalConfig = nil
 
-	// 使用空路径加载（会使用默认搜索路径）
+	// Load with empty path (uses default search paths)
 	cfg, err := Load("")
-	// 在默认搜索路径下可能找到也可能找不到配置文件
-	// 我们只验证函数不会 panic，且能返回配置
+	// Config file may or may not be found in default search paths
+	// We only verify the function doesn't panic and returns config
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 
-	// 验证有默认值被设置
+	// Verify defaults are set
 	assert.NotEmpty(t, cfg.Server.Host)
 	assert.NotEqual(t, 0, cfg.Server.Port)
 }
 
-// TestLoad_WithEnvironmentVariables 测试环境变量覆盖配置
+// TestLoad_WithEnvironmentVariables tests env var config overrides
 func TestLoad_WithEnvironmentVariables(t *testing.T) {
 	configContent := `
 server:
@@ -176,7 +176,7 @@ llm:
 	configPath, cleanup := createTempConfigFile(t, configContent)
 	defer cleanup()
 
-	// 设置环境变量
+	// Set environment variables
 	envVars := map[string]string{
 		"DB_HOST":        "env-db.example.com",
 		"DB_PORT":        "5434",
@@ -193,14 +193,14 @@ llm:
 		"APP_ENV":        "test",
 	}
 
-	// 保存并设置环境变量
+	// Save and set environment variables
 	oldEnvVars := make(map[string]string)
 	for key, value := range envVars {
 		oldEnvVars[key] = os.Getenv(key)
 		os.Setenv(key, value)
 	}
 
-	// 清理环境变量
+	// Clean up environment variables
 	defer func() {
 		for key, value := range oldEnvVars {
 			if value == "" {
@@ -211,38 +211,38 @@ llm:
 		}
 	}()
 
-	// 重置全局配置
+	// Reset global config
 	globalConfig = nil
 
 	cfg, err := Load(configPath)
 	require.NoError(t, err)
 	assert.NotNil(t, cfg)
 
-	// 验证环境变量覆盖了配置文件
+	// Verify env vars override config file
 	assert.Equal(t, "env-db.example.com", cfg.Database.Host)
 	assert.Equal(t, 5434, cfg.Database.Port)
 	assert.Equal(t, "envdb", cfg.Database.Name)
 	assert.Equal(t, "envuser", cfg.Database.User)
 	assert.Equal(t, "envpass", cfg.Database.Password)
 
-	// 验证 Redis 环境变量覆盖
+	// Verify Redis env var overrides
 	assert.Equal(t, "env-redis.example.com", cfg.Redis.Host)
 	assert.Equal(t, 6381, cfg.Redis.Port)
 	assert.Equal(t, "envredispass", cfg.Redis.Password)
 
-	// 验证 JWT 环境变量覆盖
+	// Verify JWT env var overrides
 	assert.Equal(t, "env-secret-key", cfg.JWT.Secret)
 
-	// 验证 LLM 环境变量覆盖
+	// Verify LLM env var overrides
 	assert.Equal(t, "https://api.env.com", cfg.LLM.BaseURL)
 	assert.Equal(t, "env-api-key", cfg.LLM.APIKey)
 
-	// 验证服务器环境变量覆盖
+	// Verify server env var overrides
 	assert.Equal(t, 4000, cfg.Server.Port)
 	assert.Equal(t, "test", cfg.Server.Mode)
 }
 
-// TestDatabaseConfig_DSN 测试数据库 DSN 生成
+// TestDatabaseConfig_DSN tests database DSN generation
 func TestDatabaseConfig_DSN(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -250,7 +250,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "标准配置",
+			name: "standard config",
 			config: DatabaseConfig{
 				Host:     "localhost",
 				Port:     5432,
@@ -261,7 +261,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 			expected: "host=localhost port=5432 user=postgres password=password dbname=mydb sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		{
-			name: "远程主机配置",
+			name: "remote host config",
 			config: DatabaseConfig{
 				Host:     "db.example.com",
 				Port:     5433,
@@ -272,7 +272,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 			expected: "host=db.example.com port=5433 user=admin password=secret123 dbname=production sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		{
-			name: "含特殊字符密码",
+			name: "password with special characters",
 			config: DatabaseConfig{
 				Host:     "localhost",
 				Port:     5432,
@@ -283,7 +283,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 			expected: "host=localhost port=5432 user=user password=p@ssw0rd!#$% dbname=testdb sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		{
-			name: "自定义端口",
+			name: "custom port",
 			config: DatabaseConfig{
 				Host:     "192.168.1.100",
 				Port:     15432,
@@ -294,7 +294,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 			expected: "host=192.168.1.100 port=15432 user=dbuser password=pass dbname=codemind sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		{
-			name: "空密码",
+			name: "empty password",
 			config: DatabaseConfig{
 				Host:     "localhost",
 				Port:     5432,
@@ -314,7 +314,7 @@ func TestDatabaseConfig_DSN(t *testing.T) {
 	}
 }
 
-// TestRedisConfig_Addr 测试 Redis 地址格式
+// TestRedisConfig_Addr tests Redis address format
 func TestRedisConfig_Addr(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -322,27 +322,27 @@ func TestRedisConfig_Addr(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "本地默认端口",
+			name:     "local default port",
 			config:   RedisConfig{Host: "localhost", Port: 6379},
 			expected: "localhost:6379",
 		},
 		{
-			name:     "远程主机",
+			name:     "remote host",
 			config:   RedisConfig{Host: "redis.example.com", Port: 6380},
 			expected: "redis.example.com:6380",
 		},
 		{
-			name:     "IP 地址",
+			name:     "IP address",
 			config:   RedisConfig{Host: "192.168.1.50", Port: 6379},
 			expected: "192.168.1.50:6379",
 		},
 		{
-			name:     "自定义端口",
+			name:     "custom port",
 			config:   RedisConfig{Host: "localhost", Port: 16379},
 			expected: "localhost:16379",
 		},
 		{
-			name:     "IPv6 地址",
+			name:     "IPv6 address",
 			config:   RedisConfig{Host: "::1", Port: 6379},
 			expected: "::1:6379",
 		},
@@ -356,7 +356,7 @@ func TestRedisConfig_Addr(t *testing.T) {
 	}
 }
 
-// TestLLMConfig_GetEffectiveProviders 测试获取有效的 LLM Provider
+// TestLLMConfig_GetEffectiveProviders tests getting effective LLM providers
 func TestLLMConfig_GetEffectiveProviders(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -365,7 +365,7 @@ func TestLLMConfig_GetEffectiveProviders(t *testing.T) {
 		expectedProvider ProviderConfig
 	}{
 		{
-			name: "多 Provider 配置",
+			name: "multiple providers config",
 			config: LLMConfig{
 				Providers: []ProviderConfig{
 					{
@@ -397,7 +397,7 @@ func TestLLMConfig_GetEffectiveProviders(t *testing.T) {
 			},
 		},
 		{
-			name: "单 Provider 配置",
+			name: "single provider config",
 			config: LLMConfig{
 				Providers: []ProviderConfig{
 					{
@@ -417,7 +417,7 @@ func TestLLMConfig_GetEffectiveProviders(t *testing.T) {
 			},
 		},
 		{
-			name: "向后兼容 - 旧版配置",
+			name: "backward compatibility - legacy config",
 			config: LLMConfig{
 				BaseURL:              "https://legacy.api.com",
 				APIKey:               "legacy-key",
@@ -436,7 +436,7 @@ func TestLLMConfig_GetEffectiveProviders(t *testing.T) {
 			},
 		},
 		{
-			name:             "空配置",
+			name:             "empty config",
 			config:           LLMConfig{},
 			expectedLen:      1,
 			expectedProvider: ProviderConfig{Name: "default", Format: "openai"},
@@ -454,7 +454,7 @@ func TestLLMConfig_GetEffectiveProviders(t *testing.T) {
 	}
 }
 
-// TestLLMConfig_GetDefaultProviderName 测试获取默认 Provider 名称
+// TestLLMConfig_GetDefaultProviderName tests getting default provider name
 func TestLLMConfig_GetDefaultProviderName(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -462,7 +462,7 @@ func TestLLMConfig_GetDefaultProviderName(t *testing.T) {
 		expectedName string
 	}{
 		{
-			name: "显式默认 Provider",
+			name: "explicit default provider",
 			config: LLMConfig{
 				DefaultProvider: "openai",
 				Providers: []ProviderConfig{
@@ -473,7 +473,7 @@ func TestLLMConfig_GetDefaultProviderName(t *testing.T) {
 			expectedName: "openai",
 		},
 		{
-			name: "使用第一个 Provider",
+			name: "use first provider",
 			config: LLMConfig{
 				Providers: []ProviderConfig{
 					{Name: "anthropic", Format: "anthropic"},
@@ -483,12 +483,12 @@ func TestLLMConfig_GetDefaultProviderName(t *testing.T) {
 			expectedName: "anthropic",
 		},
 		{
-			name:         "向后兼容 - 旧版配置",
+			name:         "backward compatibility - legacy config",
 			config:       LLMConfig{BaseURL: "https://api.example.com"},
 			expectedName: "default",
 		},
 		{
-			name:         "空配置",
+			name:         "empty config",
 			config:       LLMConfig{},
 			expectedName: "default",
 		},
@@ -502,32 +502,32 @@ func TestLLMConfig_GetDefaultProviderName(t *testing.T) {
 	}
 }
 
-// TestGet 测试获取全局配置实例
+// TestGet tests getting global config instance
 func TestGet(t *testing.T) {
-	// 保存原始配置
+	// Save original config
 	originalConfig := globalConfig
 	defer func() {
 		globalConfig = originalConfig
 	}()
 
-	// 测试空配置
+	// Test empty config
 	globalConfig = nil
 	assert.Nil(t, Get())
 
-	// 设置测试配置
+	// Set test config
 	testConfig := &Config{
 		Server: ServerConfig{Host: "test", Port: 9999},
 	}
 	globalConfig = testConfig
 
-	// 验证 Get() 返回正确的配置
+	// Verify Get() returns correct config
 	cfg := Get()
 	assert.NotNil(t, cfg)
 	assert.Equal(t, "test", cfg.Server.Host)
 	assert.Equal(t, 9999, cfg.Server.Port)
 }
 
-// TestSetDefaults 测试默认值设置
+// TestSetDefaults tests default value setup
 func TestSetDefaults(t *testing.T) {
 	v := viper.New()
 	setDefaults(v)
@@ -536,12 +536,12 @@ func TestSetDefaults(t *testing.T) {
 		key      string
 		expected interface{}
 	}{
-		// 服务器默认值
+		// Server defaults
 		{"server.host", "0.0.0.0"},
 		{"server.port", 8080},
 		{"server.mode", "debug"},
 
-		// 数据库默认值
+		// Database defaults
 		{"database.host", "localhost"},
 		{"database.port", 5432},
 		{"database.name", "codemind"},
@@ -550,28 +550,28 @@ func TestSetDefaults(t *testing.T) {
 		{"database.max_idle_conns", 10},
 		{"database.conn_max_lifetime_minutes", 60},
 
-		// Redis 默认值
+		// Redis defaults
 		{"redis.host", "localhost"},
 		{"redis.port", 6379},
 		{"redis.db", 0},
 		{"redis.pool_size", 20},
 
-		// JWT 默认值
+		// JWT defaults
 		{"jwt.expire_hours", 24},
 
-		// LLM 默认值
+		// LLM defaults
 		{"llm.timeout_seconds", 300},
 		{"llm.stream_timeout_seconds", 600},
 		{"llm.max_retries", 0},
 
-		// 系统默认值
+		// System defaults
 		{"system.max_keys_per_user", 10},
 		{"system.default_concurrency", 5},
 		{"system.default_daily_tokens", 1000000},
 		{"system.default_monthly_tokens", 20000000},
 		{"system.force_change_password", true},
 
-		// 日志默认值
+		// Log defaults
 		{"log.level", "info"},
 		{"log.format", "json"},
 		{"log.output", "stdout"},
@@ -585,7 +585,7 @@ func TestSetDefaults(t *testing.T) {
 	}
 }
 
-// TestLoad_WithMultipleProviders 测试多 Provider 配置加载
+// TestLoad_WithMultipleProviders tests loading multi-provider config
 func TestLoad_WithMultipleProviders(t *testing.T) {
 	configContent := `
 llm:
@@ -610,18 +610,18 @@ llm:
 	configPath, cleanup := createTempConfigFile(t, configContent)
 	defer cleanup()
 
-	// 重置全局配置
+	// Reset global config
 	globalConfig = nil
 
 	cfg, err := Load(configPath)
 	require.NoError(t, err)
 	assert.NotNil(t, cfg)
 
-	// 验证 Provider 配置
+	// Verify provider config
 	providers := cfg.LLM.GetEffectiveProviders()
 	require.Len(t, providers, 2)
 
-	// 验证第一个 Provider
+	// Verify first provider
 	assert.Equal(t, "openai", providers[0].Name)
 	assert.Equal(t, "openai", providers[0].Format)
 	assert.Equal(t, "https://api.openai.com/v1", providers[0].BaseURL)
@@ -629,7 +629,7 @@ llm:
 	assert.Equal(t, 60, providers[0].TimeoutSeconds)
 	assert.Equal(t, 120, providers[0].StreamTimeoutSeconds)
 
-	// 验证第二个 Provider
+	// Verify second provider
 	assert.Equal(t, "anthropic", providers[1].Name)
 	assert.Equal(t, "anthropic", providers[1].Format)
 	assert.Equal(t, "https://api.anthropic.com", providers[1].BaseURL)
@@ -637,16 +637,16 @@ llm:
 	assert.Equal(t, 90, providers[1].TimeoutSeconds)
 	assert.Equal(t, 180, providers[1].StreamTimeoutSeconds)
 
-	// 验证默认 Provider
+	// Verify default provider
 	assert.Equal(t, "anthropic", cfg.LLM.GetDefaultProviderName())
 	assert.Equal(t, "anthropic", cfg.LLM.DefaultProvider)
 
-	// 验证模型路由
+	// Verify model routing
 	assert.Equal(t, "openai", cfg.LLM.ModelRouting["gpt-4"])
 	assert.Equal(t, "anthropic", cfg.LLM.ModelRouting["claude-3"])
 }
 
-// TestLoad_PartialConfig 测试部分配置加载
+// TestLoad_PartialConfig tests partial config loading
 func TestLoad_PartialConfig(t *testing.T) {
 	configContent := `
 server:
@@ -658,27 +658,27 @@ database:
 	configPath, cleanup := createTempConfigFile(t, configContent)
 	defer cleanup()
 
-	// 重置全局配置
+	// Reset global config
 	globalConfig = nil
 
 	cfg, err := Load(configPath)
 	require.NoError(t, err)
 	assert.NotNil(t, cfg)
 
-	// 验证覆盖的配置
+	// Verify overridden config
 	assert.Equal(t, 9000, cfg.Server.Port)
 	assert.Equal(t, "secret123", cfg.Database.Password)
 
-	// 验证其他配置使用默认值
+	// Verify other configs use defaults
 	assert.Equal(t, "0.0.0.0", cfg.Server.Host)
 	assert.Equal(t, "debug", cfg.Server.Mode)
 	assert.Equal(t, "localhost", cfg.Database.Host)
 	assert.Equal(t, 5432, cfg.Database.Port)
 }
 
-// TestLoad_WithInvalidConfigFile 测试无效配置文件
+// TestLoad_WithInvalidConfigFile tests invalid config file
 func TestLoad_WithInvalidConfigFile(t *testing.T) {
-	// 创建包含无效 YAML 的文件
+	// Create file with invalid YAML
 	invalidContent := `
 server:
   port: not_a_number
@@ -686,17 +686,17 @@ server:
 	configPath, cleanup := createTempConfigFile(t, invalidContent)
 	defer cleanup()
 
-	// 重置全局配置
+	// Reset global config
 	globalConfig = nil
 
-	// 对于 viper，类型错误可能会导致解析失败
+	// For viper, type errors may cause parsing failures
 	_, err := Load(configPath)
-	// viper 会尝试解析，如果类型不匹配可能导致错误
-	// 这里我们只验证函数不会 panic
+	// viper will try to parse; type mismatches may cause errors
+	// Here we only verify the function doesn't panic
 	assert.True(t, err == nil || err != nil)
 }
 
-// TestServerConfig_Addr 测试服务器地址组合
+// TestServerConfig_Addr tests server address composition
 func TestServerConfig_Addr(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -704,10 +704,10 @@ func TestServerConfig_Addr(t *testing.T) {
 		port     int
 		expected string
 	}{
-		{"默认地址", "0.0.0.0", 8080, "0.0.0.0:8080"},
-		{"本地地址", "127.0.0.1", 3000, "127.0.0.1:3000"},
-		{"域名地址", "api.example.com", 443, "api.example.com:443"},
-		{"IPv6地址", "::1", 8080, "::1:8080"},
+		{"default address", "0.0.0.0", 8080, "0.0.0.0:8080"},
+		{"local address", "127.0.0.1", 3000, "127.0.0.1:3000"},
+		{"domain address", "api.example.com", 443, "api.example.com:443"},
+		{"IPv6 address", "::1", 8080, "::1:8080"},
 	}
 
 	for _, tt := range tests {
@@ -719,7 +719,7 @@ func TestServerConfig_Addr(t *testing.T) {
 	}
 }
 
-// TestInitLogger 测试日志初始化
+// TestInitLogger tests logger initialization
 func TestInitLogger(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -727,7 +727,7 @@ func TestInitLogger(t *testing.T) {
 		expectError bool
 	}{
 		{
-			name: "console 格式 debug 级别",
+			name: "console format debug level",
 			config: LogConfig{
 				Level:  "debug",
 				Format: "console",
@@ -736,7 +736,7 @@ func TestInitLogger(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "json 格式 info 级别",
+			name: "json format info level",
 			config: LogConfig{
 				Level:  "info",
 				Format: "json",
@@ -745,7 +745,7 @@ func TestInitLogger(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "warn 级别",
+			name: "warn level",
 			config: LogConfig{
 				Level:  "warn",
 				Format: "json",
@@ -754,7 +754,7 @@ func TestInitLogger(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "error 级别",
+			name: "error level",
 			config: LogConfig{
 				Level:  "error",
 				Format: "console",
@@ -763,7 +763,7 @@ func TestInitLogger(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "无效级别应使用默认值",
+			name: "invalid level should use default",
 			config: LogConfig{
 				Level:  "invalid_level",
 				Format: "json",
@@ -789,7 +789,7 @@ func TestInitLogger(t *testing.T) {
 	}
 }
 
-// TestInitLogger_WithFileOutput 测试文件输出日志
+// TestInitLogger_WithFileOutput tests file output logging
 func TestInitLogger_WithFileOutput(t *testing.T) {
 	tmpDir := t.TempDir()
 	logPath := filepath.Join(tmpDir, "logs", "test.log")
@@ -805,7 +805,7 @@ func TestInitLogger_WithFileOutput(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, logger)
 
-	// 验证日志目录和文件已创建
+	// Verify log directory and file were created
 	_, err = os.Stat(filepath.Dir(logPath))
 	assert.NoError(t, err)
 
@@ -814,7 +814,7 @@ func TestInitLogger_WithFileOutput(t *testing.T) {
 	}
 }
 
-// TestConfig_TableDriven 表格驱动测试综合场景
+// TestConfig_TableDriven is a table-driven test for comprehensive scenarios
 func TestConfig_TableDriven(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -823,7 +823,7 @@ func TestConfig_TableDriven(t *testing.T) {
 		validateConfig func(t *testing.T, cfg *Config)
 	}{
 		{
-			name: "最小配置",
+			name: "minimal config",
 			configContent: `
 server:
   port: 8080
@@ -831,12 +831,12 @@ server:
 			envVars: map[string]string{},
 			validateConfig: func(t *testing.T, cfg *Config) {
 				assert.Equal(t, 8080, cfg.Server.Port)
-				assert.Equal(t, "0.0.0.0", cfg.Server.Host) // 默认值
+				assert.Equal(t, "0.0.0.0", cfg.Server.Host) // default value
 				assert.Equal(t, "localhost", cfg.Database.Host)
 			},
 		},
 		{
-			name: "完整数据库配置",
+			name: "full database config",
 			configContent: `
 database:
   host: postgres.internal
@@ -859,7 +859,7 @@ database:
 				assert.Equal(t, 5, cfg.Database.MaxIdleConns)
 				assert.Equal(t, 30, cfg.Database.ConnMaxLifetimeMin)
 
-				// 验证 DSN
+				// Verify DSN
 				dsn := cfg.Database.DSN()
 				assert.Contains(t, dsn, "host=postgres.internal")
 				assert.Contains(t, dsn, "port=5432")
@@ -869,7 +869,7 @@ database:
 			},
 		},
 		{
-			name: "环境变量覆盖配置",
+			name: "env vars override config",
 			configContent: `
 database:
   host: config-host
@@ -881,15 +881,15 @@ database:
 				"DB_PASSWORD": "env-pass",
 			},
 			validateConfig: func(t *testing.T, cfg *Config) {
-				// 环境变量应该覆盖配置文件
+				// Env vars should override config file
 				assert.Equal(t, "env-host", cfg.Database.Host)
 				assert.Equal(t, "env-pass", cfg.Database.Password)
-				// 端口来自配置文件
+				// Port comes from config file
 				assert.Equal(t, 5432, cfg.Database.Port)
 			},
 		},
 		{
-			name: "LLM Provider 配置",
+			name: "LLM provider config",
 			configContent: `
 llm:
   default_provider: custom
@@ -913,7 +913,7 @@ llm:
 			},
 		},
 		{
-			name: "系统配置",
+			name: "system config",
 			configContent: `
 system:
   max_keys_per_user: 50
@@ -935,18 +935,18 @@ system:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 保存原始环境变量
+			// Save original environment variables
 			oldEnvVars := make(map[string]string)
 			for key := range tt.envVars {
 				oldEnvVars[key] = os.Getenv(key)
 			}
 
-			// 设置测试环境变量
+			// Set test environment variables
 			for key, value := range tt.envVars {
 				os.Setenv(key, value)
 			}
 
-			// 清理函数
+			// Cleanup function
 			defer func() {
 				for key, value := range oldEnvVars {
 					if value == "" {
@@ -957,36 +957,36 @@ system:
 				}
 			}()
 
-			// 创建临时配置文件
+			// Create temp config file
 			configPath, cleanup := createTempConfigFile(t, tt.configContent)
 			defer cleanup()
 
-			// 重置全局配置
+			// Reset global config
 			globalConfig = nil
 
-			// 加载配置
+			// Load config
 			cfg, err := Load(configPath)
 			require.NoError(t, err)
 			assert.NotNil(t, cfg)
 
-			// 执行验证
+			// Execute validation
 			tt.validateConfig(t, cfg)
 		})
 	}
 }
 
-// TestBindEnvVars 测试环境变量绑定
+// TestBindEnvVars tests environment variable binding
 func TestBindEnvVars(t *testing.T) {
 	v := viper.New()
 
-	// 设置一些默认值
+	// Set some defaults
 	v.SetDefault("database.host", "localhost")
 	v.SetDefault("database.port", 5432)
 
-	// 绑定环境变量
+	// Bind environment variables
 	bindEnvVars(v)
 
-	// 设置环境变量
+	// Set environment variables
 	os.Setenv("DB_HOST", "env-host")
 	os.Setenv("DB_PORT", "5433")
 	defer func() {
@@ -994,8 +994,8 @@ func TestBindEnvVars(t *testing.T) {
 		os.Unsetenv("DB_PORT")
 	}()
 
-	// 验证环境变量绑定（v.Get 返回的是 interface{}，可能为 string 或 int）
+	// Verify env var bindings (v.Get returns interface{}, may be string or int)
 	assert.Equal(t, "env-host", v.Get("database.host"))
-	// DB_PORT 从环境变量获取的是字符串 "5433"
+	// DB_PORT from env var is the string "5433"
 	assert.Equal(t, "5433", v.Get("database.port"))
 }

@@ -10,10 +10,10 @@ import (
 )
 
 // ══════════════════════════════════
-// Anthropic Messages API — 类型序列化测试
+// Anthropic Messages API - type serialization tests
 // ══════════════════════════════════
 
-// TestAnthropicRequestSerialization 验证请求体包含所有关键字段.
+// TestAnthropicRequestSerialization verifies request body contains all key fields.
 func TestAnthropicRequestSerialization(t *testing.T) {
 	temp := 0.7
 	topP := 0.9
@@ -35,7 +35,7 @@ func TestAnthropicRequestSerialization(t *testing.T) {
 		ParallelToolUse: &parallel,
 		Tools: []AnthropicTool{{
 			Name:        "get_weather",
-			Description: "获取天气",
+			Description: "get weather",
 			InputSchema: map[string]interface{}{"type": "object"},
 		}},
 		ToolChoice: AnthropicToolChoice{Type: "auto"},
@@ -45,7 +45,7 @@ func TestAnthropicRequestSerialization(t *testing.T) {
 
 	data, err := json.Marshal(req)
 	if err != nil {
-		t.Fatalf("序列化失败: %v", err)
+		t.Fatalf("serialization failed: %v", err)
 	}
 
 	var raw map[string]interface{}
@@ -58,21 +58,21 @@ func TestAnthropicRequestSerialization(t *testing.T) {
 	}
 	for _, key := range checks {
 		if _, ok := raw[key]; !ok {
-			t.Errorf("序列化结果缺少字段: %s", key)
+			t.Errorf("serialized result missing field: %s", key)
 		}
 	}
 
-	// 验证 thinking 结构
+	// Verify thinking structure
 	thinking, _ := raw["thinking"].(map[string]interface{})
 	if thinking["type"] != "enabled" {
-		t.Errorf("thinking.type 不正确: %v", thinking["type"])
+		t.Errorf("incorrect thinking.type: %v", thinking["type"])
 	}
 	if thinking["budget_tokens"].(float64) != 10000 {
-		t.Errorf("thinking.budget_tokens 不正确: %v", thinking["budget_tokens"])
+		t.Errorf("incorrect thinking.budget_tokens: %v", thinking["budget_tokens"])
 	}
 }
 
-// TestAnthropicResponseDeserialization 验证完整响应体反序列化.
+// TestAnthropicResponseDeserialization verifies full response body deserialization.
 func TestAnthropicResponseDeserialization(t *testing.T) {
 	respJSON := `{
 		"id": "msg_01abc",
@@ -95,51 +95,51 @@ func TestAnthropicResponseDeserialization(t *testing.T) {
 
 	var resp AnthropicMessagesResponse
 	if err := json.Unmarshal([]byte(respJSON), &resp); err != nil {
-		t.Fatalf("反序列化失败: %v", err)
+		t.Fatalf("deserialization failed: %v", err)
 	}
 
 	if resp.ID != "msg_01abc" {
-		t.Errorf("ID 不正确: %s", resp.ID)
+		t.Errorf("incorrect ID: %s", resp.ID)
 	}
 	if resp.Type != "message" {
-		t.Errorf("Type 不正确: %s", resp.Type)
+		t.Errorf("incorrect Type: %s", resp.Type)
 	}
 	if resp.Model != "claude-sonnet-4-20250514" {
-		t.Errorf("Model 不正确: %s", resp.Model)
+		t.Errorf("incorrect Model: %s", resp.Model)
 	}
 	if len(resp.Content) != 2 {
-		t.Fatalf("Content 数量不正确: %d", len(resp.Content))
+		t.Fatalf("incorrect Content count: %d", len(resp.Content))
 	}
 
-	// 验证 text 块
+	// Verify text block
 	if resp.Content[0].Type != "text" || resp.Content[0].Text != "Hello!" {
-		t.Error("第一个内容块不正确")
+		t.Error("incorrect first content block")
 	}
 
-	// 验证 tool_use 块
+	// Verify tool_use block
 	tc := resp.Content[1]
 	if tc.Type != "tool_use" || tc.ID != "toolu_01xyz" || tc.Name != "get_weather" {
-		t.Errorf("tool_use 块不正确: type=%s, id=%s, name=%s", tc.Type, tc.ID, tc.Name)
+		t.Errorf("incorrect tool_use block: type=%s, id=%s, name=%s", tc.Type, tc.ID, tc.Name)
 	}
 
-	// 验证 stop_reason
+	// Verify stop_reason
 	if resp.StopReason == nil || *resp.StopReason != "tool_use" {
-		t.Error("stop_reason 不正确")
+		t.Error("incorrect stop_reason")
 	}
 
-	// 验证 usage
+	// Verify usage
 	if resp.Usage == nil {
-		t.Fatal("Usage 不应为 nil")
+		t.Fatal("Usage should not be nil")
 	}
 	if resp.Usage.InputTokens != 100 || resp.Usage.OutputTokens != 50 {
-		t.Errorf("Token 数量不正确: input=%d, output=%d", resp.Usage.InputTokens, resp.Usage.OutputTokens)
+		t.Errorf("incorrect token count: input=%d, output=%d", resp.Usage.InputTokens, resp.Usage.OutputTokens)
 	}
 	if resp.Usage.CacheCreationInputTokens != 10 || resp.Usage.CacheReadInputTokens != 5 {
-		t.Error("缓存 token 数量不正确")
+		t.Error("incorrect cache token count")
 	}
 }
 
-// TestAnthropicContentBlockThinking 验证 thinking 内容块序列化.
+// TestAnthropicContentBlockThinking verifies thinking content block serialization.
 func TestAnthropicContentBlockThinking(t *testing.T) {
 	block := AnthropicContentBlock{
 		Type:      "thinking",
@@ -149,24 +149,24 @@ func TestAnthropicContentBlockThinking(t *testing.T) {
 
 	data, err := json.Marshal(block)
 	if err != nil {
-		t.Fatalf("序列化失败: %v", err)
+		t.Fatalf("serialization failed: %v", err)
 	}
 
 	var raw map[string]interface{}
 	json.Unmarshal(data, &raw)
 
 	if raw["type"] != "thinking" {
-		t.Errorf("type 不正确: %v", raw["type"])
+		t.Errorf("incorrect type: %v", raw["type"])
 	}
 	if raw["thinking"] != "Let me analyze this step by step..." {
-		t.Error("thinking 内容不正确")
+		t.Error("incorrect thinking content")
 	}
 	if raw["signature"] != "EqQBCgIYAhIM..." {
-		t.Error("signature 不正确")
+		t.Error("incorrect signature")
 	}
 }
 
-// TestAnthropicUsageToUsage 验证 Anthropic Usage 到通用 Usage 的转换.
+// TestAnthropicUsageToUsage verifies Anthropic Usage to common Usage conversion.
 func TestAnthropicUsageToUsage(t *testing.T) {
 	au := &AnthropicUsage{
 		InputTokens:              100,
@@ -177,59 +177,59 @@ func TestAnthropicUsageToUsage(t *testing.T) {
 
 	usage := au.ToUsage()
 	if usage.PromptTokens != 100 {
-		t.Errorf("PromptTokens 不正确: %d", usage.PromptTokens)
+		t.Errorf("incorrect PromptTokens: %d", usage.PromptTokens)
 	}
 	if usage.CompletionTokens != 50 {
-		t.Errorf("CompletionTokens 不正确: %d", usage.CompletionTokens)
+		t.Errorf("incorrect CompletionTokens: %d", usage.CompletionTokens)
 	}
 	if usage.TotalTokens != 150 {
-		t.Errorf("TotalTokens 不正确: %d", usage.TotalTokens)
+		t.Errorf("incorrect TotalTokens: %d", usage.TotalTokens)
 	}
 
-	// nil 安全
+	// nil safety
 	var nilUsage *AnthropicUsage
 	if nilUsage.ToUsage() != nil {
-		t.Error("nil AnthropicUsage.ToUsage() 应返回 nil")
+		t.Error("nil AnthropicUsage.ToUsage() should return nil")
 	}
 }
 
 // ══════════════════════════════════
-// Anthropic Client — 请求/响应测试
+// Anthropic Client - request/response tests
 // ══════════════════════════════════
 
-// TestAnthropicClientMessages 测试非流式消息调用.
+// TestAnthropicClientMessages tests non-streaming messages call.
 func TestAnthropicClientMessages(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 验证请求方法和路径
+		// Verify request method and path
 		if r.Method != "POST" {
-			t.Errorf("预期 POST, 实际: %s", r.Method)
+			t.Errorf("expected POST, got: %s", r.Method)
 		}
 		if r.URL.Path != "/v1/messages" {
-			t.Errorf("预期路径 /v1/messages, 实际: %s", r.URL.Path)
+			t.Errorf("expected path /v1/messages, got: %s", r.URL.Path)
 		}
 
-		// 验证 Anthropic 专用请求头
+		// Verify Anthropic-specific request headers
 		if r.Header.Get("anthropic-version") != AnthropicAPIVersion {
-			t.Errorf("anthropic-version 头不正确: %s", r.Header.Get("anthropic-version"))
+			t.Errorf("incorrect anthropic-version header: %s", r.Header.Get("anthropic-version"))
 		}
 		if r.Header.Get("x-api-key") != "test-anthropic-key" {
-			t.Errorf("x-api-key 头不正确: %s", r.Header.Get("x-api-key"))
+			t.Errorf("incorrect x-api-key header: %s", r.Header.Get("x-api-key"))
 		}
 		if r.Header.Get("Content-Type") != "application/json" {
-			t.Error("缺少 Content-Type 头")
+			t.Error("missing Content-Type header")
 		}
 
-		// 验证请求体
+		// Verify request body
 		body, _ := io.ReadAll(r.Body)
 		var req AnthropicMessagesRequest
 		if err := json.Unmarshal(body, &req); err != nil {
-			t.Errorf("请求体解析失败: %v", err)
+			t.Errorf("failed to parse request body: %v", err)
 		}
 		if req.Model != "claude-sonnet-4-20250514" {
-			t.Errorf("模型不正确: %s", req.Model)
+			t.Errorf("incorrect model: %s", req.Model)
 		}
 		if req.Stream {
-			t.Error("非流式请求 stream 应为 false")
+			t.Error("stream should be false for non-streaming request")
 		}
 
 		stopReason := "end_turn"
@@ -253,21 +253,21 @@ func TestAnthropicClientMessages(t *testing.T) {
 		MaxTokens: 1024,
 	})
 	if err != nil {
-		t.Fatalf("请求失败: %v", err)
+		t.Fatalf("request failed: %v", err)
 	}
 
 	if resp.ID != "msg_test" {
-		t.Errorf("响应 ID 不正确: %s", resp.ID)
+		t.Errorf("incorrect response ID: %s", resp.ID)
 	}
 	if len(resp.Content) != 1 || resp.Content[0].Text != "Hello!" {
-		t.Error("响应内容不正确")
+		t.Error("incorrect response content")
 	}
 	if resp.Usage == nil || resp.Usage.InputTokens != 10 {
-		t.Error("Usage 不正确")
+		t.Error("incorrect Usage")
 	}
 }
 
-// TestAnthropicClientMessagesRaw 测试原始请求体透传.
+// TestAnthropicClientMessagesRaw tests raw request body passthrough.
 func TestAnthropicClientMessagesRaw(t *testing.T) {
 	var receivedBody []byte
 	var receivedHeaders http.Header
@@ -290,7 +290,7 @@ func TestAnthropicClientMessagesRaw(t *testing.T) {
 
 	client := NewAnthropicClient(server.URL, "test-key", 30, 60)
 
-	// 构造包含 thinking 等额外字段的原始请求——验证透传不丢失
+	// Construct raw request with thinking and other extra fields to verify passthrough preserves them
 	rawReq := `{
 		"model": "claude-sonnet-4-20250514",
 		"messages": [{"role": "user", "content": "Hi"}],
@@ -304,37 +304,37 @@ func TestAnthropicClientMessagesRaw(t *testing.T) {
 
 	respBytes, usage, err := client.MessagesRaw([]byte(rawReq), extraHeaders)
 	if err != nil {
-		t.Fatalf("请求失败: %v", err)
+		t.Fatalf("request failed: %v", err)
 	}
 
-	// 验证原始请求体被完整转发（含 thinking 字段）
+	// Verify raw request body is fully forwarded (including thinking field)
 	if !strings.Contains(string(receivedBody), `"thinking"`) {
-		t.Error("原始透传应保留 thinking 字段")
+		t.Error("raw passthrough should preserve thinking field")
 	}
 	if !strings.Contains(string(receivedBody), `"parallel_tool_use"`) {
-		t.Error("原始透传应保留 parallel_tool_use 字段")
+		t.Error("raw passthrough should preserve parallel_tool_use field")
 	}
 
-	// 验证额外请求头被转发
+	// Verify extra request headers are forwarded
 	if receivedHeaders.Get("anthropic-beta") != "extended-thinking-2025-04-11" {
-		t.Errorf("anthropic-beta 头未被转发: %s", receivedHeaders.Get("anthropic-beta"))
+		t.Errorf("anthropic-beta header not forwarded: %s", receivedHeaders.Get("anthropic-beta"))
 	}
 
-	// 验证 usage 提取
+	// Verify usage extraction
 	if usage == nil {
-		t.Fatal("Usage 不应为 nil")
+		t.Fatal("Usage should not be nil")
 	}
 	if usage.InputTokens != 20 || usage.OutputTokens != 10 {
-		t.Errorf("Usage 不正确: input=%d, output=%d", usage.InputTokens, usage.OutputTokens)
+		t.Errorf("incorrect Usage: input=%d, output=%d", usage.InputTokens, usage.OutputTokens)
 	}
 
-	// 验证原始响应完整
+	// Verify raw response is complete
 	if !strings.Contains(string(respBytes), "msg_raw") {
-		t.Error("原始响应不完整")
+		t.Error("raw response incomplete")
 	}
 }
 
-// TestAnthropicClientMessagesStreamRaw 测试原始请求体流式透传.
+// TestAnthropicClientMessagesStreamRaw tests raw request body streaming passthrough.
 func TestAnthropicClientMessagesStreamRaw(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_stream","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null,"usage":{"input_tokens":25,"output_tokens":1}}}
@@ -363,30 +363,30 @@ data: {"type":"message_stop"}
 		nil,
 	)
 	if err != nil {
-		t.Fatalf("请求失败: %v", err)
+		t.Fatalf("request failed: %v", err)
 	}
 	defer body.Close()
 
 	data, err := io.ReadAll(body)
 	if err != nil {
-		t.Fatalf("读取流失败: %v", err)
+		t.Fatalf("failed to read stream: %v", err)
 	}
 	if !strings.Contains(string(data), "message_start") {
-		t.Error("流应包含 message_start 事件")
+		t.Error("stream should contain message_start event")
 	}
 }
 
-// TestAnthropicClientErrorHandling 测试错误处理.
+// TestAnthropicClientErrorHandling tests error handling.
 func TestAnthropicClientErrorHandling(t *testing.T) {
 	tests := []struct {
 		name       string
 		statusCode int
 		expectCode int
 	}{
-		{"429 → 529 过载", http.StatusTooManyRequests, 529},
-		{"500 → 502 服务错误", http.StatusInternalServerError, 502},
-		{"400 → 400 原样返回", http.StatusBadRequest, 400},
-		{"401 → 401 原样返回", http.StatusUnauthorized, 401},
+		{"429 → 529 overloaded", http.StatusTooManyRequests, 529},
+		{"500 → 502 server error", http.StatusInternalServerError, 502},
+		{"400 → 400 pass through", http.StatusBadRequest, 400},
+		{"401 → 401 pass through", http.StatusUnauthorized, 401},
 	}
 
 	for _, tt := range tests {
@@ -405,24 +405,24 @@ func TestAnthropicClientErrorHandling(t *testing.T) {
 			})
 
 			if err == nil {
-				t.Fatal("应返回错误")
+				t.Fatal("should return error")
 			}
 			llmErr, ok := err.(*Error)
 			if !ok {
-				t.Fatalf("应返回 Error 类型, 实际: %T", err)
+				t.Fatalf("should return Error type, got: %T", err)
 			}
 			if llmErr.StatusCode != tt.expectCode {
-				t.Errorf("状态码映射不正确: 预期 %d, 实际 %d", tt.expectCode, llmErr.StatusCode)
+				t.Errorf("incorrect status code mapping: expected %d, got %d", tt.expectCode, llmErr.StatusCode)
 			}
 		})
 	}
 }
 
 // ══════════════════════════════════
-// Anthropic SSE 流式读取器测试
+// Anthropic SSE stream reader tests
 // ══════════════════════════════════
 
-// TestAnthropicStreamReaderBasic 测试基本 SSE 事件读取.
+// TestAnthropicStreamReaderBasic tests basic SSE event reading.
 func TestAnthropicStreamReaderBasic(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null,"usage":{"input_tokens":25,"output_tokens":1}}}
@@ -468,29 +468,29 @@ data: {"type":"message_stop"}
 	for i, expected := range expectedEvents {
 		eventType, rawLines, _, err := reader.ReadEvent()
 		if err != nil {
-			t.Fatalf("第 %d 个事件读取失败: %v", i, err)
+			t.Fatalf("failed to read event %d: %v", i, err)
 		}
 		if eventType != expected {
-			t.Errorf("第 %d 个事件类型不正确: 预期 %s, 实际 %s", i, expected, eventType)
+			t.Errorf("incorrect event %d type: expected %s, got %s", i, expected, eventType)
 		}
 		if rawLines == "" {
-			t.Errorf("第 %d 个事件原始文本不应为空", i)
+			t.Errorf("event %d raw text should not be empty", i)
 		}
 	}
 
-	// message_stop 后应标记 done
+	// Should be marked done after message_stop
 	if !reader.IsDone() {
-		t.Error("message_stop 后 reader 应标记为 done")
+		t.Error("reader should be marked as done after message_stop")
 	}
 
-	// 再次读取应返回 EOF
+	// Reading again should return EOF
 	_, _, _, err := reader.ReadEvent()
 	if err != io.EOF {
-		t.Errorf("应返回 io.EOF, 实际: %v", err)
+		t.Errorf("should return io.EOF, got: %v", err)
 	}
 }
 
-// TestAnthropicStreamReaderToolUse 测试工具调用流式事件.
+// TestAnthropicStreamReaderToolUse tests tool call streaming events.
 func TestAnthropicStreamReaderToolUse(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_tool","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null,"usage":{"input_tokens":50,"output_tokens":2}}}
@@ -525,35 +525,35 @@ data: {"type":"message_stop"}
 	// content_block_start (tool_use)
 	eventType, _, event, err := reader.ReadEvent()
 	if err != nil {
-		t.Fatalf("读取失败: %v", err)
+		t.Fatalf("read failed: %v", err)
 	}
 	if eventType != AnthropicEventContentBlockStart {
-		t.Errorf("事件类型不正确: %s", eventType)
+		t.Errorf("incorrect event type: %s", eventType)
 	}
 	if event.ContentBlock == nil || event.ContentBlock.Type != "tool_use" {
-		t.Error("content_block 应为 tool_use 类型")
+		t.Error("content_block should be tool_use type")
 	}
 	if event.ContentBlock.Name != "get_weather" {
-		t.Errorf("工具名不正确: %s", event.ContentBlock.Name)
+		t.Errorf("incorrect tool name: %s", event.ContentBlock.Name)
 	}
 
 	// content_block_delta (input_json_delta)
 	eventType, _, event, err = reader.ReadEvent()
 	if err != nil {
-		t.Fatalf("读取失败: %v", err)
+		t.Fatalf("read failed: %v", err)
 	}
 	if eventType != AnthropicEventContentBlockDelta {
-		t.Errorf("事件类型不正确: %s", eventType)
+		t.Errorf("incorrect event type: %s", eventType)
 	}
 	if event.Delta == nil || event.Delta.Type != "input_json_delta" {
-		t.Error("delta 应为 input_json_delta 类型")
+		t.Error("delta should be input_json_delta type")
 	}
 	if event.Delta.PartialJSON != `{"city":` {
-		t.Errorf("partial_json 不正确: %s", event.Delta.PartialJSON)
+		t.Errorf("incorrect partial_json: %s", event.Delta.PartialJSON)
 	}
 }
 
-// TestAnthropicStreamReaderThinking 测试扩展思考流式事件.
+// TestAnthropicStreamReaderThinking tests extended thinking streaming events.
 func TestAnthropicStreamReaderThinking(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_think","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null}}
@@ -597,31 +597,31 @@ data: {"type":"message_stop"}
 	// content_block_start (thinking)
 	eventType, _, event, _ := reader.ReadEvent()
 	if eventType != AnthropicEventContentBlockStart {
-		t.Errorf("事件类型不正确: %s", eventType)
+		t.Errorf("incorrect event type: %s", eventType)
 	}
 	if event.ContentBlock == nil || event.ContentBlock.Type != "thinking" {
-		t.Error("content_block 应为 thinking 类型")
+		t.Error("content_block should be thinking type")
 	}
 
 	// thinking_delta
 	eventType, _, event, _ = reader.ReadEvent()
 	if eventType != AnthropicEventContentBlockDelta {
-		t.Errorf("事件类型不正确: %s", eventType)
+		t.Errorf("incorrect event type: %s", eventType)
 	}
 	if event.Delta == nil || event.Delta.Type != "thinking_delta" {
-		t.Error("delta 应为 thinking_delta 类型")
+		t.Error("delta should be thinking_delta type")
 	}
 	if event.Delta.Thinking != "Let me think about this..." {
-		t.Errorf("thinking 内容不正确: %s", event.Delta.Thinking)
+		t.Errorf("incorrect thinking content: %s", event.Delta.Thinking)
 	}
 
 	// signature_delta
 	_, _, event, _ = reader.ReadEvent()
 	if event.Delta == nil || event.Delta.Type != "signature_delta" {
-		t.Error("delta 应为 signature_delta 类型")
+		t.Error("delta should be signature_delta type")
 	}
 	if event.Delta.Signature != "EqQBCgIYAhIM..." {
-		t.Errorf("signature 不正确: %s", event.Delta.Signature)
+		t.Errorf("incorrect signature: %s", event.Delta.Signature)
 	}
 
 	// content_block_stop
@@ -633,23 +633,23 @@ data: {"type":"message_stop"}
 	// text_delta
 	_, _, event, _ = reader.ReadEvent()
 	if event.Delta.Text != "The answer is 42." {
-		t.Errorf("文本不正确: %s", event.Delta.Text)
+		t.Errorf("incorrect text: %s", event.Delta.Text)
 	}
 
 	// content_block_stop
 	reader.ReadEvent()
 
-	// message_delta (含 usage)
+	// message_delta (with usage)
 	eventType, _, event, _ = reader.ReadEvent()
 	if eventType != AnthropicEventMessageDelta {
-		t.Errorf("事件类型不正确: %s", eventType)
+		t.Errorf("incorrect event type: %s", eventType)
 	}
 	if event.Usage == nil || event.Usage.OutputTokens != 100 {
-		t.Error("message_delta 中的 usage 不正确")
+		t.Error("incorrect usage in message_delta")
 	}
 }
 
-// TestAnthropicStreamReaderEmpty 测试空流.
+// TestAnthropicStreamReaderEmpty tests empty stream.
 func TestAnthropicStreamReaderEmpty(t *testing.T) {
 	body := io.NopCloser(strings.NewReader(""))
 	reader := NewAnthropicStreamReader(body)
@@ -657,15 +657,15 @@ func TestAnthropicStreamReaderEmpty(t *testing.T) {
 
 	_, _, _, err := reader.ReadEvent()
 	if err != io.EOF {
-		t.Errorf("空流应返回 io.EOF, 实际: %v", err)
+		t.Errorf("empty stream should return io.EOF, got: %v", err)
 	}
 }
 
 // ══════════════════════════════════
-// Anthropic 错误响应测试
+// Anthropic error response tests
 // ══════════════════════════════════
 
-// TestAnthropicErrorResponseSerialization 验证错误响应格式.
+// TestAnthropicErrorResponseSerialization verifies error response format.
 func TestAnthropicErrorResponseSerialization(t *testing.T) {
 	errResp := AnthropicErrorResponse{
 		Type: "error",
@@ -677,12 +677,12 @@ func TestAnthropicErrorResponseSerialization(t *testing.T) {
 	s := string(data)
 
 	if !strings.Contains(s, `"type":"error"`) {
-		t.Error("错误响应缺少 type:error")
+		t.Error("error response missing type:error")
 	}
 	if !strings.Contains(s, `"invalid_request_error"`) {
-		t.Error("错误响应缺少 error type")
+		t.Error("error response missing error type")
 	}
 	if !strings.Contains(s, `messages: Required`) {
-		t.Error("错误响应缺少 error message")
+		t.Error("error response missing error message")
 	}
 }

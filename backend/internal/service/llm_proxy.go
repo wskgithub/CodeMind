@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// configValueTrue 是系统配置中表示布尔真值的字符串常量。
+// configValueTrue is the string constant representing boolean true in system configuration.
 const configValueTrue = "true"
 
 var acquireConcurrencyScript = redis.NewScript(`

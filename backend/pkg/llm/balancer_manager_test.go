@@ -176,7 +176,7 @@ func (m *mockProvider) AnthropicMessagesStreamRaw(ctx context.Context, rawBody [
 	return nil, args.Error(1)
 }
 
-// mockReadCloser 用于模拟流式响应.
+// mockReadCloser mocks a streaming response body.
 type mockReadCloser struct {
 	io.Reader
 	onClose func()

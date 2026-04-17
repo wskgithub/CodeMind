@@ -1,4 +1,4 @@
-// Package config 管理应用配置的加载和验证。
+// Package config manages application configuration loading and validation.
 package config
 
 import (

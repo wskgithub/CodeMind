@@ -1,2 +1,2 @@
-// Package monitor 定义监控相关的数据模型。
+// Package monitor defines data models for system monitoring.
 package monitor

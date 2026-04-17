@@ -75,7 +75,7 @@ func (h *MonitorHandler) RequestMetrics(c *gin.Context) {
 	response.Success(c, metrics)
 }
 
-// LLMNodeMetrics 获取 LLM 节点指标 (GET /api/v1/monitor/llm-nodes)。
+// LLMNodeMetrics returns LLM node metrics (GET /api/v1/monitor/llm-nodes).
 func (h *MonitorHandler) LLMNodeMetrics(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
@@ -90,7 +90,7 @@ func (h *MonitorHandler) LLMNodeMetrics(c *gin.Context) {
 	response.Success(c, nodes)
 }
 
-// HealthCheck 执行健康检查 (GET /api/v1/monitor/health)。
+// HealthCheck performs a health check (GET /api/v1/monitor/health).
 func (h *MonitorHandler) HealthCheck(c *gin.Context) {
 	response.Success(c, gin.H{
 		"status":    "healthy",
@@ -99,7 +99,7 @@ func (h *MonitorHandler) HealthCheck(c *gin.Context) {
 	})
 }
 
-// LLMNodeReport 上报 LLM 节点状态 (POST /api/v1/monitor/nodes/report)。
+// LLMNodeReport reports LLM node status (POST /api/v1/monitor/nodes/report).
 func (h *MonitorHandler) LLMNodeReport(c *gin.Context) {
 	var req monitor.NodeReportRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

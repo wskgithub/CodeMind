@@ -1,4 +1,4 @@
-// Package token 提供 LLM Token 计数功能。
+// Package token provides LLM token counting utilities.
 package token
 
 // EstimateTokens estimates token count using a simple heuristic.

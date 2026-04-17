@@ -1,4 +1,4 @@
-// Package response 提供统一的 HTTP 响应封装。
+// Package response provides unified HTTP response wrappers.
 package response
 
 import (

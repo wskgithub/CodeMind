@@ -1,4 +1,4 @@
-// Package main 是 CodeMind 服务端入口。
+// Package main is the entry point for the CodeMind server.
 package main
 
 import (
@@ -190,7 +190,7 @@ func main() {
 		Addr:         addr,
 		Handler:      engine,
 		ReadTimeout:  30 * time.Second,                    //nolint:mnd // intentional constant.
-		WriteTimeout: llmStreamWriteTimeout * time.Second, // LLM 流式请求需要较长超时
+		WriteTimeout: llmStreamWriteTimeout * time.Second, // LLM streaming requests require a longer timeout
 		IdleTimeout:  120 * time.Second,                   //nolint:mnd // intentional constant.
 	}
 

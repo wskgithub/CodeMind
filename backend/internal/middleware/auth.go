@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// JWT 认证中间件上下文键。
+// Context keys for JWT authentication middleware.
 const (
 	CtxKeyUserID       = "user_id"
 	CtxKeyUsername     = "username"

@@ -10,7 +10,7 @@ import (
 // ProviderFormat represents the LLM provider protocol format.
 type ProviderFormat string
 
-// LLM 服务商协议格式常量。
+// LLM provider protocol format constants.
 const (
 	FormatOpenAI    ProviderFormat = "openai"
 	FormatAnthropic ProviderFormat = "anthropic"
@@ -57,73 +57,73 @@ func NewOpenAIProvider(name string, client *Client) *OpenAIProvider {
 	}
 }
 
-// Name 返回服务商名称。
+// Name returns the provider name.
 func (p *OpenAIProvider) Name() string { return p.name }
 
-// Format 返回服务商协议格式。
+// Format returns the provider protocol format.
 func (p *OpenAIProvider) Format() ProviderFormat { return FormatOpenAI }
 
-// ChatCompletion 执行非流式聊天补全。
+// ChatCompletion performs a non-streaming chat completion.
 func (p *OpenAIProvider) ChatCompletion(_ context.Context, req *ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	return p.client.ChatCompletion(req)
 }
 
-// ChatCompletionStream 执行流式聊天补全。
+// ChatCompletionStream performs a streaming chat completion.
 func (p *OpenAIProvider) ChatCompletionStream(_ context.Context, req *ChatCompletionRequest) (io.ReadCloser, error) {
 	return p.client.ChatCompletionStream(req)
 }
 
-// ChatCompletionRaw 使用原始请求体执行非流式聊天补全。
+// ChatCompletionRaw performs a non-streaming chat completion with raw request body.
 func (p *OpenAIProvider) ChatCompletionRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	return p.client.ChatCompletionRawAll(rawBody)
 }
 
-// ChatCompletionStreamRaw 使用原始请求体执行流式聊天补全。
+// ChatCompletionStreamRaw performs a streaming chat completion with raw request body.
 func (p *OpenAIProvider) ChatCompletionStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
 	return p.client.ChatCompletionStreamRaw(rawBody)
 }
 
-// Completion 执行非流式文本补全。
+// Completion performs a non-streaming text completion.
 func (p *OpenAIProvider) Completion(_ context.Context, req *CompletionRequest) (*CompletionResponse, error) {
 	return p.client.Completion(req)
 }
 
-// CompletionStream 执行流式文本补全。
+// CompletionStream performs a streaming text completion.
 func (p *OpenAIProvider) CompletionStream(_ context.Context, req *CompletionRequest) (io.ReadCloser, error) {
 	return p.client.CompletionStream(req)
 }
 
-// CompletionRaw 使用原始请求体执行非流式文本补全。
+// CompletionRaw performs a non-streaming text completion with raw request body.
 func (p *OpenAIProvider) CompletionRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	return p.client.CompletionRawAll(rawBody)
 }
 
-// CompletionStreamRaw 使用原始请求体执行流式文本补全。
+// CompletionStreamRaw performs a streaming text completion with raw request body.
 func (p *OpenAIProvider) CompletionStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
 	return p.client.CompletionStreamRaw(rawBody)
 }
 
-// ListModels 获取可用模型列表。
+// ListModels retrieves the list of available models.
 func (p *OpenAIProvider) ListModels(_ context.Context) (*ModelListResponse, error) {
 	return p.client.ListModels()
 }
 
-// RetrieveModel 获取单个模型信息。
+// RetrieveModel retrieves information for a single model.
 func (p *OpenAIProvider) RetrieveModel(_ context.Context, modelID string) (*ModelInfo, error) {
 	return p.client.RetrieveModel(modelID)
 }
 
-// EmbeddingRaw 使用原始请求体执行嵌入调用。
+// EmbeddingRaw performs an embedding call with raw request body.
 func (p *OpenAIProvider) EmbeddingRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	return p.client.EmbeddingRaw(rawBody)
 }
 
-// ResponsesRaw 使用原始请求体执行非流式 Responses API 调用。
+// ResponsesRaw performs a non-streaming Responses API call with raw request body.
 func (p *OpenAIProvider) ResponsesRaw(_ context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	return p.client.ResponsesRaw(rawBody)
 }
 
-// ResponsesStreamRaw 使用原始请求体执行流式 Responses API 调用。
+// ResponsesStreamRaw performs a streaming Responses API call with raw request body.
 func (p *OpenAIProvider) ResponsesStreamRaw(_ context.Context, rawBody []byte) (io.ReadCloser, error) {
 	return p.client.ResponsesStreamRaw(rawBody)
 }
@@ -171,10 +171,10 @@ func NewAnthropicProvider(name string, client *AnthropicClient) *AnthropicProvid
 	}
 }
 
-// Name 返回服务商名称。
+// Name returns the provider name.
 func (p *AnthropicProvider) Name() string { return p.name }
 
-// Format 返回服务商协议格式。
+// Format returns the provider protocol format.
 func (p *AnthropicProvider) Format() ProviderFormat { return FormatAnthropic }
 
 // ChatCompletion converts OpenAI request to Anthropic format.
@@ -210,7 +210,7 @@ func (p *AnthropicProvider) ChatCompletionRaw(ctx context.Context, rawBody []byt
 	return data, resp.Usage, nil
 }
 
-// ChatCompletionStreamRaw 将 OpenAI 流式请求转换为 Anthropic 格式并返回流。
+// ChatCompletionStreamRaw converts an OpenAI streaming request to Anthropic format and returns the stream.
 func (p *AnthropicProvider) ChatCompletionStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error) {
 	var req ChatCompletionRequest
 	if err := json.Unmarshal(rawBody, &req); err != nil {
@@ -231,14 +231,14 @@ func (p *AnthropicProvider) Completion(_ context.Context, req *CompletionRequest
 	return chatToCompletionResponse(chatResp), nil
 }
 
-// CompletionStream 执行流式文本补全（转换为 Anthropic Messages 调用）。
+// CompletionStream performs a streaming text completion (converted to Anthropic Messages call).
 func (p *AnthropicProvider) CompletionStream(_ context.Context, req *CompletionRequest) (io.ReadCloser, error) {
 	chatReq := completionToChatRequest(req)
 	anthropicReq := OpenAIToAnthropic(chatReq)
 	return p.client.MessagesStream(anthropicReq)
 }
 
-// CompletionRaw 使用原始请求体执行非流式文本补全。
+// CompletionRaw performs a non-streaming text completion with raw request body.
 func (p *AnthropicProvider) CompletionRaw(ctx context.Context, rawBody []byte) ([]byte, *Usage, error) {
 	var req CompletionRequest
 	if err := json.Unmarshal(rawBody, &req); err != nil {
@@ -255,7 +255,7 @@ func (p *AnthropicProvider) CompletionRaw(ctx context.Context, rawBody []byte) (
 	return data, resp.Usage, nil
 }
 
-// CompletionStreamRaw 使用原始请求体执行流式文本补全。
+// CompletionStreamRaw performs a streaming text completion with raw request body.
 func (p *AnthropicProvider) CompletionStreamRaw(ctx context.Context, rawBody []byte) (io.ReadCloser, error) {
 	var req CompletionRequest
 	if err := json.Unmarshal(rawBody, &req); err != nil {
@@ -293,12 +293,12 @@ func (p *AnthropicProvider) EmbeddingRaw(_ context.Context, _ []byte) ([]byte, *
 	return nil, nil, &Error{StatusCode: 404, Message: "Anthropic does not support Embeddings API"} //nolint:mnd // intentional constant.
 }
 
-// ResponsesRaw 返回不支持错误（Anthropic 不支持 Responses API）。
+// ResponsesRaw returns an unsupported error (Anthropic does not support Responses API).
 func (p *AnthropicProvider) ResponsesRaw(_ context.Context, _ []byte) ([]byte, *Usage, error) {
 	return nil, nil, &Error{StatusCode: 404, Message: "Anthropic does not support Responses API"} //nolint:mnd // intentional constant.
 }
 
-// ResponsesStreamRaw 返回不支持错误（Anthropic 不支持 Responses API）。
+// ResponsesStreamRaw returns an unsupported error (Anthropic does not support Responses API).
 func (p *AnthropicProvider) ResponsesStreamRaw(_ context.Context, _ []byte) (io.ReadCloser, error) {
 	return nil, &Error{StatusCode: 404, Message: "Anthropic does not support Responses API"} //nolint:mnd // intentional constant.
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// ==================== UserListQuery 测试 ====================
+// ==================== UserListQuery tests ====================
 
 func TestUserListQuery_GetPage(t *testing.T) {
 	tests := []struct {
@@ -14,11 +14,11 @@ func TestUserListQuery_GetPage(t *testing.T) {
 		page     int
 		expected int
 	}{
-		{"默认页码-0", 0, 1},
-		{"默认页码-负数", -1, 1},
-		{"正常页码-1", 1, 1},
-		{"正常页码-10", 10, 10},
-		{"大页码-999", 999, 999},
+		{"default page - 0", 0, 1},
+		{"default page - negative", -1, 1},
+		{"normal page - 1", 1, 1},
+		{"normal page - 10", 10, 10},
+		{"large page - 999", 999, 999},
 	}
 
 	for _, tt := range tests {
@@ -35,13 +35,13 @@ func TestUserListQuery_GetPageSize(t *testing.T) {
 		pageSize int
 		expected int
 	}{
-		{"默认大小-0", 0, 20},
-		{"默认大小-负数", -1, 20},
-		{"正常大小-1", 1, 1},
-		{"正常大小-50", 50, 50},
-		{"最大大小-100", 100, 100},
-		{"超过最大-101", 101, 100},
-		{"超过最大-200", 200, 100},
+		{"default size - 0", 0, 20},
+		{"default size - negative", -1, 20},
+		{"normal size - 1", 1, 1},
+		{"normal size - 50", 50, 50},
+		{"max size - 100", 100, 100},
+		{"exceeds max - 101", 101, 100},
+		{"exceeds max - 200", 200, 100},
 	}
 
 	for _, tt := range tests {
@@ -52,7 +52,7 @@ func TestUserListQuery_GetPageSize(t *testing.T) {
 	}
 }
 
-// ==================== RankingQuery 测试 ====================
+// ==================== RankingQuery tests ====================
 
 func TestRankingQuery_GetLimit(t *testing.T) {
 	tests := []struct {
@@ -60,12 +60,12 @@ func TestRankingQuery_GetLimit(t *testing.T) {
 		limit    int
 		expected int
 	}{
-		{"默认限制-0", 0, 10},
-		{"默认限制-负数", -1, 10},
-		{"默认限制--10", -10, 10},
-		{"正常限制-1", 1, 1},
-		{"正常限制-50", 50, 50},
-		{"最大限制-100", 100, 100},
+		{"default limit - 0", 0, 10},
+		{"default limit - negative", -1, 10},
+		{"default limit - -10", -10, 10},
+		{"normal limit - 1", 1, 1},
+		{"normal limit - 50", 50, 50},
+		{"max limit - 100", 100, 100},
 	}
 
 	for _, tt := range tests {
@@ -76,7 +76,7 @@ func TestRankingQuery_GetLimit(t *testing.T) {
 	}
 }
 
-// ==================== AuditLogQuery 测试 ====================
+// ==================== AuditLogQuery tests ====================
 
 func TestAuditLogQuery_GetPage(t *testing.T) {
 	tests := []struct {
@@ -84,10 +84,10 @@ func TestAuditLogQuery_GetPage(t *testing.T) {
 		page     int
 		expected int
 	}{
-		{"默认页码-0", 0, 1},
-		{"默认页码-负数", -1, 1},
-		{"正常页码-1", 1, 1},
-		{"正常页码-5", 5, 5},
+		{"default page - 0", 0, 1},
+		{"default page - negative", -1, 1},
+		{"normal page - 1", 1, 1},
+		{"normal page - 5", 5, 5},
 	}
 
 	for _, tt := range tests {
@@ -104,13 +104,13 @@ func TestAuditLogQuery_GetPageSize(t *testing.T) {
 		pageSize int
 		expected int
 	}{
-		{"默认大小-0", 0, 20},
-		{"默认大小-负数", -5, 20},
-		{"正常大小-1", 1, 1},
-		{"正常大小-50", 50, 50},
-		{"最大大小-100", 100, 100},
-		{"超过最大-101", 101, 100},
-		{"超过最大-1000", 1000, 100},
+		{"default size - 0", 0, 20},
+		{"default size - negative", -5, 20},
+		{"normal size - 1", 1, 1},
+		{"normal size - 50", 50, 50},
+		{"max size - 100", 100, 100},
+		{"exceeds max - 101", 101, 100},
+		{"exceeds max - 1000", 1000, 100},
 	}
 
 	for _, tt := range tests {
@@ -121,7 +121,7 @@ func TestAuditLogQuery_GetPageSize(t *testing.T) {
 	}
 }
 
-// ==================== 结构体字段验证测试 ====================
+// ==================== Struct field validation tests ====================
 
 func TestLoginRequest_StructFields(t *testing.T) {
 	r := &LoginRequest{

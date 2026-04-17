@@ -30,8 +30,8 @@ describe('departmentService', () => {
 
   const mockDept: DeptTree = {
     id: 1,
-    name: '技术部',
-    description: '技术研发部门',
+    name: 'Engineering',
+    description: 'Engineering and R&D department',
     user_count: 10,
     status: 1,
     children: [],
@@ -44,14 +44,14 @@ describe('departmentService', () => {
         children: [
           {
             id: 2,
-            name: '前端组',
+            name: 'Frontend Team',
             user_count: 5,
             status: 1,
             children: [],
           },
           {
             id: 3,
-            name: '后端组',
+            name: 'Backend Team',
             user_count: 5,
             status: 1,
             children: [],
@@ -109,27 +109,27 @@ describe('departmentService', () => {
       {
         desc: 'full data',
         data: {
-          name: '新产品部',
-          description: '产品研发部门',
+          name: 'New Product Department',
+          description: 'Product R&D department',
           parent_id: 1,
           manager_id: 2,
         } as CreateDepartmentParams,
       },
       {
         desc: 'minimal data',
-        data: { name: '简单部门' } as CreateDepartmentParams,
+        data: { name: 'Simple Department' } as CreateDepartmentParams,
       },
       {
         desc: 'with description only',
         data: {
-          name: '有描述的部门',
-          description: '部门描述',
+          name: 'Department with Description',
+          description: 'Department description',
         } as CreateDepartmentParams,
       },
       {
         desc: 'with parent only',
         data: {
-          name: '子部门',
+          name: 'Sub Department',
           parent_id: 1,
         } as CreateDepartmentParams,
       },
@@ -150,10 +150,10 @@ describe('departmentService', () => {
 
   describe('update', () => {
     it.each([
-      { desc: 'name only', data: { name: '新名称' } },
-      { desc: 'description only', data: { description: '新描述' } },
+      { desc: 'name only', data: { name: 'New Name' } },
+      { desc: 'description only', data: { description: 'New Description' } },
       { desc: 'manager only', data: { manager_id: 5 } },
-      { desc: 'multiple fields', data: { name: '新名称', description: '新描述', manager_id: 3 } },
+      { desc: 'multiple fields', data: { name: 'New Name', description: 'New Description', manager_id: 3 } },
     ])('should update department with $desc', async ({ data }) => {
       const deptId = 1;
       const mockResponse: ApiResponse<null> = {

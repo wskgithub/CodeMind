@@ -341,7 +341,7 @@ export default {
     confirmEnable: 'Confirm enable this API Key?',
   },
 
-  // 用量统计
+  // Usage statistics
   usage: {
     title: 'Usage Statistics',
     description: 'View detailed usage data including token consumption and request counts',
@@ -407,7 +407,7 @@ export default {
     },
   },
 
-  // 模型服务
+  // Model services
   models: {
     title: 'Model Services',
     description: 'View available LLM models',
@@ -616,7 +616,7 @@ export default {
     createSuccess: 'User created successfully',
   },
 
-  // 部门管理
+  // Department management
   departments: {
     title: 'Department Management',
     description: 'Manage organization department structure',
@@ -651,7 +651,7 @@ export default {
     confirmDelete: 'Confirm delete department {{name}}?',
   },
 
-  // 限额管理
+  // Limit management
   limits: {
     title: 'Limits Management',
     description: 'Configure global, department, and user token limits',
@@ -713,7 +713,7 @@ export default {
     formatHoursMonthly: '720 hours (Monthly)',
   },
 
-  // LLM 节点管理
+  // LLM node management
   backends: {
     title: 'LLM Nodes',
     pageTitle: 'LLM Node Management',
@@ -794,7 +794,7 @@ export default {
     },
   },
 
-  // 模型模板
+  // Provider templates
   templates: {
     title: 'Provider Templates',
     pageTitle: 'Provider Template Management',
@@ -840,7 +840,7 @@ export default {
     },
   },
 
-  // MCP 服务管理
+  // MCP service management
   mcp: {
     title: 'MCP Services',
     pageTitle: 'MCP Service Management',
@@ -920,7 +920,7 @@ export default {
     },
   },
 
-  // 平台配置
+  // Platform settings
   platform: {
     title: 'Platform Settings',
     description: 'Configure platform parameters and security policies',
@@ -935,7 +935,7 @@ export default {
     endpointHint: 'Different protocols use different endpoint paths',
   },
 
-  // 系统管理
+  // System management
   system: {
     title: 'System Management',
     pageDescription: 'Manage system configuration, announcements, and audit logs',
@@ -1019,7 +1019,7 @@ export default {
     },
   },
 
-  // 系统监控
+  // System monitoring
   monitor: {
     title: 'System Monitor',
     description: 'Real-time monitoring of system resources and service status',
@@ -1101,7 +1101,7 @@ export default {
     },
   },
 
-  // 文档管理
+  // Documentation management
   docsAdmin: {
     title: 'Documentation Admin',
     description: 'Manage platform documentation and guides',
@@ -1185,7 +1185,7 @@ export default {
     },
   },
 
-  // 用户端接入文档
+  // User-facing documentation
   docs: {
     title: 'Documentation',
     sidebarTitle: 'Documentation',
@@ -1209,7 +1209,7 @@ export default {
     },
   },
 
-  // 训练数据
+  // Training data
   training: {
     title: 'Training Data',
     pageTitle: 'Training Data Management',

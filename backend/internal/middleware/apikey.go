@@ -28,7 +28,7 @@ type APIKeyInfo struct {
 	UserStatus   int16  `json:"user_status"`
 }
 
-// API Key 认证中间件上下文键。
+// Context keys for API Key authentication middleware.
 const (
 	CtxKeyAPIKeyID    = "api_key_id"
 	CtxKeyAPIKeyInfo  = "api_key_info"

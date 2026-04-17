@@ -1,4 +1,4 @@
-// Package errcode 定义统一错误码。
+// Package errcode defines unified error codes.
 package errcode
 
 import "net/http"
@@ -24,7 +24,7 @@ func (e *ErrCode) WithMessage(msg string) *ErrCode {
 	}
 }
 
-// Success 表示操作成功。
+// Success indicates a successful operation.
 var Success = &ErrCode{Code: 0, Message: "success", HTTP: http.StatusOK}
 
 // Authentication errors (40001-40099).

@@ -372,7 +372,7 @@ const DashboardLayout: React.FC = () => {
           />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* 语言切换 */}
+            {/* Language switch */}
             <div
               style={{
                 display: 'inline-flex',
@@ -417,7 +417,7 @@ const DashboardLayout: React.FC = () => {
               })}
             </div>
 
-            {/* 主题切换 */}
+            {/* Theme toggle */}
             <Tooltip title={themeMode === 'dark' ? t('theme.toggleLight') : t('theme.toggleDark')}>
               <Button
                 type="text"

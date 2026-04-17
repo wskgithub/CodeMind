@@ -44,43 +44,43 @@ export interface UpdateDocumentRequest {
 }
 
 class DocumentService {
-  /** 获取已发布的文档列表 */
+  /** Get list of published documents */
   async list(): Promise<DocumentListItem[]> {
     const response = await request.get('/docs');
     return response.data?.data || [];
   }
 
-  /** 根据 slug 获取文档详情 */
+  /** Get document details by slug */
   async getBySlug(slug: string): Promise<Document | null> {
     const response = await request.get(`/docs/${slug}`);
     return response.data?.data || null;
   }
 
-  /** 获取所有文档（管理接口） */
+  /** Get all documents (admin API) */
   async listAll(): Promise<Document[]> {
     const response = await request.get('/docs/admin');
     return response.data?.data || [];
   }
 
-  /** 根据 ID 获取文档详情（管理接口） */
+  /** Get document details by ID (admin API) */
   async getById(id: number): Promise<Document | null> {
     const response = await request.get(`/docs/admin/${id}`);
     return response.data?.data || null;
   }
 
-  /** 创建文档 */
+  /** Create a document */
   async create(data: CreateDocumentRequest): Promise<Document> {
     const response = await request.post('/docs/admin', data);
     return response.data?.data;
   }
 
-  /** 更新文档 */
+  /** Update a document */
   async update(id: number, data: UpdateDocumentRequest): Promise<Document> {
     const response = await request.put(`/docs/admin/${id}`, data);
     return response.data?.data;
   }
 
-  /** 删除文档 */
+  /** Delete a document */
   async delete(id: number): Promise<void> {
     await request.delete(`/docs/admin/${id}`);
   }

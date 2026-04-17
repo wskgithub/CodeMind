@@ -25,7 +25,7 @@ func NewStatsHandler(statsService *service.StatsService) *StatsHandler {
 	return &StatsHandler{statsService: statsService}
 }
 
-// Overview 获取统计概览 (GET /api/v1/stats/overview)。
+// Overview returns the statistics overview (GET /api/v1/stats/overview).
 func (h *StatsHandler) Overview(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	role := middleware.GetUserRole(c)
@@ -40,7 +40,7 @@ func (h *StatsHandler) Overview(c *gin.Context) {
 	response.Success(c, overview)
 }
 
-// Usage 获取用量统计 (GET /api/v1/stats/usage)。
+// Usage returns usage statistics (GET /api/v1/stats/usage).
 func (h *StatsHandler) Usage(c *gin.Context) {
 	var query dto.StatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -61,7 +61,7 @@ func (h *StatsHandler) Usage(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// Ranking 获取用量排行 (GET /api/v1/stats/ranking)。
+// Ranking returns usage rankings (GET /api/v1/stats/ranking).
 func (h *StatsHandler) Ranking(c *gin.Context) {
 	var query dto.RankingQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -86,7 +86,7 @@ func (h *StatsHandler) Ranking(c *gin.Context) {
 	response.Success(c, items)
 }
 
-// KeyUsageSummary 获取 API Key 用量汇总 (GET /api/v1/stats/key-usage)。
+// KeyUsageSummary returns API Key usage summary (GET /api/v1/stats/key-usage).
 func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
 	var query dto.KeyUsageQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -107,7 +107,7 @@ func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// ExportCSV 导出统计数据为 CSV (GET /api/v1/stats/export/csv)。
+// ExportCSV exports usage statistics as CSV (GET /api/v1/stats/export/csv).
 func (h *StatsHandler) ExportCSV(c *gin.Context) {
 	var query dto.StatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

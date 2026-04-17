@@ -38,7 +38,7 @@ describe('authService', () => {
       user: {
         id: 1,
         username: 'admin',
-        display_name: '管理员',
+        display_name: 'Admin',
         role: 'super_admin',
       },
     };
@@ -85,7 +85,7 @@ describe('authService', () => {
     const userDetail: UserDetail = {
       id: 1,
       username: 'admin',
-      display_name: '管理员',
+      display_name: 'Admin',
       email: 'admin@example.com',
       phone: '13800138000',
       role: 'super_admin',
@@ -111,7 +111,7 @@ describe('authService', () => {
 
   describe('updateProfile', () => {
     const updateData = {
-      display_name: '新名称',
+      display_name: 'New Name',
       email: 'new@example.com',
       phone: '13900139000',
     };
@@ -138,7 +138,7 @@ describe('authService', () => {
       };
       mockRequest.put.mockResolvedValue({ data: mockResponse });
 
-      const partialData = { display_name: '仅更新名称' };
+      const partialData = { display_name: 'Name Only Update' };
       await authService.updateProfile(partialData);
 
       expect(mockRequest.put).toHaveBeenCalledWith('/auth/profile', partialData);

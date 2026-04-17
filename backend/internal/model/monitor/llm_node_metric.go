@@ -34,7 +34,7 @@ func (LLMNodeMetric) TableName() string {
 	return "llm_node_metrics"
 }
 
-// 节点状态常量。
+// Node status constants.
 const (
 	NodeStatusOnline  = "online"
 	NodeStatusOffline = "offline"

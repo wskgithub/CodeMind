@@ -26,7 +26,7 @@ func (LLMBackend) TableName() string {
 	return "llm_backends"
 }
 
-// LLM 后端状态常量。
+// LLM backend status constants.
 const (
 	LLMBackendDisabled = 0
 	LLMBackendEnabled  = 1

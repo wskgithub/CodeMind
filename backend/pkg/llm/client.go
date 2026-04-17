@@ -282,7 +282,7 @@ func (c *Client) doRequestRaw(method, path string, rawBody []byte, isStream bool
 	return resp.Body, nil
 }
 
-// Error 表示 LLM 服务错误。
+// Error represents an LLM service error.
 type Error struct {
 	Message    string
 	Body       []byte

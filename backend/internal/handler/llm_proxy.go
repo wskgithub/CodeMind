@@ -34,7 +34,7 @@ func NewLLMProxyHandler(proxyService *service.LLMProxyService, logger *zap.Logge
 	}
 }
 
-// ChatCompletions 处理聊天补全请求 (POST /api/openai/v1/chat/completions)。
+// ChatCompletions handles chat completion requests (POST /api/openai/v1/chat/completions).
 func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -156,7 +156,7 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// Completions 处理文本补全请求 (POST /api/openai/v1/completions)。
+// Completions handles text completion requests (POST /api/openai/v1/completions).
 func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -291,7 +291,7 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, true, rawBody, llm.AssembleCompletionResponse(result), result.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// ListModels 获取模型列表 (GET /api/openai/v1/models)。
+// ListModels returns the list of available models (GET /api/openai/v1/models).
 func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	provider, err := h.proxyService.GetProviderManager().GetDefault()
 	if err != nil {
@@ -306,7 +306,7 @@ func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// RetrieveModel 获取指定模型信息 (GET /api/openai/v1/models/:model)。
+// RetrieveModel returns information for a specific model (GET /api/openai/v1/models/:model).
 func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	modelID := c.Param("model")
 	if modelID == "" {
@@ -333,7 +333,7 @@ func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// Embeddings 处理嵌入请求 (POST /api/openai/v1/embeddings)。
+// Embeddings handles embedding requests (POST /api/openai/v1/embeddings).
 func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -403,7 +403,7 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 // OpenAI Responses API
 // ──────────────────────────────────
 
-// Responses 处理 Responses API 请求 (POST /api/openai/v1/responses)。
+// Responses handles Responses API requests (POST /api/openai/v1/responses).
 func (h *LLMProxyHandler) Responses(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -516,7 +516,7 @@ func (h *LLMProxyHandler) handleStreamResponses(
 	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, true, rawBody, nil, streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// AnthropicMessages 处理 Anthropic 消息请求 (POST /api/anthropic/v1/messages)。
+// AnthropicMessages handles Anthropic message requests (POST /api/anthropic/v1/messages).
 func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)

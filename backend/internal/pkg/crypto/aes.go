@@ -1,4 +1,4 @@
-// Package crypto 提供加密和密钥生成工具。
+// Package crypto provides encryption and key generation utilities.
 package crypto
 
 import (

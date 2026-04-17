@@ -1,4 +1,4 @@
-// Package router 定义 HTTP 路由和中间件注册。
+// Package router defines HTTP routes and middleware registration.
 package router
 
 import (
@@ -58,7 +58,7 @@ func Setup(
 		c.JSON(200, gin.H{"status": "ok"}) //nolint:mnd // intentional constant.
 	})
 
-	// 静态文件服务（上传的图片等资源）
+	// Static file serving (uploaded images and other assets)
 	engine.Static("/uploads", uploadDir)
 
 	// Management API (/api/v1)

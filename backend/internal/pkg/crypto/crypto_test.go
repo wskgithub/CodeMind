@@ -5,75 +5,75 @@ import (
 	"testing"
 )
 
-// TestHashPassword 测试密码哈希.
+// TestHashPassword tests password hashing.
 func TestHashPassword(t *testing.T) {
 	password := "Test@12345"
 	hash, err := HashPassword(password)
 	if err != nil {
-		t.Fatalf("密码哈希失败: %v", err)
+		t.Fatalf("password hashing failed: %v", err)
 	}
 
 	if hash == "" {
-		t.Fatal("哈希结果不能为空")
+		t.Fatal("hash result should not be empty")
 	}
 
-	// 哈希值不应与原文相同
+	// Hash should not equal the original text
 	if hash == password {
-		t.Fatal("哈希值不应与原文相同")
+		t.Fatal("hash should not equal the original text")
 	}
 }
 
-// TestCheckPassword 测试密码校验.
+// TestCheckPassword tests password verification.
 func TestCheckPassword(t *testing.T) {
 	password := "Test@12345"
 	hash, _ := HashPassword(password)
 
-	// 正确密码
+	// Correct password
 	if !CheckPassword(password, hash) {
-		t.Error("正确密码应通过校验")
+		t.Error("correct password should pass verification")
 	}
 
-	// 错误密码
+	// Wrong password
 	if CheckPassword("WrongPassword", hash) {
-		t.Error("错误密码不应通过校验")
+		t.Error("wrong password should not pass verification")
 	}
 }
 
-// TestGenerateAPIKey 测试 API Key 生成.
+// TestGenerateAPIKey tests API Key generation.
 func TestGenerateAPIKey(t *testing.T) {
 	fullKey, prefix, hash, err := GenerateAPIKey()
 	if err != nil {
-		t.Fatalf("生成 API Key 失败: %v", err)
+		t.Fatalf("failed to generate API Key: %v", err)
 	}
 
-	// 检查完整 Key 的前缀格式
+	// Verify complete key prefix format
 	if !strings.HasPrefix(fullKey, "cm-") {
-		t.Errorf("Key 应以 'cm-' 开头，实际: %s", fullKey)
+		t.Errorf("key should start with 'cm-', got: %s", fullKey)
 	}
 
-	// 检查 Key 长度：cm- + 64 hex = 67 字符
+	// Verify key length: cm- + 64 hex = 67 characters
 	if len(fullKey) != 67 {
-		t.Errorf("Key 长度应为 67，实际: %d", len(fullKey))
+		t.Errorf("key length should be 67, got: %d", len(fullKey))
 	}
 
-	// 检查前缀格式：cm-前8位
+	// Verify prefix format: cm- followed by first 8 chars
 	if !strings.HasPrefix(prefix, "cm-") {
-		t.Errorf("前缀格式不正确: %s", prefix)
+		t.Errorf("prefix format is incorrect: %s", prefix)
 	}
 
-	// 检查哈希不为空
+	// Verify hash is not empty
 	if hash == "" {
-		t.Fatal("哈希结果不能为空")
+		t.Fatal("hash result should not be empty")
 	}
 
-	// 用同一个 Key 重新哈希应得到相同结果
+	// Re-hashing the same key should produce the same result
 	rehash := HashAPIKey(fullKey)
 	if rehash != hash {
-		t.Error("相同 Key 的哈希值应一致")
+		t.Error("same key should produce the same hash")
 	}
 }
 
-// TestHashAPIKey 测试 API Key 哈希.
+// TestHashAPIKey tests API Key hashing.
 func TestHashAPIKey(t *testing.T) {
 	key1 := "cm-abcdef1234567890abcdef12345678"
 	key2 := "cm-abcdef1234567890abcdef12345679"
@@ -81,27 +81,27 @@ func TestHashAPIKey(t *testing.T) {
 	hash1 := HashAPIKey(key1)
 	hash2 := HashAPIKey(key2)
 
-	// 不同 Key 应产生不同哈希
+	// Different keys should produce different hashes
 	if hash1 == hash2 {
-		t.Error("不同 Key 应产生不同哈希")
+		t.Error("different keys should produce different hashes")
 	}
 
-	// 相同 Key 应产生相同哈希
+	// Same key should produce same hash
 	if HashAPIKey(key1) != hash1 {
-		t.Error("相同 Key 应产生相同哈希")
+		t.Error("same key should produce the same hash")
 	}
 }
 
-// TestGenerateAPIKeyUniqueness 测试 API Key 唯一性.
+// TestGenerateAPIKeyUniqueness tests API Key uniqueness.
 func TestGenerateAPIKeyUniqueness(t *testing.T) {
 	keys := make(map[string]bool)
 	for i := 0; i < 100; i++ {
 		key, _, _, err := GenerateAPIKey()
 		if err != nil {
-			t.Fatalf("生成 API Key 失败: %v", err)
+			t.Fatalf("failed to generate API Key: %v", err)
 		}
 		if keys[key] {
-			t.Fatalf("生成了重复的 Key: %s", key)
+			t.Fatalf("generated duplicate key: %s", key)
 		}
 		keys[key] = true
 	}

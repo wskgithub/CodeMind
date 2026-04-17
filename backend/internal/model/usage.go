@@ -21,7 +21,7 @@ type TokenUsage struct {
 	CacheReadInputTokens     int       `gorm:"not null;default:0" json:"cache_read_input_tokens"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (TokenUsage) TableName() string {
 	return "token_usage"
 }
@@ -41,7 +41,7 @@ type TokenUsageDaily struct {
 	RequestCount             int       `gorm:"not null;default:0" json:"request_count"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (TokenUsageDaily) TableName() string {
 	return "token_usage_daily"
 }
@@ -62,7 +62,7 @@ type TokenUsageDailyKey struct {
 	RequestCount             int       `gorm:"not null;default:0" json:"request_count"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (TokenUsageDailyKey) TableName() string {
 	return "token_usage_daily_key"
 }
@@ -82,7 +82,7 @@ type RequestLog struct {
 	StatusCode   int       `gorm:"not null" json:"status_code"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (RequestLog) TableName() string {
 	return "request_logs"
 }
@@ -113,7 +113,7 @@ type LLMTrainingData struct {
 	IsStream             bool            `gorm:"not null;default:false" json:"is_stream"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (LLMTrainingData) TableName() string {
 	return "llm_training_data"
 }
@@ -147,7 +147,7 @@ type TrainingDataStats struct {
 	ExcludedCount     int64              `json:"excluded_count"`
 }
 
-// DistributionItem 表示按模型分布的使用量统计项。
+// DistributionItem represents a usage statistics item distributed by model.
 type DistributionItem struct {
 	Model string `json:"model"`
 	Count int64  `json:"count"`

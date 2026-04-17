@@ -1,2 +1,2 @@
-// Package service 实现业务逻辑层。
+// Package service implements the business logic layer.
 package service

@@ -1,6 +1,7 @@
 /**
- * 复制文本到剪贴板（兼容非 HTTPS / localhost 环境）
- * 生产环境若不是安全上下文，navigator.clipboard 可能不可用，此时降级到 document.execCommand('copy')
+ * Copy text to clipboard (compatible with non-HTTPS / localhost environments).
+ * Falls back to document.execCommand('copy') when navigator.clipboard is unavailable
+ * outside a secure context in production.
  */
 export const copyToClipboard = async (text: string): Promise<boolean> => {
   // prefer modern Clipboard API

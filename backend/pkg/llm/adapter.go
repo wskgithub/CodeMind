@@ -1,4 +1,4 @@
-// Package llm 提供 LLM 服务商的客户端封装和格式适配。
+// Package llm provides LLM provider client wrappers and format adapters.
 package llm
 
 import (
@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// 角色常量。
+// Role constants.
 const (
 	RoleSystem    = "system"
 	RoleUser      = "user"
@@ -18,21 +18,21 @@ const (
 	RoleTool      = "tool"
 )
 
-// 内容块类型常量。
+// Content block type constants.
 const (
 	ContentTypeText     = "text"
 	ContentTypeToolUse  = "tool_use"
 	ContentTypeThinking = "thinking"
 )
 
-// 结束原因常量。
+// Finish reason constants.
 const (
 	FinishReasonStop      = "stop"
 	FinishReasonEndTurn   = "end_turn"
 	FinishReasonToolCalls = "tool_calls"
 )
 
-// 工具选择策略常量。
+// Tool choice strategy constants.
 const (
 	ToolChoiceAuto     = "auto"
 	ToolChoiceRequired = "required"

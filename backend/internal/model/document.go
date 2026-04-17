@@ -2,7 +2,7 @@ package model
 
 import "time"
 
-// Document 表示一篇使用文档.
+// Document represents a usage document.
 type Document struct {
 	CreatedAt   time.Time  `gorm:"not null;autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time  `gorm:"not null;autoUpdateTime" json:"updated_at"`
@@ -17,12 +17,12 @@ type Document struct {
 	IsPublished bool       `gorm:"not null;default:false" json:"is_published"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (Document) TableName() string {
 	return "documents"
 }
 
-// DocumentListItem 文档列表项（不含正文）.
+// DocumentListItem represents a document list item without body content.
 type DocumentListItem struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	Slug        string    `json:"slug"`

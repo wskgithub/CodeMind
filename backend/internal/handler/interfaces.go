@@ -9,7 +9,7 @@ import (
 	jwtPkg "codemind/internal/pkg/jwt"
 )
 
-// DocumentService 文档服务接口.
+// DocumentService defines the document service interface.
 type DocumentService interface {
 	List() ([]model.DocumentListItem, error)
 	GetBySlug(slug string) (*model.Document, error)

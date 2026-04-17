@@ -5,7 +5,7 @@ import { initReactI18next } from 'react-i18next';
 import enUS from './locales/en-US';
 import zhCN from './locales/zh-CN';
 
-// 支持的语言列表（用于 UI 切换器与校验）
+// Supported languages (for UI switcher and validation)
 export const SUPPORTED_LANGUAGES = [
   { code: 'zh-CN', name: '简体中文', nativeName: '简体中文' },
   { code: 'en-US', name: 'English', nativeName: 'English' },
@@ -20,7 +20,7 @@ const resources = {
   'en-US': { translation: enUS },
 };
 
-// 从语言标签推导回退语言（例如 zh 或 zh-HK -> zh-CN）
+// Normalize language tag to a supported locale (e.g. zh or zh-HK -> zh-CN)
 const normalizeLanguage = (lang: string | undefined): SupportedLanguage => {
   if (!lang) return 'zh-CN';
   if (lang.toLowerCase().startsWith('zh')) return 'zh-CN';
@@ -37,7 +37,7 @@ i18n
     supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
     load: 'currentOnly',
     interpolation: {
-      escapeValue: false, // React 已内置 XSS 防御
+      escapeValue: false, // React handles XSS protection
     },
     detection: {
       order: ['localStorage', 'navigator'],
@@ -47,10 +47,10 @@ i18n
     returnNull: false,
   })
   .catch(() => {
-    // 初始化失败静默处理，回退到默认语言
+    // Silently handle init failure, fall back to default language
   });
 
-// 确保 i18n 初始语言符合支持列表
+// Ensure initial i18n language is in the supported list
 const initialLang = normalizeLanguage(i18n.language);
 if (initialLang !== i18n.language) {
   i18n.changeLanguage(initialLang);

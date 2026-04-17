@@ -1,2 +1,2 @@
-// Package middleware 提供 HTTP 中间件。
+// Package middleware provides HTTP middleware.
 package middleware

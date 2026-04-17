@@ -5,62 +5,62 @@ import (
 	"testing"
 )
 
-// TestErrCodeError 测试错误码实现 error 接口
+// TestErrCodeError tests error code implements the error interface.
 func TestErrCodeError(t *testing.T) {
 	err := ErrInvalidCredentials
 	if err.Error() != "invalid username or password" {
-		t.Errorf("Error() 返回值不正确: %s", err.Error())
+		t.Errorf("Error() returned incorrect value: %s", err.Error())
 	}
 }
 
-// TestWithMessage 测试自定义消息
+// TestWithMessage tests custom error message override.
 func TestWithMessage(t *testing.T) {
 	original := ErrInvalidParams
-	custom := original.WithMessage("自定义消息")
+	custom := original.WithMessage("custom message")
 
-	// 自定义消息应生效
-	if custom.Message != "自定义消息" {
-		t.Errorf("自定义消息未生效: %s", custom.Message)
+	// Custom message should take effect
+	if custom.Message != "custom message" {
+		t.Errorf("custom message not applied: %s", custom.Message)
 	}
 
-	// Code 应保持不变
+	// Code should remain unchanged
 	if custom.Code != original.Code {
-		t.Errorf("Code 不应改变: %d != %d", custom.Code, original.Code)
+		t.Errorf("Code should not change: %d != %d", custom.Code, original.Code)
 	}
 
-	// HTTP 状态码应保持不变
+	// HTTP status code should remain unchanged
 	if custom.HTTP != original.HTTP {
-		t.Errorf("HTTP 状态码不应改变: %d != %d", custom.HTTP, original.HTTP)
+		t.Errorf("HTTP status code should not change: %d != %d", custom.HTTP, original.HTTP)
 	}
 
-	// 原始错误不应被修改
+	// Original error should not be modified
 	if original.Message != "invalid parameters" {
-		t.Error("原始错误不应被修改")
+		t.Error("original error should not be modified")
 	}
 }
 
-// TestHTTPStatusMapping 测试错误码到 HTTP 状态码映射
+// TestHTTPStatusMapping tests error code to HTTP status code mapping.
 func TestHTTPStatusMapping(t *testing.T) {
 	tests := []struct {
 		name   string
 		err    *ErrCode
 		status int
 	}{
-		{"认证失败", ErrInvalidCredentials, http.StatusUnauthorized},
-		{"账号禁用", ErrAccountDisabled, http.StatusForbidden},
-		{"无权访问", ErrForbidden, http.StatusForbidden},
-		{"参数错误", ErrInvalidParams, http.StatusBadRequest},
-		{"用户名已存在", ErrUsernameExists, http.StatusConflict},
-		{"Token 超限", ErrTokenQuotaExceeded, http.StatusTooManyRequests},
-		{"内部错误", ErrInternal, http.StatusInternalServerError},
-		{"LLM 不可用", ErrLLMUnavailable, http.StatusBadGateway},
-		{"API Key 不可复制", ErrAPIKeyNotCopyable, http.StatusBadRequest},
+		{"invalid credentials", ErrInvalidCredentials, http.StatusUnauthorized},
+		{"account disabled", ErrAccountDisabled, http.StatusForbidden},
+		{"access denied", ErrForbidden, http.StatusForbidden},
+		{"invalid params", ErrInvalidParams, http.StatusBadRequest},
+		{"username exists", ErrUsernameExists, http.StatusConflict},
+		{"token quota exceeded", ErrTokenQuotaExceeded, http.StatusTooManyRequests},
+		{"internal error", ErrInternal, http.StatusInternalServerError},
+		{"LLM unavailable", ErrLLMUnavailable, http.StatusBadGateway},
+		{"API key not copyable", ErrAPIKeyNotCopyable, http.StatusBadRequest},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.err.HTTP != tt.status {
-				t.Errorf("%s: HTTP 状态码 = %d, 预期 = %d", tt.name, tt.err.HTTP, tt.status)
+				t.Errorf("%s: HTTP status = %d, expected = %d", tt.name, tt.err.HTTP, tt.status)
 			}
 		})
 	}

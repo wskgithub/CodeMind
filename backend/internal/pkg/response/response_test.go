@@ -74,7 +74,7 @@ func TestSuccessWithPage(t *testing.T) {
 	pageData, ok := resp.Data.(map[string]interface{})
 	assert.True(t, ok)
 
-	// 验证分页信息
+	// Verify pagination info
 	pagination, ok := pageData["pagination"].(map[string]interface{})
 	assert.True(t, ok)
 	assert.Equal(t, float64(page), pagination["page"])
@@ -82,7 +82,7 @@ func TestSuccessWithPage(t *testing.T) {
 	assert.Equal(t, float64(total), pagination["total"])
 	assert.Equal(t, float64(3), pagination["total_pages"]) // 25/10 = 2.5 -> 3 pages
 
-	// 验证列表数据
+	// Verify list data
 	listData, ok := pageData["list"].([]interface{})
 	assert.True(t, ok)
 	assert.Len(t, listData, 3)
@@ -124,7 +124,7 @@ func TestError(t *testing.T) {
 
 	testErr := &errcode.ErrCode{
 		Code:    40001,
-		Message: "用户名或密码错误",
+		Message: "invalid username or password",
 		HTTP:    http.StatusUnauthorized,
 	}
 
@@ -136,7 +136,7 @@ func TestError(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, 40001, resp.Code)
-	assert.Equal(t, "用户名或密码错误", resp.Message)
+	assert.Equal(t, "invalid username or password", resp.Message)
 	assert.Nil(t, resp.Data)
 }
 
@@ -193,10 +193,10 @@ func TestErrorWithMsg(t *testing.T) {
 
 	testErr := &errcode.ErrCode{
 		Code:    40001,
-		Message: "用户名或密码错误",
+		Message: "invalid username or password",
 		HTTP:    http.StatusUnauthorized,
 	}
-	customMsg := "自定义错误消息"
+	customMsg := "custom error message"
 
 	ErrorWithMsg(c, testErr, customMsg)
 
@@ -213,7 +213,7 @@ func TestErrorWithMsg(t *testing.T) {
 func TestBadRequest(t *testing.T) {
 	c, w := setupTestContext()
 
-	msg := "缺少必填参数 user_id"
+	msg := "missing required parameter user_id"
 	BadRequest(c, msg)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -229,7 +229,7 @@ func TestBadRequest(t *testing.T) {
 func TestUnauthorized(t *testing.T) {
 	c, w := setupTestContext()
 
-	msg := "请先登录"
+	msg := "please login first"
 	Unauthorized(c, msg)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -245,7 +245,7 @@ func TestUnauthorized(t *testing.T) {
 func TestForbidden(t *testing.T) {
 	c, w := setupTestContext()
 
-	msg := "您没有权限执行此操作"
+	msg := "you do not have permission to perform this action"
 	Forbidden(c, msg)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)

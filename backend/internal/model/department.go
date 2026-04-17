@@ -17,7 +17,7 @@ type Department struct {
 	Status      int16        `gorm:"not null;default:1" json:"status"`
 }
 
-// TableName 返回数据库表名。
+// TableName returns the database table name.
 func (Department) TableName() string {
 	return "departments"
 }
