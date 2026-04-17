@@ -7,6 +7,7 @@ import {
   getLLMNodeMetrics,
   healthCheck,
 } from '../monitorService';
+import request from '../request';
 
 import type {
   ApiResponse,
@@ -22,9 +23,6 @@ vi.mock('../request', () => ({
     get: vi.fn(),
   },
 }));
-
-// eslint-disable-next-line import/first
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;
