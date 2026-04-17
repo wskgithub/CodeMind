@@ -1,8 +1,10 @@
+// Package response 提供统一的 HTTP 响应封装。
 package response
 
 import (
-	"codemind/internal/pkg/errcode"
 	"net/http"
+
+	"codemind/internal/pkg/errcode"
 
 	"github.com/gin-gonic/gin"
 )

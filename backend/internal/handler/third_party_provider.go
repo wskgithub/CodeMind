@@ -18,7 +18,7 @@ func NewThirdPartyProviderHandler(service ThirdPartyProviderService) *ThirdParty
 	return &ThirdPartyProviderHandler{service: service}
 }
 
-// GET /api/v1/system/provider-templates.
+// ListTemplatesAdmin 获取服务商模板列表-管理端 (GET /api/v1/system/provider-templates)。
 func (h *ThirdPartyProviderHandler) ListTemplatesAdmin(c *gin.Context) {
 	templates, err := h.service.ListTemplates()
 	if err != nil {
@@ -28,7 +28,7 @@ func (h *ThirdPartyProviderHandler) ListTemplatesAdmin(c *gin.Context) {
 	response.Success(c, templates)
 }
 
-// POST /api/v1/system/provider-templates.
+// CreateTemplate 创建服务商模板 (POST /api/v1/system/provider-templates)。
 func (h *ThirdPartyProviderHandler) CreateTemplate(c *gin.Context) {
 	var req dto.CreateProviderTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,7 +49,7 @@ func (h *ThirdPartyProviderHandler) CreateTemplate(c *gin.Context) {
 	response.Success(c, template)
 }
 
-// PUT /api/v1/system/provider-templates/:id.
+// UpdateTemplate 更新服务商模板 (PUT /api/v1/system/provider-templates/:id)。
 func (h *ThirdPartyProviderHandler) UpdateTemplate(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -75,7 +75,7 @@ func (h *ThirdPartyProviderHandler) UpdateTemplate(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DELETE /api/v1/system/provider-templates/:id.
+// DeleteTemplate 删除服务商模板 (DELETE /api/v1/system/provider-templates/:id)。
 func (h *ThirdPartyProviderHandler) DeleteTemplate(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -90,7 +90,7 @@ func (h *ThirdPartyProviderHandler) DeleteTemplate(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GET /api/v1/models/third-party.
+// ListProviders 获取第三方服务商列表 (GET /api/v1/models/third-party)。
 func (h *ThirdPartyProviderHandler) ListProviders(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	providers, err := h.service.ListProviders(userID)
@@ -101,7 +101,7 @@ func (h *ThirdPartyProviderHandler) ListProviders(c *gin.Context) {
 	response.Success(c, providers)
 }
 
-// POST /api/v1/models/third-party.
+// CreateProvider 创建第三方服务商 (POST /api/v1/models/third-party)。
 func (h *ThirdPartyProviderHandler) CreateProvider(c *gin.Context) {
 	var req dto.CreateThirdPartyProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -121,7 +121,7 @@ func (h *ThirdPartyProviderHandler) CreateProvider(c *gin.Context) {
 	response.Success(c, provider)
 }
 
-// PUT /api/v1/models/third-party/:id.
+// UpdateProvider 更新第三方服务商 (PUT /api/v1/models/third-party/:id)。
 func (h *ThirdPartyProviderHandler) UpdateProvider(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -146,7 +146,7 @@ func (h *ThirdPartyProviderHandler) UpdateProvider(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// PUT /api/v1/models/third-party/:id/status.
+// UpdateProviderStatus 更新第三方服务商状态 (PUT /api/v1/models/third-party/:id/status)。
 func (h *ThirdPartyProviderHandler) UpdateProviderStatus(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -168,7 +168,7 @@ func (h *ThirdPartyProviderHandler) UpdateProviderStatus(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DELETE /api/v1/models/third-party/:id.
+// DeleteProvider 删除第三方服务商 (DELETE /api/v1/models/third-party/:id)。
 func (h *ThirdPartyProviderHandler) DeleteProvider(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -184,7 +184,7 @@ func (h *ThirdPartyProviderHandler) DeleteProvider(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GET /api/v1/models/templates.
+// ListTemplatesForUser 获取服务商模板列表-用户端 (GET /api/v1/models/templates)。
 func (h *ThirdPartyProviderHandler) ListTemplatesForUser(c *gin.Context) {
 	templates, err := h.service.ListActiveTemplates()
 	if err != nil {
@@ -194,7 +194,7 @@ func (h *ThirdPartyProviderHandler) ListTemplatesForUser(c *gin.Context) {
 	response.Success(c, templates)
 }
 
-// GET /api/v1/models/platform.
+// ListPlatformModels 获取平台模型列表 (GET /api/v1/models/platform)。
 func (h *ThirdPartyProviderHandler) ListPlatformModels(c *gin.Context) {
 	models, err := h.service.ListPlatformModels()
 	if err != nil {

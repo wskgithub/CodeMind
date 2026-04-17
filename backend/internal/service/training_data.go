@@ -1,12 +1,13 @@
 package service
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/repository"
 	"encoding/json"
 	"fmt"
 	"io"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -119,7 +120,7 @@ func (s *TrainingDataService) convertChatToTraining(record model.LLMTrainingData
 		assistantContent = respBody.Choices[0].Message.Content
 	} else if respBody.Role == "assistant" && len(respBody.Content) > 0 {
 		for _, block := range respBody.Content {
-			if block.Type == "text" {
+			if block.Type == contentTypeText {
 				assistantContent += block.Text
 			}
 		}

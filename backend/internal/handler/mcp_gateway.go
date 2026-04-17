@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"codemind/internal/middleware"
-	"codemind/internal/service"
 	"fmt"
 	"net/http"
+
+	"codemind/internal/middleware"
+	"codemind/internal/service"
 
 	mcpPkg "codemind/pkg/mcp"
 

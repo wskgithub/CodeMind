@@ -1,12 +1,13 @@
 package repository
 
 import (
-	"codemind/internal/model/monitor"
 	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
+
+	"codemind/internal/model/monitor"
 
 	"gorm.io/gorm"
 )

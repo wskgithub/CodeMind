@@ -1,14 +1,15 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/validator"
 	"codemind/internal/repository"
-	"encoding/json"
-	"fmt"
 
 	"go.uber.org/zap"
 )
@@ -60,14 +61,16 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 		return nil, errcode.ErrDatabase
 	}
 	if existsIncludingDeleted {
-		if err := s.userRepo.HardDeleteSoftDeletedUser(req.Username); err != nil {
+		err = s.userRepo.HardDeleteSoftDeletedUser(req.Username)
+		if err != nil {
 			s.logger.Error("failed to hard delete soft-deleted user", zap.Error(err), zap.String("username", req.Username))
 			return nil, errcode.ErrDatabase
 		}
 	}
 
 	if req.Email != "" {
-		emailExists, err := s.userRepo.ExistsEmail(req.Email)
+		var emailExists bool
+		emailExists, err = s.userRepo.ExistsEmail(req.Email)
 		if err != nil {
 			return nil, errcode.ErrDatabase
 		}
@@ -75,12 +78,14 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 			return nil, errcode.ErrEmailExists
 		}
 
-		emailExistsIncludingDeleted, err := s.userRepo.ExistsEmailIncludingDeleted(req.Email)
+		var emailExistsIncludingDeleted bool
+		emailExistsIncludingDeleted, err = s.userRepo.ExistsEmailIncludingDeleted(req.Email)
 		if err != nil {
 			return nil, errcode.ErrDatabase
 		}
 		if emailExistsIncludingDeleted {
-			if err := s.userRepo.HardDeleteSoftDeletedUserByEmail(req.Email); err != nil {
+			err = s.userRepo.HardDeleteSoftDeletedUserByEmail(req.Email)
+			if err != nil {
 				s.logger.Error("failed to hard delete soft-deleted user", zap.Error(err), zap.String("email", req.Email))
 				return nil, errcode.ErrDatabase
 			}
@@ -98,7 +103,7 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 	}
 
 	if req.DepartmentID != nil {
-		_, err := s.deptRepo.FindByID(*req.DepartmentID)
+		_, err = s.deptRepo.FindByID(*req.DepartmentID)
 		if err != nil {
 			return nil, errcode.ErrDeptNotFound
 		}
@@ -130,7 +135,7 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 		return nil, errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionCreateUser, model.AuditTargetUser, &user.ID,
+	s.recordAudit(operatorID, model.AuditActionCreateUser, &user.ID,
 		map[string]interface{}{"username": req.Username, "role": req.Role}, clientIP)
 
 	return s.GetDetail(user.ID)
@@ -218,7 +223,7 @@ func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID in
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionUpdateUser, model.AuditTargetUser, &id, fields, clientIP)
+	s.recordAudit(operatorID, model.AuditActionUpdateUser, &id, fields, clientIP)
 
 	return nil
 }
@@ -238,7 +243,7 @@ func (s *UserService) Delete(id int64, operatorID int64, clientIP string) error 
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionDeleteUser, model.AuditTargetUser, &id,
+	s.recordAudit(operatorID, model.AuditActionDeleteUser, &id,
 		map[string]string{"username": user.Username}, clientIP)
 
 	return nil
@@ -266,7 +271,7 @@ func (s *UserService) UpdateStatus(id int64, status int16, operatorID int64, ope
 	if status == model.StatusDisabled {
 		action = model.AuditActionDisableUser
 	}
-	s.recordAudit(operatorID, action, model.AuditTargetUser, &id, nil, clientIP)
+	s.recordAudit(operatorID, action, &id, nil, clientIP)
 
 	return nil
 }
@@ -298,7 +303,7 @@ func (s *UserService) ResetPassword(id int64, newPassword string, operatorID int
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionResetPassword, model.AuditTargetUser, &id,
+	s.recordAudit(operatorID, model.AuditActionResetPassword, &id,
 		map[string]string{"username": user.Username}, clientIP)
 
 	return nil
@@ -327,7 +332,7 @@ func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionUnlockUser, model.AuditTargetUser, &id,
+	s.recordAudit(operatorID, model.AuditActionUnlockUser, &id,
 		map[string]interface{}{
 			"username": user.Username,
 			"reason":   reason,
@@ -355,7 +360,7 @@ func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operat
 		return nil, 0, errcode.ErrDatabase
 	}
 
-	var details []dto.UserDetail
+	details := make([]dto.UserDetail, 0, len(users))
 	for _, u := range users {
 		d := dto.UserDetail{
 			ID:             u.ID,
@@ -384,7 +389,7 @@ func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operat
 	return details, total, nil
 }
 
-func (s *UserService) recordAudit(operatorID int64, action, targetType string, targetID *int64, detail interface{}, clientIP string) {
+func (s *UserService) recordAudit(operatorID int64, action string, targetID *int64, detail interface{}, clientIP string) {
 	var detailJSON json.RawMessage
 	if detail != nil {
 		data, _ := json.Marshal(detail)
@@ -394,7 +399,7 @@ func (s *UserService) recordAudit(operatorID int64, action, targetType string, t
 	log := &model.AuditLog{
 		OperatorID: operatorID,
 		Action:     action,
-		TargetType: targetType,
+		TargetType: model.AuditTargetUser,
 		TargetID:   targetID,
 		Detail:     detailJSON,
 		ClientIP:   &clientIP,
@@ -423,7 +428,7 @@ func (s *UserService) ImportUsers(users []dto.CreateUserRequest, operatorID int6
 		successCount++
 	}
 
-	s.recordAudit(operatorID, model.AuditActionImportUsers, model.AuditTargetUser, nil,
+	s.recordAudit(operatorID, model.AuditActionImportUsers, nil,
 		map[string]interface{}{"total": len(users), "success": successCount, "failed": len(errors)}, clientIP)
 
 	return successCount, errors, nil

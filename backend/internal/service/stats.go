@@ -1,13 +1,15 @@
 package service
 
 import (
+	"sort"
+	"sync"
+	"time"
+
+	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/timezone"
 	"codemind/internal/repository"
-	"sort"
-	"sync"
-	"time"
 
 	"go.uber.org/zap"
 )
@@ -39,11 +41,11 @@ func NewStatsService(
 }
 
 // GetOverview returns usage overview with parallel queries.
-func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*dto.StatsOverview, error) {
+func (s *StatsService) GetOverview(userID *int64, role string, _ *int64) (*dto.StatsOverview, error) {
 	overview := &dto.StatsOverview{SystemStatus: "healthy"}
 
 	var filterUserID *int64
-	if role == "user" {
+	if role == model.RoleUser {
 		filterUserID = userID
 	}
 
@@ -70,7 +72,7 @@ func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*
 	go func() { defer wg.Done(); tpMonthTokens, _ = s.usageRepo.GetThirdPartyMonthTotalTokens(filterUserID) }()
 	go func() { defer wg.Done(); tpMonthRequests, _ = s.usageRepo.GetThirdPartyMonthRequestCount(filterUserID) }()
 
-	if role != "user" {
+	if role != model.RoleUser {
 		wg.Add(3) //nolint:mnd // intentional constant.
 		go func() { defer wg.Done(); totalUsers, _ = s.userRepo.CountAll() }()
 		go func() { defer wg.Done(); totalDepts, _ = s.deptRepo.CountAll() }()
@@ -106,10 +108,10 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 	var deptID *int64
 
 	switch operatorRole {
-	case "super_admin":
+	case model.RoleSuperAdmin:
 		userID = query.UserID
 		deptID = query.DepartmentID
-	case "dept_manager":
+	case model.RoleDeptManager:
 		if query.UserID != nil {
 			userID = query.UserID
 		}
@@ -118,7 +120,7 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 		userID = &operatorID
 	}
 
-	if query.Period != "daily" && query.Period != "weekly" && query.Period != "monthly" {
+	if query.Period != model.PeriodDaily && query.Period != model.PeriodWeekly && query.Period != model.PeriodMonthly {
 		return nil, errcode.ErrInvalidParams.WithMessage("invalid period")
 	}
 
@@ -133,11 +135,11 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 	go func() {
 		defer wg.Done()
 		switch query.Period {
-		case "daily":
+		case model.PeriodDaily:
 			platformRows, platformErr = s.usageRepo.GetDailyStats(userID, deptID, startDate, endDate)
-		case "weekly":
+		case model.PeriodWeekly:
 			platformRows, platformErr = s.usageRepo.GetWeeklyStats(userID, deptID, startDate, endDate)
-		case "monthly":
+		case model.PeriodMonthly:
 			platformRows, platformErr = s.usageRepo.GetMonthlyStats(userID, deptID, startDate, endDate)
 		}
 	}()
@@ -145,11 +147,11 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 	go func() {
 		defer wg.Done()
 		switch query.Period {
-		case "daily":
+		case model.PeriodDaily:
 			tpRows, tpErr = s.usageRepo.GetThirdPartyDailyStats(userID, deptID, startDate, endDate)
-		case "weekly":
+		case model.PeriodWeekly:
 			tpRows, tpErr = s.usageRepo.GetThirdPartyWeeklyStats(userID, deptID, startDate, endDate)
-		case "monthly":
+		case model.PeriodMonthly:
 			tpRows, tpErr = s.usageRepo.GetThirdPartyMonthlyStats(userID, deptID, startDate, endDate)
 		}
 	}()
@@ -225,7 +227,7 @@ func (s *StatsService) GetRanking(query *dto.RankingQuery, operatorDeptID *int64
 	var err error
 
 	switch query.Type {
-	case "user":
+	case model.RoleUser:
 		rows, err = s.usageRepo.GetUserRanking(operatorDeptID, startDate, endDate, limit)
 	case "department":
 		rows, err = s.usageRepo.GetDeptRanking(startDate, endDate, limit)
@@ -268,11 +270,11 @@ func (s *StatsService) parseDateRange(startStr, endStr, period string) (time.Tim
 	}
 	if startDate.IsZero() {
 		switch period {
-		case "daily":
+		case model.PeriodDaily:
 			startDate = now.AddDate(0, 0, -30)
-		case "weekly":
+		case model.PeriodWeekly:
 			startDate = now.AddDate(0, -3, 0)
-		case "monthly":
+		case model.PeriodMonthly:
 			startDate = now.AddDate(-1, 0, 0)
 		default:
 			startDate = now.AddDate(0, 0, -30)
@@ -285,10 +287,10 @@ func (s *StatsService) parseDateRange(startStr, endStr, period string) (time.Tim
 // getPeriodRange returns date range based on current time and period.
 func (s *StatsService) getPeriodRange(now time.Time, period string) (time.Time, time.Time) {
 	switch period {
-	case "daily":
+	case model.PeriodDaily:
 		start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		return start, now
-	case "weekly":
+	case model.PeriodWeekly:
 		weekday := int(now.Weekday())
 		if weekday == 0 {
 			weekday = 7
@@ -296,7 +298,7 @@ func (s *StatsService) getPeriodRange(now time.Time, period string) (time.Time, 
 		start := now.AddDate(0, 0, -(weekday - 1))
 		start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, now.Location())
 		return start, now
-	case "monthly":
+	case model.PeriodMonthly:
 		start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 		return start, now
 	default:
@@ -310,8 +312,8 @@ func (s *StatsService) GetKeyUsageSummary(query *dto.KeyUsageQuery, operatorRole
 	var deptID *int64
 
 	switch operatorRole {
-	case "super_admin":
-	case "dept_manager":
+	case model.RoleSuperAdmin:
+	case model.RoleDeptManager:
 		deptID = operatorDeptID
 	default:
 		userID = &operatorID
@@ -400,10 +402,10 @@ func (s *StatsService) ExportUsageStats(query *dto.StatsQuery, operatorRole stri
 	var deptID *int64
 
 	switch operatorRole {
-	case "super_admin":
+	case model.RoleSuperAdmin:
 		userID = query.UserID
 		deptID = query.DepartmentID
-	case "dept_manager":
+	case model.RoleDeptManager:
 		if query.UserID != nil {
 			userID = query.UserID
 		}

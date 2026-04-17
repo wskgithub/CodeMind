@@ -1,3 +1,4 @@
+// Package jwt 提供 JWT 令牌的生成、验证和黑名单管理。
 package jwt
 
 import (
@@ -104,7 +105,7 @@ func (m *Manager) Blacklist(ctx context.Context, jti string, expiration time.Tim
 	return m.rdb.Set(ctx, key, "1", ttl).Err()
 }
 
-// Fail-closed: returns true on Redis errors to prevent revoked tokens from being used.
+// IsBlacklisted 检查令牌是否在黑名单中。Redis 错误时返回 true（fail-closed），防止已吊销的令牌被使用。
 func (m *Manager) IsBlacklisted(ctx context.Context, jti string) bool {
 	key := fmt.Sprintf("codemind:jwt:blacklist:%s", jti)
 	result, err := m.rdb.Exists(ctx, key).Result()

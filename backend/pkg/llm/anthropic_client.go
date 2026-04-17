@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Anthropic API 版本常量。
 const (
 	AnthropicAPIVersion = "2023-06-01"
 )
@@ -126,11 +127,11 @@ func (c *AnthropicClient) doRequestRaw(path string, rawBody []byte, isStream boo
 
 		switch {
 		case resp.StatusCode == 429: //nolint:mnd // intentional constant.
-			return nil, &LLMError{StatusCode: 529, Message: "Anthropic service overloaded, please retry later", Body: bodyBytes} //nolint:mnd // intentional constant.
+			return nil, &Error{StatusCode: 529, Message: "Anthropic service overloaded, please retry later", Body: bodyBytes} //nolint:mnd // intentional constant.
 		case resp.StatusCode >= 500: //nolint:mnd // intentional constant.
-			return nil, &LLMError{StatusCode: 502, Message: "Anthropic service internal error", Body: bodyBytes} //nolint:mnd // intentional constant.
+			return nil, &Error{StatusCode: 502, Message: "Anthropic service internal error", Body: bodyBytes} //nolint:mnd // intentional constant.
 		default:
-			return nil, &LLMError{StatusCode: resp.StatusCode, Message: "Anthropic service request failed", Body: bodyBytes}
+			return nil, &Error{StatusCode: resp.StatusCode, Message: "Anthropic service request failed", Body: bodyBytes}
 		}
 	}
 

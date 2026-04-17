@@ -121,9 +121,9 @@ func TestLLMErrorHandling(t *testing.T) {
 		t.Fatal("应返回错误")
 	}
 
-	llmErr, ok := err.(*LLMError)
+	llmErr, ok := err.(*Error)
 	if !ok {
-		t.Fatalf("应返回 LLMError 类型, 实际: %T", err)
+		t.Fatalf("应返回 Error 类型, 实际: %T", err)
 	}
 
 	// 500 应映射为 502
@@ -150,7 +150,7 @@ func TestLLMRateLimitHandling(t *testing.T) {
 		t.Fatal("应返回错误")
 	}
 
-	llmErr := err.(*LLMError)
+	llmErr := err.(*Error)
 	// 429 应映射为 503
 	if llmErr.StatusCode != 503 {
 		t.Errorf("429 应映射为 503, 实际: %d", llmErr.StatusCode)

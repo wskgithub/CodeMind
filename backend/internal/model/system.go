@@ -16,6 +16,7 @@ func (SystemConfig) TableName() string {
 	return "system_configs"
 }
 
+// 系统配置键名常量。
 const (
 	ConfigLLMBaseURL                    = "llm.base_url"
 	ConfigLLMAPIKey                     = "llm.api_key"

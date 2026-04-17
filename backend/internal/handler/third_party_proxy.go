@@ -3,14 +3,15 @@ package handler
 import (
 	"bufio"
 	"bytes"
-	"codemind/internal/model"
-	"codemind/pkg/llm"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/pkg/llm"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -119,7 +120,7 @@ func (h *LLMProxyHandler) pipeThirdPartyNonStreamResponse(
 func (h *LLMProxyHandler) pipeThirdPartyStreamResponse(
 	c *gin.Context, resp *http.Response,
 	route *model.ThirdPartyRouteInfo, meta *llm.RequestMeta,
-	requestBody []byte, requestFormat string, userID, apiKeyID int64, startTime time.Time,
+	requestBody []byte, _ string, userID, apiKeyID int64, startTime time.Time,
 ) {
 	for key, vals := range resp.Header {
 		for _, v := range vals {
@@ -177,7 +178,7 @@ func (h *LLMProxyHandler) pipeThirdPartyStreamResponse(
 // pipeThirdPartyErrorResponse pipes third-party service error response.
 func (h *LLMProxyHandler) pipeThirdPartyErrorResponse(
 	c *gin.Context, resp *http.Response,
-	route *model.ThirdPartyRouteInfo, meta *llm.RequestMeta,
+	_ *model.ThirdPartyRouteInfo, meta *llm.RequestMeta,
 	userID, apiKeyID int64, startTime time.Time,
 ) {
 	respBody, _ := io.ReadAll(resp.Body)

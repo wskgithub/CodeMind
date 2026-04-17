@@ -1,10 +1,6 @@
 package handler
 
 import (
-	"codemind/internal/middleware"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/service"
-	"codemind/pkg/llm"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,9 +9,16 @@ import (
 	"strings"
 	"time"
 
+	"codemind/internal/middleware"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/service"
+	"codemind/pkg/llm"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+const errMsgLLMUnavailable = "LLM service unavailable"
 
 // LLMProxyHandler handles LLM proxy requests.
 type LLMProxyHandler struct {
@@ -31,7 +34,7 @@ func NewLLMProxyHandler(proxyService *service.LLMProxyService, logger *zap.Logge
 	}
 }
 
-// POST /api/openai/v1/chat/completions.
+// ChatCompletions 处理聊天补全请求 (POST /api/openai/v1/chat/completions)。
 func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -93,15 +96,15 @@ func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	)
 
 	if meta.Stream {
-		h.handleStreamChatRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleStreamChatRaw(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleNonStreamChatRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleNonStreamChatRaw(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
 // handleNonStreamChatRaw handles non-streaming chat with raw body passthrough.
 func (h *LLMProxyHandler) handleNonStreamChatRaw(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -122,7 +125,7 @@ func (h *LLMProxyHandler) handleNonStreamChatRaw(
 
 // handleStreamChatRaw handles streaming chat (SSE) with raw body passthrough.
 func (h *LLMProxyHandler) handleStreamChatRaw(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -153,7 +156,7 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// POST /api/openai/v1/completions.
+// Completions 处理文本补全请求 (POST /api/openai/v1/completions)。
 func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -200,15 +203,15 @@ func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	}
 
 	if meta.Stream {
-		h.handleStreamCompletionRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleStreamCompletionRaw(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleNonStreamCompletionRaw(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleNonStreamCompletionRaw(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
 // handleNonStreamCompletionRaw handles non-streaming text completion.
 func (h *LLMProxyHandler) handleNonStreamCompletionRaw(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -229,7 +232,7 @@ func (h *LLMProxyHandler) handleNonStreamCompletionRaw(
 
 // handleStreamCompletionRaw handles streaming text completion.
 func (h *LLMProxyHandler) handleStreamCompletionRaw(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -288,7 +291,7 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, true, rawBody, llm.AssembleCompletionResponse(result), result.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// GET /api/openai/v1/models.
+// ListModels 获取模型列表 (GET /api/openai/v1/models)。
 func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	provider, err := h.proxyService.GetProviderManager().GetDefault()
 	if err != nil {
@@ -303,7 +306,7 @@ func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GET /api/openai/v1/models/:model.
+// RetrieveModel 获取指定模型信息 (GET /api/openai/v1/models/:model)。
 func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	modelID := c.Param("model")
 	if modelID == "" {
@@ -319,7 +322,7 @@ func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 
 	resp, err := provider.RetrieveModel(c.Request.Context(), modelID)
 	if err != nil {
-		if llmErr, ok := err.(*llm.LLMError); ok && llmErr.StatusCode == 404 {
+		if llmErr, ok := err.(*llm.Error); ok && llmErr.StatusCode == 404 {
 			h.sendOpenAIError(c, http.StatusNotFound, "invalid_request_error",
 				fmt.Sprintf("The model '%s' does not exist", modelID))
 			return
@@ -330,7 +333,7 @@ func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// POST /api/openai/v1/embeddings.
+// Embeddings 处理嵌入请求 (POST /api/openai/v1/embeddings)。
 func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -400,7 +403,7 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 // OpenAI Responses API
 // ──────────────────────────────────
 
-// POST /api/openai/v1/responses.
+// Responses 处理 Responses API 请求 (POST /api/openai/v1/responses)。
 func (h *LLMProxyHandler) Responses(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -459,15 +462,15 @@ func (h *LLMProxyHandler) Responses(c *gin.Context) {
 	)
 
 	if meta.Stream {
-		h.handleStreamResponses(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleStreamResponses(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleNonStreamResponses(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleNonStreamResponses(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
 // handleNonStreamResponses handles non-streaming Responses API.
 func (h *LLMProxyHandler) handleNonStreamResponses(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -488,7 +491,7 @@ func (h *LLMProxyHandler) handleNonStreamResponses(
 
 // handleStreamResponses handles streaming Responses API (SSE named events).
 func (h *LLMProxyHandler) handleStreamResponses(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -513,7 +516,7 @@ func (h *LLMProxyHandler) handleStreamResponses(
 	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, true, rawBody, nil, streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// POST /api/anthropic/v1/messages.
+// AnthropicMessages 处理 Anthropic 消息请求 (POST /api/anthropic/v1/messages)。
 func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -531,7 +534,7 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 		Model  string `json:"model"`
 		Stream bool   `json:"stream"`
 	}
-	if err := json.Unmarshal(rawBody, &partial); err != nil {
+	if err = json.Unmarshal(rawBody, &partial); err != nil {
 		h.sendAnthropicError(c, http.StatusBadRequest, "invalid_request_error", "invalid JSON in request body")
 		return
 	}
@@ -580,15 +583,15 @@ func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	)
 
 	if partial.Stream {
-		h.handleAnthropicStream(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleAnthropicStream(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	} else {
-		h.handleAnthropicNonStream(c, ctx, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
+		h.handleAnthropicNonStream(ctx, c, provider, rawBody, userID, apiKeyID, deptID, modelName, startTime)
 	}
 }
 
 // handleAnthropicNonStream handles Anthropic non-streaming requests.
 func (h *LLMProxyHandler) handleAnthropicNonStream(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -609,7 +612,7 @@ func (h *LLMProxyHandler) handleAnthropicNonStream(
 
 // handleAnthropicStream handles Anthropic streaming requests.
 func (h *LLMProxyHandler) handleAnthropicStream(
-	c *gin.Context, ctx context.Context, provider llm.Provider,
+	ctx context.Context, c *gin.Context, provider llm.Provider,
 	rawBody []byte,
 	userID, apiKeyID int64, deptID *int64, modelName string, startTime time.Time,
 ) {
@@ -791,7 +794,7 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 }
 
 // pipeOpenAIStreamToAnthropic converts OpenAI stream to Anthropic format output.
-func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.ReadCloser, model string) *llm.StreamResult {
+func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.ReadCloser, _ string) *llm.StreamResult {
 	reader := llm.NewStreamReader(body)
 	defer func() { _ = reader.Close() }()
 
@@ -909,12 +912,12 @@ func (h *LLMProxyHandler) handleLLMError(
 	var statusCode int
 	var errMsg string
 
-	if llmErr, ok := err.(*llm.LLMError); ok {
+	if llmErr, ok := err.(*llm.Error); ok {
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
 	} else {
 		statusCode = http.StatusBadGateway
-		errMsg = "LLM service unavailable"
+		errMsg = errMsgLLMUnavailable
 	}
 
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
@@ -931,12 +934,12 @@ func (h *LLMProxyHandler) handleLLMErrorAnthropic(
 	var statusCode int
 	var errMsg string
 
-	if llmErr, ok := err.(*llm.LLMError); ok {
+	if llmErr, ok := err.(*llm.Error); ok {
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
 	} else {
 		statusCode = http.StatusBadGateway
-		errMsg = "LLM service unavailable"
+		errMsg = errMsgLLMUnavailable
 	}
 
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)
@@ -953,12 +956,12 @@ func (h *LLMProxyHandler) handleLLMErrorResponses(
 	var statusCode int
 	var errMsg string
 
-	if llmErr, ok := err.(*llm.LLMError); ok {
+	if llmErr, ok := err.(*llm.Error); ok {
 		statusCode = llmErr.StatusCode
 		errMsg = llmErr.Message
 	} else {
 		statusCode = http.StatusBadGateway
-		errMsg = "LLM service unavailable"
+		errMsg = errMsgLLMUnavailable
 	}
 
 	go h.proxyService.RecordRequestLog(userID, apiKeyID, requestType, modelName, statusCode, errMsg, c.ClientIP(), c.Request.UserAgent(), durationMs)

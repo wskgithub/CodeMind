@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"codemind/internal/model"
 	"time"
+
+	"codemind/internal/model"
 
 	"gorm.io/gorm"
 )

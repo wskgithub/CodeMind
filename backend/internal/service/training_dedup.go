@@ -1,13 +1,14 @@
 package service
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/repository"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/internal/repository"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -121,7 +122,7 @@ func (d *TrainingDataDeduplicator) extractPrompt(body json.RawMessage) string {
 	if err := json.Unmarshal(body, &chatReq); err == nil && len(chatReq.Messages) > 0 {
 		var result string
 		for _, m := range chatReq.Messages {
-			if m.Role == "user" {
+			if m.Role == messageRoleUser {
 				result += contentToString(m.Content)
 			}
 		}
@@ -170,7 +171,7 @@ func (d *TrainingDataDeduplicator) extractResponse(body json.RawMessage) string 
 	if err := json.Unmarshal(body, &anthropicResp); err == nil && anthropicResp.Role == "assistant" {
 		var result string
 		for _, b := range anthropicResp.Content {
-			if b.Type == "text" {
+			if b.Type == contentTypeText {
 				result += b.Text
 			}
 		}
@@ -189,7 +190,7 @@ func contentToString(content interface{}) string {
 	case []interface{}:
 		for _, item := range v {
 			if itemMap, ok := item.(map[string]interface{}); ok {
-				if itemMap["type"] == "text" {
+				if itemMap["type"] == contentTypeText {
 					if text, ok := itemMap["text"].(string); ok {
 						return text
 					}
@@ -207,7 +208,7 @@ func (d *TrainingDataDeduplicator) refreshConfigIfNeeded() {
 
 	if d.sysConfigRepo != nil {
 		if cfg, err := d.sysConfigRepo.GetByKey(model.ConfigTrainingDedupEnabled); err == nil {
-			d.enabled = cfg.ConfigValue == "true"
+			d.enabled = cfg.ConfigValue == configValueTrue
 		}
 	}
 	d.lastRefresh = time.Now()

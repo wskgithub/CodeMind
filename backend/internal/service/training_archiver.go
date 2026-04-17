@@ -2,8 +2,6 @@ package service
 
 import (
 	"archive/tar"
-	"codemind/internal/model"
-	"codemind/internal/repository"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -12,6 +10,9 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -249,24 +250,27 @@ func (a *TrainingDataArchiver) compressArchive(jsonlPath string, minID, maxID, r
 	}
 	metaBytes, _ := json.MarshalIndent(meta, "", "  ")
 
-	if err := tarWriter.WriteHeader(&tar.Header{
+	err = tarWriter.WriteHeader(&tar.Header{
 		Name:    "metadata.json",
 		Size:    int64(len(metaBytes)),
 		Mode:    0o644, //nolint:mnd // intentional constant.
 		ModTime: time.Now(),
-	}); err != nil {
+	})
+	if err != nil {
 		return "", err
 	}
-	if _, err := tarWriter.Write(metaBytes); err != nil {
+	_, err = tarWriter.Write(metaBytes)
+	if err != nil {
 		return "", err
 	}
 
-	if err := tarWriter.WriteHeader(&tar.Header{
+	err = tarWriter.WriteHeader(&tar.Header{
 		Name:    "training_data.jsonl",
 		Size:    jsonlInfo.Size(),
 		Mode:    0o644, //nolint:mnd // intentional constant.
 		ModTime: time.Now(),
-	}); err != nil {
+	})
+	if err != nil {
 		return "", err
 	}
 
@@ -276,7 +280,8 @@ func (a *TrainingDataArchiver) compressArchive(jsonlPath string, minID, maxID, r
 	}
 	defer func() { _ = jsonlFile.Close() }()
 
-	if _, err := io.Copy(tarWriter, jsonlFile); err != nil {
+	_, err = io.Copy(tarWriter, jsonlFile)
+	if err != nil {
 		return "", err
 	}
 

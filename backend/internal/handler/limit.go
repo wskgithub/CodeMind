@@ -20,7 +20,7 @@ func NewLimitHandler(limitService LimitService) *LimitHandler {
 	return &LimitHandler{limitService: limitService}
 }
 
-// GET /api/v1/limits.
+// List 获取限流规则列表 (GET /api/v1/limits)。
 func (h *LimitHandler) List(c *gin.Context) {
 	var query dto.LimitListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -37,7 +37,7 @@ func (h *LimitHandler) List(c *gin.Context) {
 	response.Success(c, limits)
 }
 
-// PUT /api/v1/limits.
+// Upsert 创建或更新限流规则 (PUT /api/v1/limits)。
 func (h *LimitHandler) Upsert(c *gin.Context) {
 	var req dto.UpsertRateLimitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,7 +61,7 @@ func (h *LimitHandler) Upsert(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GET /api/v1/limits/my.
+// GetMyLimits 获取当前用户的限流配置 (GET /api/v1/limits/my)。
 func (h *LimitHandler) GetMyLimits(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	deptID := middleware.GetDepartmentID(c)
@@ -75,7 +75,7 @@ func (h *LimitHandler) GetMyLimits(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// GET /api/v1/limits/my/progress.
+// GetMyProgress 获取当前用户的限流使用进度 (GET /api/v1/limits/my/progress)。
 func (h *LimitHandler) GetMyProgress(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	deptID := middleware.GetDepartmentID(c)
@@ -89,7 +89,7 @@ func (h *LimitHandler) GetMyProgress(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// DELETE /api/v1/limits/:id.
+// Delete 删除限流规则 (DELETE /api/v1/limits/:id)。
 func (h *LimitHandler) Delete(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {

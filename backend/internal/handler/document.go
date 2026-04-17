@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"strconv"
+
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -96,7 +97,7 @@ func (h *DocumentHandler) UpdateDocument(c *gin.Context) {
 	}
 
 	var req dto.UpdateDocumentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, err.Error())
 		return
 	}

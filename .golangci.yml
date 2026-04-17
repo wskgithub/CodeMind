@@ -105,6 +105,14 @@ linters-settings:
       - name: unreachable-code
       - name: redefines-builtin-id
 
+  gofumpt:
+    # 模块路径，用于区分本地包和第三方包
+    module-path: codemind
+
+  goimports:
+    # 本地包前缀
+    local-prefixes: codemind
+
   misspell:
     # 区域设置
     locale: US
@@ -124,6 +132,13 @@ issues:
         - errcheck
         - gosec
         - goconst
+        - godot
+        - unparam
+        - revive
+
+    # 测试文件中忽略 govet 的字段对齐和未使用写入检查
+    - path: _test\.go
+      text: "fieldalignment|unusedwrite"
 
     # main 函数允许未使用的返回值
     - path: cmd/

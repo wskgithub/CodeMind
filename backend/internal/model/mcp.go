@@ -30,16 +30,19 @@ func (MCPService) TableName() string {
 	return "mcp_services"
 }
 
+// MCP 服务状态常量。
 const (
 	MCPServiceEnabled  = "enabled"
 	MCPServiceDisabled = "disabled"
 )
 
+// MCP 传输方式常量。
 const (
 	MCPTransportSSE            = "sse"
 	MCPTransportStreamableHTTP = "streamable-http"
 )
 
+// MCP 认证方式常量。
 const (
 	MCPAuthNone   = "none"
 	MCPAuthBearer = "bearer"
@@ -74,6 +77,7 @@ func (MCPAccessRule) TableName() string {
 	return "mcp_access_rules"
 }
 
+// MCP 访问规则目标类型常量。
 const (
 	MCPTargetUser       = "user"
 	MCPTargetDepartment = "department"

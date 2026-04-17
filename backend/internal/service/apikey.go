@@ -1,15 +1,16 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+
 	"codemind/internal/config"
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
-	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -83,7 +84,7 @@ func (s *APIKeyService) Create(req *dto.CreateAPIKeyRequest, userID int64, clien
 		return nil, errcode.ErrDatabase
 	}
 
-	s.recordAudit(userID, model.AuditActionCreateKey, model.AuditTargetAPIKey, &key.ID,
+	s.recordAudit(userID, model.AuditActionCreateKey, &key.ID,
 		map[string]string{"name": req.Name, "prefix": prefix}, clientIP)
 
 	return &dto.APIKeyCreateResponse{
@@ -122,7 +123,7 @@ func (s *APIKeyService) Copy(keyID int64, operatorID int64, operatorRole string,
 		return nil, errcode.ErrInternal
 	}
 
-	s.recordAudit(operatorID, model.AuditActionCopyKey, model.AuditTargetAPIKey, &keyID,
+	s.recordAudit(operatorID, model.AuditActionCopyKey, &keyID,
 		map[string]string{"name": key.Name, "prefix": key.KeyPrefix}, clientIP)
 
 	return &dto.APIKeyCopyResponse{Key: fullKey}, nil
@@ -135,7 +136,7 @@ func (s *APIKeyService) List(userID int64) ([]dto.APIKeyResponse, error) {
 		return nil, errcode.ErrDatabase
 	}
 
-	var resp []dto.APIKeyResponse
+	resp := make([]dto.APIKeyResponse, 0, len(keys))
 	for _, k := range keys {
 		resp = append(resp, dto.APIKeyResponse{
 			ID:         k.ID,
@@ -155,7 +156,7 @@ func (s *APIKeyService) List(userID int64) ([]dto.APIKeyResponse, error) {
 }
 
 // UpdateStatus toggles API key status.
-func (s *APIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
+func (s *APIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64, operatorRole string, _ *int64, clientIP string) error {
 	key, err := s.keyRepo.FindByID(keyID)
 	if err != nil {
 		return errcode.ErrAPIKeyNotFound
@@ -177,7 +178,7 @@ func (s *APIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64
 	if status == model.StatusDisabled {
 		action = model.AuditActionDisableKey
 	}
-	s.recordAudit(operatorID, action, model.AuditTargetAPIKey, &keyID, nil, clientIP)
+	s.recordAudit(operatorID, action, &keyID, nil, clientIP)
 
 	return nil
 }
@@ -199,7 +200,7 @@ func (s *APIKeyService) Delete(keyID int64, operatorID int64, operatorRole strin
 
 	s.invalidateKeyCache(key.KeyHash)
 
-	s.recordAudit(operatorID, model.AuditActionDeleteKey, model.AuditTargetAPIKey, &keyID,
+	s.recordAudit(operatorID, model.AuditActionDeleteKey, &keyID,
 		map[string]string{"name": key.Name, "prefix": key.KeyPrefix}, clientIP)
 
 	return nil
@@ -216,7 +217,7 @@ func (s *APIKeyService) invalidateKeyCache(keyHash string) {
 }
 
 // recordAudit records an audit log entry for API key operations.
-func (s *APIKeyService) recordAudit(operatorID int64, action, targetType string, targetID *int64, detail interface{}, clientIP string) {
+func (s *APIKeyService) recordAudit(operatorID int64, action string, targetID *int64, detail interface{}, clientIP string) {
 	var detailJSON json.RawMessage
 	if detail != nil {
 		data, _ := json.Marshal(detail)
@@ -226,7 +227,7 @@ func (s *APIKeyService) recordAudit(operatorID int64, action, targetType string,
 	log := &model.AuditLog{
 		OperatorID: operatorID,
 		Action:     action,
-		TargetType: targetType,
+		TargetType: model.AuditTargetAPIKey,
 		TargetID:   targetID,
 		Detail:     detailJSON,
 		ClientIP:   &clientIP,

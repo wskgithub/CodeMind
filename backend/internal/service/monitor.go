@@ -1,8 +1,6 @@
 package service
 
 import (
-	"codemind/internal/model/monitor"
-	"codemind/internal/repository"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"codemind/internal/model/monitor"
+	"codemind/internal/repository"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -262,7 +263,7 @@ func (s *MonitorService) RecordRequest(statusCode int, responseTimeMs float64) {
 }
 
 // GetRequestMetrics returns request performance metrics.
-func (s *MonitorService) GetRequestMetrics(ctx context.Context, duration time.Duration) (*monitor.RequestMetricsSummary, error) {
+func (s *MonitorService) GetRequestMetrics(_ context.Context, _ time.Duration) (*monitor.RequestMetricsSummary, error) {
 	s.requestStats.mutex <- struct{}{}
 	defer func() { <-s.requestStats.mutex }()
 

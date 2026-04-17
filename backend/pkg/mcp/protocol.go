@@ -2,8 +2,10 @@ package mcp
 
 import "encoding/json"
 
+// JSONRPCVersion 是 JSON-RPC 协议版本。
 const JSONRPCVersion = "2.0"
 
+// MCPProtocolVersion 是 MCP 协议版本。
 const MCPProtocolVersion = "2024-11-05"
 
 // JSONRPCRequest represents a JSON-RPC request message.
@@ -36,6 +38,7 @@ type JSONRPCError struct {
 	Code    int         `json:"code"`
 }
 
+// JSON-RPC 标准错误码。
 const (
 	ErrCodeParseError     = -32700
 	ErrCodeInvalidRequest = -32600
@@ -44,6 +47,7 @@ const (
 	ErrCodeInternalError  = -32603
 )
 
+// MCP 协议方法名称常量。
 const (
 	MethodInitialize    = "initialize"
 	MethodInitialized   = "notifications/initialized"

@@ -1,14 +1,15 @@
 package router
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/pkg/crypto"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/pkg/jwt"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"codemind/internal/model"
+	"codemind/internal/pkg/crypto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/jwt"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
@@ -75,37 +76,6 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Cl
 	// 注意：这会导致 handler 路由返回 500，但可以用来验证路由存在和中间件
 	handlers := &Handlers{} // 空 handlers
 	// corsOrigins 为 nil 时 CORS 为 AllowAllOrigins，响应头 Access-Control-Allow-Origin 为 *
-	Setup(engine, handlers, jwtManager, db, rdb, logger, nil, "")
-
-	return engine, mr, rdb, db, jwtManager
-}
-
-func setupTestRouterWithMonitor(t *testing.T) (*gin.Engine, *miniredis.Miniredis, *redis.Client, *gorm.DB, *jwt.Manager) {
-	db := setupTestDB(t)
-	mr, rdb := setupTestRedis(t)
-	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
-	require.NoError(t, err)
-	logger := zaptest.NewLogger(t)
-
-	db.Exec(`CREATE TABLE api_keys (
-		id INTEGER PRIMARY KEY,
-		key_hash TEXT UNIQUE,
-		status INTEGER,
-		expires_at TIMESTAMP,
-		user_id INTEGER
-	)`)
-	db.Exec(`CREATE TABLE users (
-		id INTEGER PRIMARY KEY,
-		username TEXT,
-		role TEXT,
-		department_id INTEGER,
-		status INTEGER,
-		deleted_at TIMESTAMP
-	)`)
-
-	engine := setupTestGin()
-	// 使用空的 handlers 结构体，但 Monitor 为 nil
-	handlers := &Handlers{}
 	Setup(engine, handlers, jwtManager, db, rdb, logger, nil, "")
 
 	return engine, mr, rdb, db, jwtManager

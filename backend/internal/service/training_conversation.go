@@ -76,12 +76,18 @@ func (e *ConversationExtractor) extractFirstUserMessage(body json.RawMessage) st
 	}
 
 	for _, m := range req.Messages {
-		if m.Role == "user" {
+		if m.Role == messageRoleUser {
 			return e.contentToString(m.Content)
 		}
 	}
 	return ""
 }
+
+// messageRoleUser 是 LLM 消息中用户角色的标识符。
+const messageRoleUser = "user"
+
+// contentTypeText 是多模态内容数组中文本类型的标识符。
+const contentTypeText = "text"
 
 func (e *ConversationExtractor) contentToString(content interface{}) string {
 	switch v := content.(type) {
@@ -91,8 +97,8 @@ func (e *ConversationExtractor) contentToString(content interface{}) string {
 		var texts []string
 		for _, item := range v {
 			if itemMap, ok := item.(map[string]interface{}); ok {
-				if itemMap["type"] == "text" {
-					if text, ok := itemMap["text"].(string); ok {
+				if itemMap["type"] == contentTypeText {
+					if text, ok := itemMap[contentTypeText].(string); ok {
 						texts = append(texts, text)
 					}
 				}

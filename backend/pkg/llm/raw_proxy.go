@@ -72,7 +72,7 @@ func CleanThinkingFromHistory(rawBody []byte) []byte { //nolint:gocyclo // compl
 		if roleRaw, ok := msg["role"]; ok {
 			_ = json.Unmarshal(roleRaw, &role)
 		}
-		if role != "assistant" {
+		if role != RoleAssistant {
 			continue
 		}
 

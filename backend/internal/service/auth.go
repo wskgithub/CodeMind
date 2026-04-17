@@ -1,16 +1,17 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
+	"time"
+
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/validator"
 	"codemind/internal/repository"
-	"context"
-	"encoding/json"
-	"errors"
-	"time"
 
 	jwtPkg "codemind/internal/pkg/jwt"
 
@@ -99,7 +100,8 @@ func (s *AuthService) Login(req *dto.LoginRequest, clientIP string) (*dto.LoginR
 	}
 
 	if user.LoginFailCount > 0 {
-		if err := s.userRepo.ClearLoginFailCount(user.ID); err != nil {
+		err = s.userRepo.ClearLoginFailCount(user.ID)
+		if err != nil {
 			s.logger.Error("failed to clear login fail count", zap.Error(err))
 		}
 	}

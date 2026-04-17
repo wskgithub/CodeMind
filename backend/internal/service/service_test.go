@@ -1,16 +1,16 @@
 package service
 
 import (
+	"context"
+	"testing"
+	"time"
+
 	"codemind/internal/config"
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
-	"context"
-	"errors"
-	"testing"
-	"time"
 
 	jwtPkg "codemind/internal/pkg/jwt"
 
@@ -439,30 +439,8 @@ func setupLogger() *zap.Logger {
 	return logger
 }
 
-func setupConfig() {
-	// Initialize global config for testing
-	cfg := &config.Config{
-		System: config.SystemConfig{
-			MaxKeysPerUser:     10,
-			DefaultConcurrency: 5,
-		},
-	}
-	// Set global config using reflection or package-level variable
-	// Since we can't directly set the private variable, we'll need to ensure
-	// the config is loaded properly in each test
-	_ = cfg
-}
-
 func int64Ptr(i int64) *int64 {
 	return &i
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func timePtr(t time.Time) *time.Time {
-	return &t
 }
 
 // ==================== AuthService Tests ====================
@@ -608,9 +586,9 @@ func TestAuthService_WithSQLite(t *testing.T) {
 			Username: "nonexistent",
 			Password: "password123",
 		}
-		resp, err := authService.Login(req, "127.0.0.1")
+		resp, loginErr := authService.Login(req, "127.0.0.1")
 		assert.Nil(t, resp)
-		assert.Equal(t, errcode.ErrInvalidCredentials, err)
+		assert.Equal(t, errcode.ErrInvalidCredentials, loginErr)
 	})
 
 	// Create a test user
@@ -630,9 +608,9 @@ func TestAuthService_WithSQLite(t *testing.T) {
 			Username: "testuser",
 			Password: "wrongpassword",
 		}
-		resp, err := authService.Login(req, "127.0.0.1")
+		resp, loginErr := authService.Login(req, "127.0.0.1")
 		assert.Nil(t, resp)
-		assert.Equal(t, errcode.ErrInvalidCredentials, err)
+		assert.Equal(t, errcode.ErrInvalidCredentials, loginErr)
 	})
 
 	// Test login with correct password
@@ -641,8 +619,8 @@ func TestAuthService_WithSQLite(t *testing.T) {
 			Username: "testuser",
 			Password: "TestPass123",
 		}
-		resp, err := authService.Login(req, "127.0.0.1")
-		assert.NoError(t, err)
+		resp, loginErr := authService.Login(req, "127.0.0.1")
+		assert.NoError(t, loginErr)
 		assert.NotNil(t, resp)
 		assert.NotEmpty(t, resp.Token)
 		assert.Equal(t, "testuser", resp.User.Username)
@@ -2017,24 +1995,6 @@ func TestCalculateLockDuration(t *testing.T) {
 	})
 }
 
-// Helper to check if error matches expected error code.
-func assertErrorCode(t *testing.T, expected *errcode.ErrCode, actual error) {
-	if actual == nil {
-		t.Errorf("expected error %v, got nil", expected)
-		return
-	}
-
-	actualErrCode, ok := actual.(*errcode.ErrCode)
-	if !ok {
-		t.Errorf("expected *errcode.ErrCode, got %T", actual)
-		return
-	}
-
-	if actualErrCode.Code != expected.Code {
-		t.Errorf("expected error code %d, got %d", expected.Code, actualErrCode.Code)
-	}
-}
-
 // TestLoginLockStatus tests login lock status scenarios.
 func TestLoginLockStatus(t *testing.T) {
 	db := setupTestDB(t)
@@ -2453,12 +2413,4 @@ func BenchmarkLogin(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		authService.Login(req, "127.0.0.1")
 	}
-}
-
-// toError converts string to error (helper for mock setup).
-func toError(s string) error {
-	if s == "" {
-		return nil
-	}
-	return errors.New(s)
 }

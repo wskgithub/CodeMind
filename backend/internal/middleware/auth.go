@@ -1,15 +1,17 @@
 package middleware
 
 import (
+	"strings"
+
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
-	"strings"
 
 	jwtPkg "codemind/internal/pkg/jwt"
 
 	"github.com/gin-gonic/gin"
 )
 
+// JWT 认证中间件上下文键。
 const (
 	CtxKeyUserID       = "user_id"
 	CtxKeyUsername     = "username"

@@ -1,10 +1,11 @@
 package service
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/repository"
 	"encoding/json"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -37,7 +38,7 @@ func (s *TrainingDataQualityScorer) IsEnabled() bool {
 
 // Score calculates quality score (0-100).
 func (s *TrainingDataQualityScorer) Score(
-	requestBody, responseBody json.RawMessage,
+	requestBody, _ json.RawMessage,
 	promptTokens, completionTokens int,
 	statusCode int,
 	durationMs *int,
@@ -169,7 +170,7 @@ func (s *TrainingDataQualityScorer) refreshConfigIfNeeded() {
 
 	if s.sysConfigRepo != nil {
 		if cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingQualityScoringEnabled); err == nil {
-			s.enabled = cfg.ConfigValue == "true"
+			s.enabled = cfg.ConfigValue == configValueTrue
 		}
 	}
 	s.lastRefresh = time.Now()

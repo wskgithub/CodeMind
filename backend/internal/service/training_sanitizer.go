@@ -1,13 +1,14 @@
 package service
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/repository"
 	"encoding/json"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -175,7 +176,7 @@ func (s *TrainingDataSanitizer) refreshConfigIfNeeded() {
 
 	if s.sysConfigRepo != nil {
 		if cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingSanitizeEnabled); err == nil {
-			s.enabled = cfg.ConfigValue == "true"
+			s.enabled = cfg.ConfigValue == configValueTrue
 		}
 		if cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingSanitizePatterns); err == nil {
 			var patterns []string

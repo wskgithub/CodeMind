@@ -29,22 +29,27 @@ type User struct {
 	Status          int16          `gorm:"not null;default:1;index" json:"status"`
 }
 
+// TableName 返回数据库表名。
 func (User) TableName() string {
 	return "users"
 }
 
+// IsSuperAdmin 判断用户是否为超级管理员。
 func (u *User) IsSuperAdmin() bool {
 	return u.Role == RoleSuperAdmin
 }
 
+// IsDeptManager 判断用户是否为部门管理员。
 func (u *User) IsDeptManager() bool {
 	return u.Role == RoleDeptManager
 }
 
+// IsActive 判断用户是否处于激活状态。
 func (u *User) IsActive() bool {
 	return u.Status == StatusEnabled
 }
 
+// IsLocked 判断用户是否被锁定。
 func (u *User) IsLocked() bool {
 	if u.LockedUntil == nil {
 		return false
@@ -64,12 +69,14 @@ func (u *User) GetRemainingLockTime() int64 {
 	return remaining
 }
 
+// 用户角色常量。
 const (
 	RoleSuperAdmin  = "super_admin"
 	RoleDeptManager = "dept_manager"
 	RoleUser        = "user"
 )
 
+// 用户状态常量。
 const (
 	StatusDisabled int16 = 0
 	StatusEnabled  int16 = 1

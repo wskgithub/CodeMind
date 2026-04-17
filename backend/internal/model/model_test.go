@@ -100,10 +100,10 @@ func TestUser_GetRemainingLockTime(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name         string
-		lockUntil    *time.Time
-		expectedMin  int64
-		expectedMax  int64
+		name        string
+		lockUntil   *time.Time
+		expectedMin int64
+		expectedMax int64
 	}{
 		{"未锁定-nil", nil, 0, 0},
 		{"锁定已过期", func() *time.Time { t := now.Add(-time.Hour); return &t }(), 0, 0},
@@ -218,10 +218,10 @@ func TestPeriodHoursFromLabel(t *testing.T) {
 
 func TestRateLimit_EffectiveHours(t *testing.T) {
 	tests := []struct {
-		name         string
-		periodHours  int
-		period       string
-		expected     int
+		name        string
+		periodHours int
+		period      string
+		expected    int
 	}{
 		{"已设置PeriodHours-24", 24, "", 24},
 		{"已设置PeriodHours-168", 168, "", 168},
@@ -710,28 +710,28 @@ func TestAPIKey_IsExpired_Boundary(t *testing.T) {
 func TestRateLimit_PeriodLabel_AllPossibleHours(t *testing.T) {
 	// 测试所有可能的小时值
 	testCases := map[int]string{
-		-720:         PeriodCustom,
-		-168:         PeriodCustom,
-		-24:          PeriodCustom,
-		-1:           PeriodCustom,
-		0:            PeriodCustom,
-		1:            PeriodCustom,
-		12:           PeriodCustom,
-		23:           PeriodCustom,
-		24:           PeriodDaily,
-		25:           PeriodCustom,
-		48:           PeriodCustom,
-		72:           PeriodCustom,
-		100:          PeriodCustom,
-		167:          PeriodCustom,
-		168:          PeriodWeekly,
-		169:          PeriodCustom,
-		500:          PeriodCustom,
-		719:          PeriodCustom,
-		720:          PeriodMonthly,
-		721:          PeriodCustom,
-		1000:         PeriodCustom,
-		8760:         PeriodCustom, // 一年
+		-720: PeriodCustom,
+		-168: PeriodCustom,
+		-24:  PeriodCustom,
+		-1:   PeriodCustom,
+		0:    PeriodCustom,
+		1:    PeriodCustom,
+		12:   PeriodCustom,
+		23:   PeriodCustom,
+		24:   PeriodDaily,
+		25:   PeriodCustom,
+		48:   PeriodCustom,
+		72:   PeriodCustom,
+		100:  PeriodCustom,
+		167:  PeriodCustom,
+		168:  PeriodWeekly,
+		169:  PeriodCustom,
+		500:  PeriodCustom,
+		719:  PeriodCustom,
+		720:  PeriodMonthly,
+		721:  PeriodCustom,
+		1000: PeriodCustom,
+		8760: PeriodCustom, // 一年
 	}
 
 	for hours, expected := range testCases {

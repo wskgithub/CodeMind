@@ -13,7 +13,7 @@ func AssembleChatResponse(result *StreamResult) json.RawMessage {
 
 	finishReason := result.FinishReason
 	if finishReason == "" {
-		finishReason = "stop"
+		finishReason = FinishReasonStop
 	}
 
 	resp := ChatCompletionResponse{
@@ -25,7 +25,7 @@ func AssembleChatResponse(result *StreamResult) json.RawMessage {
 			{
 				Index: 0,
 				Message: &ChatMessage{
-					Role:    "assistant",
+					Role:    RoleAssistant,
 					Content: result.Content,
 				},
 				FinishReason: &finishReason,
@@ -49,7 +49,7 @@ func AssembleCompletionResponse(result *StreamResult) json.RawMessage {
 
 	finishReason := result.FinishReason
 	if finishReason == "" {
-		finishReason = "stop"
+		finishReason = FinishReasonStop
 	}
 
 	resp := CompletionResponse{

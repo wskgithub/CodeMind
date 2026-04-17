@@ -56,7 +56,7 @@ func (h *SystemHandler) GetPlatformServiceURL(c *gin.Context) {
 	})
 }
 
-// GET /api/v1/system/announcements.
+// ListAnnouncements 获取公告列表 (GET /api/v1/system/announcements)。
 func (h *SystemHandler) ListAnnouncements(c *gin.Context) {
 	role := middleware.GetUserRole(c)
 	isAdmin := role == model.RoleSuperAdmin
@@ -69,7 +69,7 @@ func (h *SystemHandler) ListAnnouncements(c *gin.Context) {
 	response.Success(c, anns)
 }
 
-// POST /api/v1/system/announcements.
+// CreateAnnouncement 创建公告 (POST /api/v1/system/announcements)。
 func (h *SystemHandler) CreateAnnouncement(c *gin.Context) {
 	var req dto.CreateAnnouncementRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *SystemHandler) CreateAnnouncement(c *gin.Context) {
 	response.Success(c, ann)
 }
 
-// PUT /api/v1/system/announcements/:id.
+// UpdateAnnouncement 更新公告 (PUT /api/v1/system/announcements/:id)。
 func (h *SystemHandler) UpdateAnnouncement(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -110,7 +110,7 @@ func (h *SystemHandler) UpdateAnnouncement(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DELETE /api/v1/system/announcements/:id.
+// DeleteAnnouncement 删除公告 (DELETE /api/v1/system/announcements/:id)。
 func (h *SystemHandler) DeleteAnnouncement(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -127,7 +127,7 @@ func (h *SystemHandler) DeleteAnnouncement(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GET /api/v1/system/audit-logs.
+// ListAuditLogs 获取审计日志列表 (GET /api/v1/system/audit-logs)。
 func (h *SystemHandler) ListAuditLogs(c *gin.Context) {
 	var query dto.AuditLogQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

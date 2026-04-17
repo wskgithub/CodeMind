@@ -23,12 +23,14 @@ func (RateLimit) TableName() string {
 	return "rate_limits"
 }
 
+// 限流目标类型常量。
 const (
 	TargetTypeGlobal     = "global"
 	TargetTypeDepartment = "department"
 	TargetTypeUser       = "user"
 )
 
+// 限流周期常量。
 const (
 	PeriodDaily   = "daily"
 	PeriodWeekly  = "weekly"

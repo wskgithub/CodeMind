@@ -1,19 +1,23 @@
 package service
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/pkg/timezone"
-	"codemind/internal/repository"
-	"codemind/pkg/llm"
 	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
+	"codemind/internal/model"
+	"codemind/internal/pkg/timezone"
+	"codemind/internal/repository"
+	"codemind/pkg/llm"
+
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
+
+// configValueTrue 是系统配置中表示布尔真值的字符串常量。
+const configValueTrue = "true"
 
 var acquireConcurrencyScript = redis.NewScript(`
 	local current = redis.call('INCR', KEYS[1])
@@ -455,7 +459,7 @@ func (s *LLMProxyService) isTrainingDataEnabled() bool {
 	if s.sysConfigRepo != nil {
 		cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingDataCollection)
 		if err == nil {
-			enabled = cfg.ConfigValue == "true"
+			enabled = cfg.ConfigValue == configValueTrue
 		}
 	}
 	s.trainingEnabled = enabled

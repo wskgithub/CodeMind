@@ -1,11 +1,12 @@
 package response
 
 import (
-	"codemind/internal/pkg/errcode"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"codemind/internal/pkg/errcode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

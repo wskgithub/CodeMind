@@ -2,16 +2,17 @@ package handler
 
 import (
 	"bytes"
-	"codemind/internal/middleware"
-	"codemind/internal/model"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/errcode"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"codemind/internal/middleware"
+	"codemind/internal/model"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/errcode"
 
 	jwtPkg "codemind/internal/pkg/jwt"
 

@@ -214,7 +214,7 @@ func (lb *LoadBalancer) weightedSelect(candidates []*LBNode) *LBNode {
 		node   *LBNode
 		weight float64
 	}
-	var items []scored
+	items := make([]scored, 0, len(candidates))
 	var totalWeight float64
 
 	for _, n := range candidates {

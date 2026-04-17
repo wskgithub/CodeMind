@@ -1,11 +1,12 @@
 package service
 
 import (
+	"strings"
+
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
-	"strings"
 
 	"go.uber.org/zap"
 )

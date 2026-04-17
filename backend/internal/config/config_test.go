@@ -16,7 +16,7 @@ func createTempConfigFile(t *testing.T, content string) (string, func()) {
 	t.Helper()
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.yaml")
-	err := os.WriteFile(configPath, []byte(content), 0644)
+	err := os.WriteFile(configPath, []byte(content), 0o644)
 	require.NoError(t, err)
 	return configPath, func() {}
 }
@@ -178,19 +178,19 @@ llm:
 
 	// 设置环境变量
 	envVars := map[string]string{
-		"DB_HOST":         "env-db.example.com",
-		"DB_PORT":         "5434",
-		"DB_NAME":         "envdb",
-		"DB_USER":         "envuser",
-		"DB_PASSWORD":     "envpass",
-		"REDIS_HOST":      "env-redis.example.com",
-		"REDIS_PORT":      "6381",
-		"REDIS_PASSWORD":  "envredispass",
-		"JWT_SECRET":      "env-secret-key",
-		"LLM_BASE_URL":    "https://api.env.com",
-		"LLM_API_KEY":     "env-api-key",
-		"APP_PORT":        "4000",
-		"APP_ENV":         "test",
+		"DB_HOST":        "env-db.example.com",
+		"DB_PORT":        "5434",
+		"DB_NAME":        "envdb",
+		"DB_USER":        "envuser",
+		"DB_PASSWORD":    "envpass",
+		"REDIS_HOST":     "env-redis.example.com",
+		"REDIS_PORT":     "6381",
+		"REDIS_PASSWORD": "envredispass",
+		"JWT_SECRET":     "env-secret-key",
+		"LLM_BASE_URL":   "https://api.env.com",
+		"LLM_API_KEY":    "env-api-key",
+		"APP_PORT":       "4000",
+		"APP_ENV":        "test",
 	}
 
 	// 保存并设置环境变量

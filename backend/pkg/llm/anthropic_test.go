@@ -407,9 +407,9 @@ func TestAnthropicClientErrorHandling(t *testing.T) {
 			if err == nil {
 				t.Fatal("应返回错误")
 			}
-			llmErr, ok := err.(*LLMError)
+			llmErr, ok := err.(*Error)
 			if !ok {
-				t.Fatalf("应返回 LLMError 类型, 实际: %T", err)
+				t.Fatalf("应返回 Error 类型, 实际: %T", err)
 			}
 			if llmErr.StatusCode != tt.expectCode {
 				t.Errorf("状态码映射不正确: 预期 %d, 实际 %d", tt.expectCode, llmErr.StatusCode)
@@ -616,7 +616,7 @@ data: {"type":"message_stop"}
 	}
 
 	// signature_delta
-	eventType, _, event, _ = reader.ReadEvent()
+	_, _, event, _ = reader.ReadEvent()
 	if event.Delta == nil || event.Delta.Type != "signature_delta" {
 		t.Error("delta 应为 signature_delta 类型")
 	}

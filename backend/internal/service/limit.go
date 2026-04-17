@@ -1,15 +1,16 @@
 package service
 
 import (
-	"codemind/internal/model"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/repository"
 	"context"
 	"encoding/json"
 	"fmt"
 	"math"
 	"time"
+
+	"codemind/internal/model"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/repository"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

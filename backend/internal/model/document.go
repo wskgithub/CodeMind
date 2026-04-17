@@ -17,6 +17,7 @@ type Document struct {
 	IsPublished bool       `gorm:"not null;default:false" json:"is_published"`
 }
 
+// TableName 返回数据库表名。
 func (Document) TableName() string {
 	return "documents"
 }

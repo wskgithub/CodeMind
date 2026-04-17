@@ -61,7 +61,7 @@ func (m *ChatMessage) ContentString() string {
 		var parts []string
 		for _, part := range v {
 			if partMap, ok := part.(map[string]interface{}); ok {
-				if partMap["type"] == "text" {
+				if partMap["type"] == ContentTypeText {
 					if text, ok := partMap["text"].(string); ok {
 						parts = append(parts, text)
 					}

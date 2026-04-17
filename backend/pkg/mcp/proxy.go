@@ -170,7 +170,7 @@ func (p *Proxy) ListConnectedServices() []string {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	var names []string
+	names := make([]string, 0, len(p.connections))
 	for name := range p.connections {
 		names = append(names, name)
 	}

@@ -1,3 +1,4 @@
+// Package router 定义 HTTP 路由和中间件注册。
 package router
 
 import (

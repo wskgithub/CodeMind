@@ -92,7 +92,7 @@ func (m *ProviderManager) ListProviders() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var names []string
+	names := make([]string, 0, len(m.providers))
 	for name := range m.providers {
 		names = append(names, name)
 	}
@@ -136,7 +136,7 @@ func (m *ProviderManager) ListProviderInfo() []ProviderInfo {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var infos []ProviderInfo
+	infos := make([]ProviderInfo, 0, len(m.providers))
 	for _, p := range m.providers {
 		infos = append(infos, ProviderInfo{
 			Name:   p.Name(),
@@ -151,7 +151,7 @@ func (m *ProviderManager) DebugRoutes() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var parts []string
+	parts := make([]string, 0, len(m.modelRoutes)+1)
 	for pattern, provider := range m.modelRoutes {
 		parts = append(parts, fmt.Sprintf("  %s -> %s", pattern, provider))
 	}

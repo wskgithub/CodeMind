@@ -1,6 +1,15 @@
+// Package main 是 CodeMind 服务端入口。
 package main
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"codemind/internal/config"
 	"codemind/internal/handler"
 	"codemind/internal/model"
@@ -10,13 +19,6 @@ import (
 	"codemind/internal/router"
 	"codemind/internal/service"
 	"codemind/pkg/llm"
-	"context"
-	"fmt"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	jwtPkg "codemind/internal/pkg/jwt"
 
@@ -67,7 +69,7 @@ func main() {
 	logger.Info("database connected")
 
 	// Auto-migrate: add new columns/tables without dropping existing data
-	if err := db.AutoMigrate(
+	if err = db.AutoMigrate(
 		&model.APIKey{},
 		&model.LLMBackend{},
 		&model.RateLimit{},
@@ -182,13 +184,14 @@ func main() {
 	router.Setup(engine, handlers, jwtManager, db, rdb, logger, cfg.Server.CORSOrigins, cfg.Upload.Dir)
 
 	// 11. Start HTTP server with graceful shutdown
+	const llmStreamWriteTimeout = 600
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
 		Addr:         addr,
 		Handler:      engine,
-		ReadTimeout:  30 * time.Second,  //nolint:mnd // intentional constant.
-		WriteTimeout: 600 * time.Second, // longer timeout for LLM streaming //nolint:mnd // intentional constant.
-		IdleTimeout:  120 * time.Second, //nolint:mnd // intentional constant.
+		ReadTimeout:  30 * time.Second,                    //nolint:mnd // intentional constant.
+		WriteTimeout: llmStreamWriteTimeout * time.Second, // LLM 流式请求需要较长超时
+		IdleTimeout:  120 * time.Second,                   //nolint:mnd // intentional constant.
 	}
 
 	go func() {
@@ -222,7 +225,7 @@ func main() {
 }
 
 // initDatabase initializes database connection.
-func initDatabase(cfg *config.Config, logger *zap.Logger) (*gorm.DB, error) {
+func initDatabase(cfg *config.Config, _ *zap.Logger) (*gorm.DB, error) {
 	var logLevel gormLogger.LogLevel
 	switch cfg.Server.Mode {
 	case "debug":
@@ -333,7 +336,7 @@ func fixPeriodHours(db *gorm.DB, logger *zap.Logger) {
 }
 
 // initRedis initializes Redis connection.
-func initRedis(cfg *config.Config, logger *zap.Logger) (*redis.Client, error) {
+func initRedis(cfg *config.Config, _ *zap.Logger) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr(),
 		Password: cfg.Redis.Password,

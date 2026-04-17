@@ -1,15 +1,16 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
-	"context"
-	"encoding/json"
-	"fmt"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -305,7 +306,7 @@ const (
 // ResolveThirdPartyModel resolves third-party service routing by model name.
 // Returns nil if the model is not a third-party model.
 func (s *ThirdPartyProviderService) ResolveThirdPartyModel(
-	ctx context.Context, userID int64, modelName string, requestFormat string,
+	ctx context.Context, userID int64, modelName string, _ string,
 ) *model.ThirdPartyRouteInfo {
 	cacheKey := fmt.Sprintf("%s%d", thirdPartyRouteCachePrefix, userID)
 	cached, err := s.rdb.HGet(ctx, cacheKey, modelName).Result()
@@ -425,7 +426,7 @@ func (s *ThirdPartyProviderService) ListPlatformModels() ([]dto.PlatformModelInf
 		return nil, errcode.ErrInternal
 	}
 
-	var result []dto.PlatformModelInfo
+	result := make([]dto.PlatformModelInfo, 0, len(backends))
 	for _, b := range backends {
 		if b.Status != model.LLMBackendEnabled {
 			continue

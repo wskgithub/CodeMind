@@ -149,6 +149,7 @@ type AnthropicErrorResponse struct {
 	} `json:"error"`
 }
 
+// Anthropic SSE 事件类型常量。
 const (
 	AnthropicEventMessageStart      = "message_start"
 	AnthropicEventContentBlockStart = "content_block_start"

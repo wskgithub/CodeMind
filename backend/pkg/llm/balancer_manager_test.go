@@ -932,24 +932,6 @@ func TestLoadBalancer_FilterByModel(t *testing.T) {
 	}
 }
 
-// Helper type for initialization.
-type atomicBool struct {
-	value bool
-	mu    sync.RWMutex
-}
-
-func (a *atomicBool) Load() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.value
-}
-
-func (a *atomicBool) Store(val bool) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.value = val
-}
-
 // ═══════════════════════════════════════════════════════════════
 // lbProviderWrapper Tests
 // ═══════════════════════════════════════════════════════════════

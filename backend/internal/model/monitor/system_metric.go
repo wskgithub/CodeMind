@@ -18,6 +18,7 @@ func (SystemMetric) TableName() string {
 	return "system_metrics"
 }
 
+// 系统指标类型常量。
 const (
 	MetricTypeCPU     = "cpu"
 	MetricTypeMemory  = "memory"

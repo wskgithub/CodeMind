@@ -271,24 +271,24 @@ func (c *Client) doRequestRaw(method, path string, rawBody []byte, isStream bool
 
 		switch {
 		case resp.StatusCode == 429: //nolint:mnd // intentional constant.
-			return nil, &LLMError{StatusCode: 503, Message: "LLM service busy, try again later", Body: bodyBytes} //nolint:mnd // intentional constant.
+			return nil, &Error{StatusCode: 503, Message: "LLM service busy, try again later", Body: bodyBytes} //nolint:mnd // intentional constant.
 		case resp.StatusCode >= 500: //nolint:mnd // intentional constant.
-			return nil, &LLMError{StatusCode: 502, Message: "LLM service internal error", Body: bodyBytes} //nolint:mnd // intentional constant.
+			return nil, &Error{StatusCode: 502, Message: "LLM service internal error", Body: bodyBytes} //nolint:mnd // intentional constant.
 		default:
-			return nil, &LLMError{StatusCode: resp.StatusCode, Message: "LLM request failed", Body: bodyBytes}
+			return nil, &Error{StatusCode: resp.StatusCode, Message: "LLM request failed", Body: bodyBytes}
 		}
 	}
 
 	return resp.Body, nil
 }
 
-// LLMError represents an LLM service error.
-type LLMError struct {
+// Error 表示 LLM 服务错误。
+type Error struct {
 	Message    string
 	Body       []byte
 	StatusCode int
 }
 
-func (e *LLMError) Error() string {
+func (e *Error) Error() string {
 	return fmt.Sprintf("LLM error (HTTP %d): %s", e.StatusCode, e.Message)
 }

@@ -21,6 +21,7 @@ type TokenUsage struct {
 	CacheReadInputTokens     int       `gorm:"not null;default:0" json:"cache_read_input_tokens"`
 }
 
+// TableName 返回数据库表名。
 func (TokenUsage) TableName() string {
 	return "token_usage"
 }
@@ -40,6 +41,7 @@ type TokenUsageDaily struct {
 	RequestCount             int       `gorm:"not null;default:0" json:"request_count"`
 }
 
+// TableName 返回数据库表名。
 func (TokenUsageDaily) TableName() string {
 	return "token_usage_daily"
 }
@@ -60,6 +62,7 @@ type TokenUsageDailyKey struct {
 	RequestCount             int       `gorm:"not null;default:0" json:"request_count"`
 }
 
+// TableName 返回数据库表名。
 func (TokenUsageDailyKey) TableName() string {
 	return "token_usage_daily_key"
 }
@@ -79,6 +82,7 @@ type RequestLog struct {
 	StatusCode   int       `gorm:"not null" json:"status_code"`
 }
 
+// TableName 返回数据库表名。
 func (RequestLog) TableName() string {
 	return "request_logs"
 }
@@ -109,6 +113,7 @@ type LLMTrainingData struct {
 	IsStream             bool            `gorm:"not null;default:false" json:"is_stream"`
 }
 
+// TableName 返回数据库表名。
 func (LLMTrainingData) TableName() string {
 	return "llm_training_data"
 }
@@ -136,14 +141,14 @@ type LLMTrainingDataListItem struct {
 
 // TrainingDataStats holds aggregate statistics.
 type TrainingDataStats struct {
-	ModelDistribution []ModelDistributionItem `json:"model_distribution"`
-	TotalCount        int64                   `json:"total_count"`
-	TodayCount        int64                   `json:"today_count"`
-	ExcludedCount     int64                   `json:"excluded_count"`
+	ModelDistribution []DistributionItem `json:"model_distribution"`
+	TotalCount        int64              `json:"total_count"`
+	TodayCount        int64              `json:"today_count"`
+	ExcludedCount     int64              `json:"excluded_count"`
 }
 
-// ModelDistributionItem shows usage count per model.
-type ModelDistributionItem struct {
+// DistributionItem 表示按模型分布的使用量统计项。
+type DistributionItem struct {
 	Model string `json:"model"`
 	Count int64  `json:"count"`
 }

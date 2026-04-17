@@ -17,14 +17,17 @@ type APIKey struct {
 	Status       int16      `gorm:"not null;default:1" json:"status"`
 }
 
+// TableName 返回数据库表名。
 func (APIKey) TableName() string {
 	return "api_keys"
 }
 
+// IsActive 判断 API Key 是否处于激活状态。
 func (k *APIKey) IsActive() bool {
 	return k.Status == StatusEnabled
 }
 
+// IsExpired 判断 API Key 是否已过期。
 func (k *APIKey) IsExpired() bool {
 	if k.ExpiresAt == nil {
 		return false

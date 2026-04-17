@@ -1,9 +1,10 @@
 package repository
 
 import (
+	"time"
+
 	"codemind/internal/model"
 	"codemind/internal/pkg/timezone"
-	"time"
 
 	"gorm.io/gorm"
 )

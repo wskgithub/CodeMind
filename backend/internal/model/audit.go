@@ -18,10 +18,12 @@ type AuditLog struct {
 	OperatorID int64           `gorm:"not null;index" json:"operator_id"`
 }
 
+// TableName 返回数据库表名。
 func (AuditLog) TableName() string {
 	return "audit_logs"
 }
 
+// 审计日志操作类型常量。
 const (
 	AuditActionCreateUser     = "create_user"
 	AuditActionUpdateUser     = "update_user"
@@ -47,6 +49,7 @@ const (
 	AuditActionDeleteAnnounce = "delete_announcement"
 )
 
+// 审计日志目标类型常量。
 const (
 	AuditTargetUser         = "user"
 	AuditTargetDepartment   = "department"

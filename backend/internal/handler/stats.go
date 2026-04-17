@@ -1,15 +1,16 @@
 package handler
 
 import (
-	"codemind/internal/middleware"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 	"encoding/csv"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"codemind/internal/middleware"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/response"
+	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,7 @@ func NewStatsHandler(statsService *service.StatsService) *StatsHandler {
 	return &StatsHandler{statsService: statsService}
 }
 
-// GET /api/v1/stats/overview.
+// Overview 获取统计概览 (GET /api/v1/stats/overview)。
 func (h *StatsHandler) Overview(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	role := middleware.GetUserRole(c)
@@ -39,7 +40,7 @@ func (h *StatsHandler) Overview(c *gin.Context) {
 	response.Success(c, overview)
 }
 
-// GET /api/v1/stats/usage.
+// Usage 获取用量统计 (GET /api/v1/stats/usage)。
 func (h *StatsHandler) Usage(c *gin.Context) {
 	var query dto.StatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -60,7 +61,7 @@ func (h *StatsHandler) Usage(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// GET /api/v1/stats/ranking.
+// Ranking 获取用量排行 (GET /api/v1/stats/ranking)。
 func (h *StatsHandler) Ranking(c *gin.Context) {
 	var query dto.RankingQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -85,7 +86,7 @@ func (h *StatsHandler) Ranking(c *gin.Context) {
 	response.Success(c, items)
 }
 
-// GET /api/v1/stats/key-usage.
+// KeyUsageSummary 获取 API Key 用量汇总 (GET /api/v1/stats/key-usage)。
 func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
 	var query dto.KeyUsageQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -106,7 +107,7 @@ func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// GET /api/v1/stats/export/csv.
+// ExportCSV 导出统计数据为 CSV (GET /api/v1/stats/export/csv)。
 func (h *StatsHandler) ExportCSV(c *gin.Context) {
 	var query dto.StatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

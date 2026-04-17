@@ -162,6 +162,7 @@ func ExtractModelFromResponsesBody(rawBody []byte) string {
 	return wrapper.Model
 }
 
+// Responses API SSE 事件类型常量。
 const (
 	ResponsesEventCreated               = "response.created"
 	ResponsesEventInProgress            = "response.in_progress"

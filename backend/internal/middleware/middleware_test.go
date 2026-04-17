@@ -1,10 +1,6 @@
 package middleware
 
 import (
-	"codemind/internal/pkg/crypto"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/pkg/jwt"
-	"codemind/internal/pkg/response"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +9,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"codemind/internal/pkg/crypto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/jwt"
+	"codemind/internal/pkg/response"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
