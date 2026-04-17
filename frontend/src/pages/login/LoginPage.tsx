@@ -1,10 +1,12 @@
+import { UserOutlined, LockOutlined, LockFilled, PlayCircleOutlined, SunOutlined, MoonOutlined } from '@ant-design/icons';
+import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert } from 'antd';
+import axios from 'axios';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert } from 'antd';
-import { UserOutlined, LockOutlined, LockFilled, PlayCircleOutlined, SunOutlined, MoonOutlined } from '@ant-design/icons';
-import useAuthStore from '@/store/authStore';
+
 import useAppStore from '@/store/appStore';
-import axios from 'axios';
+import useAuthStore from '@/store/authStore';
+
 
 // 登录页专用主题配置 - 根据主题动态生成
 const getLoginTheme = (isDark: boolean): ThemeConfig => ({

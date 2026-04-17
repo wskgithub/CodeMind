@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { Layout, Menu, Card, Typography, Skeleton, Empty, Alert, Button, Tooltip } from 'antd';
 import { BookOutlined, EditOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { Layout, Menu, Card, Typography, Skeleton, Empty, Alert, Button, Tooltip } from 'antd';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useNavigate, useParams } from 'react-router-dom';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
+import remarkGfm from 'remark-gfm';
+
 import { documentService, Document, DocumentListItem } from '@/services/documentService';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 import '@/assets/styles/docs.css';
 
 const { Sider, Content } = Layout;
@@ -35,6 +36,7 @@ const CodeBlock = React.memo<{ language: string; value: string; isDark: boolean 
     </SyntaxHighlighter>
   );
 });
+CodeBlock.displayName = 'CodeBlock';
 
 const DocsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -269,7 +271,7 @@ const DocsPage: React.FC = () => {
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      code({ node, inline, className, children, ...props }: any) {
+                      code({ node: _node, inline, className, children, ...props }: any) {
                         const match = /language-(\w+)/.exec(className || '');
                         return !inline && match ? (
                           <CodeBlock

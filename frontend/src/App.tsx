@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
-import { RouterProvider } from 'react-router-dom';
 import { ConfigProvider, App as AntApp, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
+import { useEffect, useMemo } from 'react';
+import { RouterProvider } from 'react-router-dom';
+
 import router from '@/router';
-import useAuthStore from '@/store/authStore';
 import useAppStore, { ThemeMode } from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 
 /** 获取 Ant Design 主题配置 — 支持亮色/暗色模式 */
 const getThemeTokens = (themeMode: ThemeMode) => {

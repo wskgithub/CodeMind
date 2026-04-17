@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Form, Input, Button, Divider, message, Descriptions, Tag, Avatar } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons';
-import type { UserDetail } from '@/types';
-import useAuthStore from '@/store/authStore';
+import { Form, Input, Button, Divider, message, Descriptions, Tag, Avatar } from 'antd';
+import { useState, useEffect } from 'react';
+
 import authService from '@/services/authService';
+import useAuthStore from '@/store/authStore';
+import type { UserDetail } from '@/types';
 
 /** 个人中心页面 — 与首页/登录页新设计风格统一 */
 const ProfilePage: React.FC = () => {

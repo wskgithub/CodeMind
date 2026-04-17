@@ -40,7 +40,7 @@ type DashboardSummary struct {
 	RequestMetrics  *RequestMetricsSummary   `json:"request_metrics"`  // 请求指标
 	LLMNodes        []LLMNodeSummary         `json:"llm_nodes"`        // LLM 节点列表
 	ActiveNodes     int                      `json:"active_nodes"`     // 活跃节点数
-	TotalNodes      int                      `json:"total_nodes""`     // 总节点数
+	TotalNodes      int                      `json:"total_nodes"`     // 总节点数
 	UpdatedAt       time.Time                `json:"updated_at"`       // 更新时间
 }
 

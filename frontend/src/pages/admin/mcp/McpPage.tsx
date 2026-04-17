@@ -1,8 +1,3 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Table, Button, Modal, Form, Input, Select, Tag, Space,
-  Tabs, Popconfirm, Switch, message, Tooltip, Badge,
-} from 'antd';
 import {
   ApiOutlined,
   PlusOutlined,
@@ -12,10 +7,16 @@ import {
   EditOutlined,
   ToolOutlined,
 } from '@ant-design/icons';
+import {
+  Table, Button, Modal, Form, Input, Select, Tag, Space,
+  Tabs, Popconfirm, Switch, message, Tooltip, Badge,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
 import mcpService from '@/services/mcpService';
-import type { MCPService, MCPTool, MCPAccessRule } from '@/types';
 import useAppStore from '@/store/appStore';
+import type { MCPService, MCPTool, MCPAccessRule } from '@/types';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (

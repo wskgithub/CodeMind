@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Table, Button, Modal, Form, Input, Space, Tag, message, Select, TreeSelect } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Space, Tag, message, Select, TreeSelect } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { DeptTree, UserDetail } from '@/types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
 import departmentService, { type CreateDepartmentParams } from '@/services/departmentService';
 import userService from '@/services/userService';
 import useAppStore from '@/store/appStore';
+import type { DeptTree, UserDetail } from '@/types';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
@@ -54,7 +55,7 @@ const DepartmentsPage: React.FC = () => {
       let page = 1;
       const pageSize = 100;
 
-      while (true) {
+      for (;;) {
         const resp = await userService.list({ page, page_size: pageSize });
         const users = resp.data.data.list || [];
         allUsers.push(...users);

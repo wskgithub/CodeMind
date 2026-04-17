@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import LoginPage from '../login/LoginPage';
 
 // 创建 mock 函数对象 - 必须在 vi.mock 之前
@@ -172,7 +173,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('账号已被锁定')).toBeInTheDocument();
-      expect(screen.getByText(/剩余锁定时间/)).toBeInTheDocument();
+      expect(screen.getByText(/剩余时间/)).toBeInTheDocument();
     });
   });
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import {
   listLimits,
   upsertLimit,
@@ -6,6 +7,8 @@ import {
   getMyLimits,
   getMyLimitProgress,
 } from '../limitService';
+import request from '../request';
+
 import type { ApiResponse, RateLimit, MyLimitResponse, LimitProgressResponse } from '@/types';
 
 // Mock request module
@@ -17,7 +20,6 @@ vi.mock('../request', () => ({
   },
 }));
 
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;

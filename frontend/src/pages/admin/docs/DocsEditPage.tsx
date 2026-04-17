@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import {
+  SaveOutlined,
+  ArrowLeftOutlined,
+  EyeOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons';
 import {
   Form,
   Input,
@@ -14,15 +18,12 @@ import {
   Alert,
   Tabs,
 } from 'antd';
-import {
-  SaveOutlined,
-  ArrowLeftOutlined,
-  EyeOutlined,
-  FileTextOutlined,
-} from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 import { documentService, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/documentService';
 import useAppStore from '@/store/appStore';
 
@@ -297,7 +298,7 @@ const DocsEditPage: React.FC = () => {
                       {content ? (
                         <ReactMarkdown
                           components={{
-                            code({ node, inline, className, children, ...props }: any) {
+                            code({ node: _node, inline, className, children, ...props }: any) {
                               const match = /language-(\w+)/.exec(className || '');
                               return !inline && match ? (
                                 <CodeBlock

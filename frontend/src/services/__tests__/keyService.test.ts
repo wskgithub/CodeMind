@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import keyService from '../keyService';
+import request from '../request';
+
 import type { ApiResponse, APIKey, APIKeyCreateResult } from '@/types';
 
 // Mock request module
@@ -12,7 +15,6 @@ vi.mock('../request', () => ({
   },
 }));
 
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;

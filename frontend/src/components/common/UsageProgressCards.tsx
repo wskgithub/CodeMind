@@ -1,11 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Progress, Tooltip, Spin } from 'antd';
 import {
   ThunderboltOutlined,
   ClockCircleOutlined,
   WarningOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
+import { Progress, Tooltip, Spin } from 'antd';
+import { useEffect, useState, useCallback } from 'react';
+
 import { getMyLimitProgress } from '@/services/limitService';
 import useAppStore from '@/store/appStore';
 import type { LimitProgressItem, LimitProgressResponse } from '@/types';

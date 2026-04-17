@@ -1,4 +1,5 @@
 import request from './request';
+
 import type { ApiResponse, RateLimit, MyLimitResponse, LimitProgressResponse } from '@/types';
 
 /** 获取限额配置列表 */

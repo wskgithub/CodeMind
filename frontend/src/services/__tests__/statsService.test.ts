@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import request from '../request';
 import {
   getOverview,
   getUsageStats,
   getRanking,
   exportUsageCSV,
 } from '../statsService';
+
 import type { ApiResponse, StatsOverview, UsageResponse, RankingItem } from '@/types';
 
 // Mock request module
@@ -14,7 +17,6 @@ vi.mock('../request', () => ({
   },
 }));
 
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;

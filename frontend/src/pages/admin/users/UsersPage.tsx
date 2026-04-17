@@ -1,18 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Table, Button, Modal, Form, Input, Select, Space, Tag, message,
-} from 'antd';
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, 
   CheckCircleOutlined, ReloadOutlined, UserOutlined, UnlockOutlined, LockOutlined 
 } from '@ant-design/icons';
+import {
+  Table, Button, Modal, Form, Input, Select, Space, Tag, message,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import type { UserDetail, DeptTree } from '@/types';
-import userService, { type UserListParams, type CreateUserParams } from '@/services/userService';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+
 import departmentService from '@/services/departmentService';
-import useAuthStore from '@/store/authStore';
+import userService, { type UserListParams, type CreateUserParams } from '@/services/userService';
 import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
+import type { UserDetail, DeptTree } from '@/types';
 
 /** 页面标题图标 — 渐变圆形背景 - 新设计 */
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
@@ -190,7 +191,7 @@ const UsersPage: React.FC = () => {
       title: '确认解锁',
       content: (
         <div>
-          <p>确定要解锁用户 "{record.display_name}" 吗？</p>
+          <p>{'确定要解锁用户 "' + record.display_name + '" 吗？'}</p>
           {locked && (
             <p style={{ color: '#FF6B6B', fontSize: 13 }}>
               当前账号被锁定，剩余锁定时间：{formatLockTime(record.locked_until)}

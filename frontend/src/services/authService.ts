@@ -1,4 +1,5 @@
 import request from './request';
+
 import type { ApiResponse, LoginParams, LoginResult, UserDetail } from '@/types';
 
 /** 认证相关 API */

@@ -1,6 +1,3 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from 'antd';
 import {
   ApiOutlined,
   RobotOutlined,
@@ -16,8 +13,12 @@ import {
   SunOutlined,
   MoonOutlined,
 } from '@ant-design/icons';
-import useAuthStore from '@/store/authStore';
+import { Button } from 'antd';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 
 /** 功能特点卡片数据 */
 const features = [

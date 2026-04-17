@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import useAuthStore from '@/store/authStore';
 
 // Mock authService

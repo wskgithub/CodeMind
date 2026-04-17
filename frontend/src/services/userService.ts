@@ -1,4 +1,5 @@
 import request from './request';
+
 import type { ApiResponse, PageData, UserDetail } from '@/types';
 
 /** 用户列表查询参数 */

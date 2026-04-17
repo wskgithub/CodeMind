@@ -1,5 +1,6 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { message } from 'antd';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+
 import type { ApiResponse } from '@/types';
 
 /** 创建 Axios 实例 */
