@@ -48,7 +48,7 @@ linters:
     - gocyclo         # 圈复杂度检查
     - godot           # 注释应以句号结尾
     - gofumpt         # 更严格的 gofmt
-    - revive          // 代码风格检查 (替代 golint)
+    - revive          # 代码风格检查 (替代 golint)
     - unconvert       # 检测不必要的类型转换
     - unparam         # 检测未使用的函数参数
 
