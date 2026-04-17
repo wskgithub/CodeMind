@@ -37,9 +37,9 @@ func TestChatCompletionRequestSerialization(t *testing.T) {
 			Type: "function",
 			Function: ToolFunction{
 				Name:        "get_weather",
-			Description: "get weather",
-			Parameters:  map[string]interface{}{"type": "object"},
-		},
+				Description: "get weather",
+				Parameters:  map[string]interface{}{"type": "object"},
+			},
 		}},
 		ToolChoice:     "auto",
 		ResponseFormat: &ResponseFormat{Type: "json_object"},

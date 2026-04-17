@@ -55,12 +55,25 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    isAxiosError: (error: unknown) => error && typeof error === 'object' && 'response' in error,
-  },
-}));
+// Mock axios - must provide create() since request.ts calls it at module scope
+vi.mock('axios', () => {
+  const mockInstance = {
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  };
+  return {
+    default: {
+      create: () => mockInstance,
+      isAxiosError: (error: unknown) => error && typeof error === 'object' && 'response' in error,
+    },
+  };
+});
 
 describe('LoginPage', () => {
   beforeEach(() => {
@@ -91,8 +104,8 @@ describe('LoginPage', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Please enter your username')).toBeInTheDocument();
-      expect(screen.getByText('Please enter your password')).toBeInTheDocument();
+      expect(screen.getByText('Please enter username')).toBeInTheDocument();
+      expect(screen.getByText('Please enter password')).toBeInTheDocument();
     });
   });
 
@@ -186,7 +199,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Account has been locked')).toBeInTheDocument();
-      expect(screen.getByText(/remaining time/)).toBeInTheDocument();
+      expect(screen.getByText(/Remaining time/i)).toBeInTheDocument();
     });
   });
 

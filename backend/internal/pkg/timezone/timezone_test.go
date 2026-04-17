@@ -407,21 +407,21 @@ func TestLoadShanghaiLocation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			loc := loadShanghaiLocation(tt.tzName)
 
-		if loc == nil {
-			t.Fatal("loadShanghaiLocation() returned nil")
-		}
+			if loc == nil {
+				t.Fatal("loadShanghaiLocation() returned nil")
+			}
 
-		// Verify timezone name
-		name := loc.String()
-		if name != tt.expectedName {
-			t.Errorf("timezone name error: expected %s, got %s", tt.expectedName, name)
-		}
+			// Verify timezone name
+			name := loc.String()
+			if name != tt.expectedName {
+				t.Errorf("timezone name error: expected %s, got %s", tt.expectedName, name)
+			}
 
-		// Verify offset
-		ref := time.Date(2024, 1, 1, 12, 0, 0, 0, loc)
-		_, offset := ref.Zone()
-		if offset != tt.expectedOffset {
-			t.Errorf("timezone offset error: expected %d, got %d", tt.expectedOffset, offset)
+			// Verify offset
+			ref := time.Date(2024, 1, 1, 12, 0, 0, 0, loc)
+			_, offset := ref.Zone()
+			if offset != tt.expectedOffset {
+				t.Errorf("timezone offset error: expected %d, got %d", tt.expectedOffset, offset)
 			}
 		})
 	}
