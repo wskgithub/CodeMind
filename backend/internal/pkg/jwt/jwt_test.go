@@ -142,7 +142,7 @@ func TestParseToken_Expired(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, claims)
-	assert.Contains(t, err.Error(), "Token 解析失败")
+	assert.Contains(t, err.Error(), "failed to parse token")
 }
 
 func TestParseToken_InvalidSignature(t *testing.T) {
@@ -163,7 +163,7 @@ func TestParseToken_InvalidSignature(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, claims)
-	assert.Contains(t, err.Error(), "Token 解析失败")
+	assert.Contains(t, err.Error(), "failed to parse token")
 }
 
 func TestParseToken_Malformed(t *testing.T) {
@@ -178,22 +178,22 @@ func TestParseToken_Malformed(t *testing.T) {
 		{
 			name:        "空字符串",
 			tokenString: "",
-			wantErr:     "Token 解析失败",
+			wantErr:     "failed to parse token",
 		},
 		{
 			name:        "非法格式",
 			tokenString: "not-a-valid-token",
-			wantErr:     "Token 解析失败",
+			wantErr:     "failed to parse token",
 		},
 		{
 			name:        "缺少部分",
 			tokenString: "header.payload",
-			wantErr:     "Token 解析失败",
+			wantErr:     "failed to parse token",
 		},
 		{
 			name:        "base64解码失败",
 			tokenString: "invalid.base64.signature",
-			wantErr:     "Token 解析失败",
+			wantErr:     "failed to parse token",
 		},
 	}
 
@@ -231,7 +231,7 @@ func TestParseToken_Blacklisted(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, claims)
-	assert.Contains(t, err.Error(), "Token 已被注销")
+	assert.Contains(t, err.Error(), "token has been revoked")
 }
 
 func TestBlacklist(t *testing.T) {
@@ -386,7 +386,7 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 	// 6. 再次解析应该失败
 	_, err = manager.ParseToken(tokenString)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Token 已被注销")
+	assert.Contains(t, err.Error(), "token has been revoked")
 }
 
 func TestClaims_WithDifferentSigningMethods(t *testing.T) {

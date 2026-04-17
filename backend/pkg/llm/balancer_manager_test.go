@@ -239,7 +239,7 @@ func TestProviderManager_GetProvider(t *testing.T) {
 			name:         "non-existent provider",
 			providerName: "non-existent",
 			wantErr:      true,
-			errMsg:       "Provider 'non-existent' 未注册",
+			errMsg:       "provider 'non-existent' not registered",
 		},
 	}
 
@@ -506,7 +506,7 @@ func TestLoadBalancer_SelectProvider_NoNodes(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, provider)
-	assert.Contains(t, err.Error(), "没有可用的后端节点")
+	assert.Contains(t, err.Error(), "no available backend node")
 }
 
 func TestLoadBalancer_SelectProvider_NoMatchingModel(t *testing.T) {
@@ -524,7 +524,7 @@ func TestLoadBalancer_SelectProvider_NoMatchingModel(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, selected)
-	assert.Contains(t, err.Error(), "没有可用的后端节点")
+	assert.Contains(t, err.Error(), "no available backend node")
 }
 
 func TestLoadBalancer_SelectProvider_UnhealthyNode(t *testing.T) {

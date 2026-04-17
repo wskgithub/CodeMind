@@ -588,37 +588,37 @@ func TestAPIKeyProtectedRoutes_WithoutKey(t *testing.T) {
 		{
 			name:           "无 API Key 访问 chat completions",
 			method:         "POST",
-			path:           "/v1/chat/completions",
+			path:           "/api/openai/v1/chat/completions",
 			expectedStatus: 401,
 		},
 		{
 			name:           "无 API Key 访问 completions",
 			method:         "POST",
-			path:           "/v1/completions",
+			path:           "/api/openai/v1/completions",
 			expectedStatus: 401,
 		},
 		{
 			name:           "无 API Key 访问 models",
 			method:         "GET",
-			path:           "/v1/models",
+			path:           "/api/openai/v1/models",
 			expectedStatus: 401,
 		},
 		{
 			name:           "无 API Key 访问 embeddings",
 			method:         "POST",
-			path:           "/v1/embeddings",
+			path:           "/api/openai/v1/embeddings",
 			expectedStatus: 401,
 		},
 		{
 			name:           "无 API Key 访问 messages",
 			method:         "POST",
-			path:           "/v1/messages",
+			path:           "/api/anthropic/v1/messages",
 			expectedStatus: 401,
 		},
 		{
 			name:           "无 API Key 访问 responses",
 			method:         "POST",
-			path:           "/v1/responses",
+			path:           "/api/openai/v1/responses",
 			expectedStatus: 401,
 		},
 		{
@@ -682,7 +682,7 @@ func TestAPIKeyProtectedRoutes_WithInvalidKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("POST", "/v1/chat/completions", nil)
+			req, _ := http.NewRequest("POST", "/api/openai/v1/chat/completions", nil)
 			req.Header.Set("Content-Type", "application/json")
 			if tt.apiKey != "" {
 				req.Header.Set("Authorization", "Bearer "+tt.apiKey)
@@ -720,31 +720,31 @@ func TestAPIKeyProtectedRoutes_WithValidKey(t *testing.T) {
 		{
 			name:           "有效 API Key 访问 chat completions",
 			method:         "POST",
-			path:           "/v1/chat/completions",
+			path:           "/api/openai/v1/chat/completions",
 			expectedStatus: 500,
 		},
 		{
 			name:           "有效 API Key 访问 completions",
 			method:         "POST",
-			path:           "/v1/completions",
+			path:           "/api/openai/v1/completions",
 			expectedStatus: 500,
 		},
 		{
 			name:           "有效 API Key 访问 models",
 			method:         "GET",
-			path:           "/v1/models",
+			path:           "/api/openai/v1/models",
 			expectedStatus: 500,
 		},
 		{
 			name:           "有效 API Key 访问 embeddings",
 			method:         "POST",
-			path:           "/v1/embeddings",
+			path:           "/api/openai/v1/embeddings",
 			expectedStatus: 500,
 		},
 		{
 			name:           "有效 API Key 访问 messages",
 			method:         "POST",
-			path:           "/v1/messages",
+			path:           "/api/anthropic/v1/messages",
 			expectedStatus: 500,
 		},
 		{
@@ -786,7 +786,7 @@ func TestAPIKeyProtectedRoutes_WithXAPIKey(t *testing.T) {
 	rdb.FlushAll(t.Context())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/v1/models", nil)
+	req, _ := http.NewRequest("GET", "/api/openai/v1/models", nil)
 	// 使用 x-api-key header（Anthropic 格式）
 	req.Header.Set("x-api-key", testAPIKey)
 	engine.ServeHTTP(w, req)
@@ -1049,7 +1049,7 @@ func TestAPIKeySelfLoopDetection(t *testing.T) {
 	rdb.FlushAll(t.Context())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/v1/chat/completions", nil)
+	req, _ := http.NewRequest("POST", "/api/openai/v1/chat/completions", nil)
 	req.Header.Set("Authorization", "Bearer "+testAPIKey)
 	req.Header.Set("X-CodeMind-Proxy", "1") // 设置自环标志
 	engine.ServeHTTP(w, req)
@@ -1077,7 +1077,7 @@ func TestAPIKeyStatus_DisabledKey(t *testing.T) {
 	rdb.FlushAll(t.Context())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/v1/chat/completions", nil)
+	req, _ := http.NewRequest("POST", "/api/openai/v1/chat/completions", nil)
 	req.Header.Set("Authorization", "Bearer "+testAPIKey)
 	engine.ServeHTTP(w, req)
 
@@ -1102,7 +1102,7 @@ func TestAPIKeyStatus_DisabledUser(t *testing.T) {
 	rdb.FlushAll(t.Context())
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/v1/chat/completions", nil)
+	req, _ := http.NewRequest("POST", "/api/openai/v1/chat/completions", nil)
 	req.Header.Set("Authorization", "Bearer "+testAPIKey)
 	engine.ServeHTTP(w, req)
 

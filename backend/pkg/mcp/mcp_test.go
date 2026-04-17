@@ -690,7 +690,7 @@ func TestSSEClient_Connect_Non200Status(t *testing.T) {
 	_, _, err := client.Connect()
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "非 200 状态")
+	assert.Contains(t, err.Error(), "non-200 status")
 }
 
 func TestSSEClient_Connect_Timeout(t *testing.T) {
@@ -915,7 +915,7 @@ func TestProxy_ConnectService_Failure(t *testing.T) {
 	// 连接一个不存在的地址
 	err := proxy.ConnectService("test-service", "http://localhost:59999", "none", "", "")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "失败")
+	assert.Contains(t, err.Error(), "failed")
 }
 
 func TestProxy_ForwardRequest(t *testing.T) {
@@ -975,7 +975,7 @@ func TestProxy_ForwardRequest_NotConnected(t *testing.T) {
 
 	_, err := proxy.ForwardRequest("non-existent", req)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "未连接")
+	assert.Contains(t, err.Error(), "not connected")
 }
 
 func TestProxy_DisconnectService(t *testing.T) {
@@ -1253,7 +1253,7 @@ func TestProxy_handleToolsCall_ToolNotFound(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.NotNil(t, resp.Error)
 	assert.Equal(t, ErrCodeMethodNotFound, resp.Error.Code)
-	assert.Contains(t, resp.Error.Message, "工具不存在")
+	assert.Contains(t, resp.Error.Message, "tool not found")
 }
 
 func TestProxy_handleResourcesList(t *testing.T) {
@@ -1430,7 +1430,7 @@ func TestProxy_waitForResponse_NotMatching(t *testing.T) {
 
 	_, err := proxy.waitForResponse(conn, 123)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "超时")
+	assert.Contains(t, err.Error(), "timeout")
 }
 
 // ═══════════════════════════════════════════════════════════

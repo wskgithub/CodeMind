@@ -153,21 +153,21 @@ func TestErrorWithDifferentErrorCodes(t *testing.T) {
 			errCode:  errcode.ErrInternal,
 			wantHTTP: http.StatusInternalServerError,
 			wantCode: 50001,
-			wantMsg:  "系统内部错误",
+			wantMsg:  "internal server error",
 		},
 		{
 			name:     "invalid params",
 			errCode:  errcode.ErrInvalidParams,
 			wantHTTP: http.StatusBadRequest,
 			wantCode: 40201,
-			wantMsg:  "请求参数错误",
+			wantMsg:  "invalid parameters",
 		},
 		{
 			name:     "forbidden",
 			errCode:  errcode.ErrForbidden,
 			wantHTTP: http.StatusForbidden,
 			wantCode: 40101,
-			wantMsg:  "无权访问该资源",
+			wantMsg:  "access denied",
 		},
 	}
 

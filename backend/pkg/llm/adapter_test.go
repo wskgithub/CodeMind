@@ -271,14 +271,14 @@ func TestAnthropicToOpenAIToolChoice(t *testing.T) {
 		name     string
 	}{
 		{
-			"auto → auto",
-			map[string]interface{}{"type": "auto"},
-			"auto",
+			name:     "auto",
+			choice:   map[string]interface{}{"type": "auto"},
+			expected: "auto",
 		},
 		{
-			"any → required",
-			map[string]interface{}{"type": "any"},
-			"required",
+			name:     "required",
+			choice:   map[string]interface{}{"type": "any"},
+			expected: "required",
 		},
 	}
 

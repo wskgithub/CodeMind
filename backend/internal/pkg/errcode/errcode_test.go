@@ -8,7 +8,7 @@ import (
 // TestErrCodeError 测试错误码实现 error 接口
 func TestErrCodeError(t *testing.T) {
 	err := ErrInvalidCredentials
-	if err.Error() != "用户名或密码错误" {
+	if err.Error() != "invalid username or password" {
 		t.Errorf("Error() 返回值不正确: %s", err.Error())
 	}
 }
@@ -34,7 +34,7 @@ func TestWithMessage(t *testing.T) {
 	}
 
 	// 原始错误不应被修改
-	if original.Message != "请求参数错误" {
+	if original.Message != "invalid parameters" {
 		t.Error("原始错误不应被修改")
 	}
 }

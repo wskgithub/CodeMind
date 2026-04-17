@@ -199,7 +199,7 @@ func TestRecovery(t *testing.T) {
 			name:           "捕获 panic",
 			path:           "/panic",
 			expectedStatus: 500,
-			expectedCode:   errcode.ErrInternal.Code,
+			expectedCode:   http.StatusInternalServerError,
 		},
 		{
 			name:           "正常请求",
@@ -803,7 +803,7 @@ func TestAPIKeyAuth(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAPIKeyInvalid.Code, resp.Code)
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
 	})
 
 	t.Run("无效格式的 API Key", func(t *testing.T) {
@@ -816,7 +816,7 @@ func TestAPIKeyAuth(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAPIKeyInvalid.Code, resp.Code)
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
 	})
 
 	t.Run("API Key 不在数据库中", func(t *testing.T) {
@@ -948,7 +948,7 @@ func TestAPIKeyAuthDisabledKey(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAPIKeyDisabled.Code, resp.Code)
+		assert.Equal(t, http.StatusForbidden, resp.Code)
 	})
 }
 
@@ -1001,7 +1001,7 @@ func TestAPIKeyAuthDisabledUser(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAccountDisabled.Code, resp.Code)
+		assert.Equal(t, http.StatusForbidden, resp.Code)
 	})
 }
 
