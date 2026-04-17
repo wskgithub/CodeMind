@@ -1,14 +1,13 @@
 package service
 
 import (
+	"codemind/internal/model"
+	"codemind/internal/repository"
 	"encoding/json"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
-
-	"codemind/internal/model"
-	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -22,13 +21,12 @@ type SensitivePattern struct {
 
 // TrainingDataSanitizer redacts sensitive data from training records.
 type TrainingDataSanitizer struct {
+	lastRefresh   time.Time
 	sysConfigRepo *repository.SystemRepository
 	logger        *zap.Logger
-
-	mu          sync.RWMutex
-	enabled     bool
-	patterns    []string
-	lastRefresh time.Time
+	patterns      []string
+	mu            sync.RWMutex
+	enabled       bool
 }
 
 var builtinPatterns = []SensitivePattern{
@@ -98,7 +96,7 @@ func (s *TrainingDataSanitizer) SanitizeResponseBody(body json.RawMessage) json.
 	return s.SanitizeRequestBody(body)
 }
 
-func (s *TrainingDataSanitizer) sanitizeMap(m map[string]interface{}) {
+func (s *TrainingDataSanitizer) sanitizeMap(m map[string]interface{}) { //nolint:gocyclo // complex business logic.
 	sensitiveKeys := s.getSensitiveKeys()
 
 	for key, value := range m {

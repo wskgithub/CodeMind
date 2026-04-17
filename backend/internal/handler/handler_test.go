@@ -2,6 +2,10 @@ package handler
 
 import (
 	"bytes"
+	"codemind/internal/middleware"
+	"codemind/internal/model"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/errcode"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,10 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"codemind/internal/middleware"
-	"codemind/internal/model"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/errcode"
 	jwtPkg "codemind/internal/pkg/jwt"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +22,7 @@ import (
 
 // ==================== Mock Services ====================
 
-// MockAuthService 认证服务 Mock
+// MockAuthService 认证服务 Mock.
 type MockAuthService struct {
 	mock.Mock
 }
@@ -66,7 +66,7 @@ func (m *MockAuthService) GetLoginLockStatusByUsername(username string) (*dto.Lo
 	return args.Get(0).(*dto.LoginLockStatusResponse), args.Error(1)
 }
 
-// MockAPIKeyService API Key 服务 Mock
+// MockAPIKeyService API Key 服务 Mock.
 type MockAPIKeyService struct {
 	mock.Mock
 }
@@ -105,7 +105,7 @@ func (m *MockAPIKeyService) Delete(keyID int64, operatorID int64, operatorRole s
 	return args.Error(0)
 }
 
-// MockUserService 用户服务 Mock
+// MockUserService 用户服务 Mock.
 type MockUserService struct {
 	mock.Mock
 }
@@ -159,7 +159,7 @@ func (m *MockUserService) UnlockUser(id int64, operatorID int64, operatorRole st
 	return args.Error(0)
 }
 
-// MockDepartmentService 部门服务 Mock
+// MockDepartmentService 部门服务 Mock.
 type MockDepartmentService struct {
 	mock.Mock
 }
@@ -198,7 +198,7 @@ func (m *MockDepartmentService) Delete(id int64, operatorID int64, clientIP stri
 	return args.Error(0)
 }
 
-// MockLimitService 限额服务 Mock
+// MockLimitService 限额服务 Mock.
 type MockLimitService struct {
 	mock.Mock
 }
@@ -237,7 +237,7 @@ func (m *MockLimitService) GetLimitProgress(userID int64, deptID *int64) (*dto.L
 	return args.Get(0).(*dto.LimitProgressResponse), args.Error(1)
 }
 
-// MockSystemService 系统服务 Mock
+// MockSystemService 系统服务 Mock.
 type MockSystemService struct {
 	mock.Mock
 }

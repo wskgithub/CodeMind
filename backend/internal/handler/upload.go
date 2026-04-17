@@ -7,17 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UploadHandler 文件上传处理器
+// UploadHandler 文件上传处理器.
 type UploadHandler struct {
 	svc *service.UploadService
 }
 
-// NewUploadHandler 创建上传处理器
+// NewUploadHandler 创建上传处理器.
 func NewUploadHandler(svc *service.UploadService) *UploadHandler {
 	return &UploadHandler{svc: svc}
 }
 
-// UploadImage 处理文档图片上传
+// UploadImage 处理文档图片上传.
 func (h *UploadHandler) UploadImage(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {

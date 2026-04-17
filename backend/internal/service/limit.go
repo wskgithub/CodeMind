@@ -1,16 +1,15 @@
 package service
 
 import (
+	"codemind/internal/model"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/repository"
 	"context"
 	"encoding/json"
 	"fmt"
 	"math"
 	"time"
-
-	"codemind/internal/model"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/repository"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -264,7 +263,7 @@ func (s *LimitService) GetLimitProgress(userID int64, deptID *int64) (*dto.Limit
 				cycleStart := startUnix
 				resetAt := periodEnd.Unix()
 				hoursLeft := time.Until(periodEnd).Hours()
-				hoursLeft = math.Round(hoursLeft*10) / 10
+				hoursLeft = math.Round(hoursLeft*10) / 10 //nolint:mnd // intentional constant.
 
 				item.CycleStartAt = &cycleStart
 				item.ResetAt = &resetAt
@@ -282,6 +281,7 @@ func (s *LimitService) GetLimitProgress(userID int64, deptID *int64) (*dto.Limit
 		}
 		if limit.MaxTokens > 0 {
 			item.UsagePercent = int(item.UsedTokens * 100 / limit.MaxTokens)
+			//nolint:mnd // magic number for configuration/defaults.
 			if item.UsagePercent > 100 {
 				item.UsagePercent = 100
 			}

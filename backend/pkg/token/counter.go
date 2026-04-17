@@ -15,7 +15,7 @@ func EstimateTokens(text string) int {
 		}
 	}
 
-	tokens := count / 4
+	tokens := count / 4 //nolint:mnd // intentional constant.
 	if tokens == 0 {
 		tokens = 1
 	}

@@ -14,16 +14,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// 允许上传的图片类型
+// 允许上传的图片类型.
 var allowedImageTypes = map[string]bool{
-	"image/jpeg": true,
-	"image/png":  true,
-	"image/gif":  true,
-	"image/webp": true,
+	"image/jpeg":    true,
+	"image/png":     true,
+	"image/gif":     true,
+	"image/webp":    true,
 	"image/svg+xml": true,
 }
 
-// 图片类型对应的文件扩展名
+// 图片类型对应的文件扩展名.
 var mimeToExt = map[string]string{
 	"image/jpeg":    ".jpg",
 	"image/png":     ".png",
@@ -32,21 +32,21 @@ var mimeToExt = map[string]string{
 	"image/svg+xml": ".svg",
 }
 
-// UploadResult 上传结果
+// UploadResult 上传结果.
 type UploadResult struct {
 	URL      string `json:"url"`
 	Filename string `json:"filename"`
 }
 
-// UploadService 文件上传服务
+// UploadService 文件上传服务.
 type UploadService struct {
-	uploadDir  string
-	maxSize    int64
-	urlPrefix  string
-	logger     *zap.Logger
+	logger    *zap.Logger
+	uploadDir string
+	urlPrefix string
+	maxSize   int64
 }
 
-// NewUploadService 创建上传服务
+// NewUploadService 创建上传服务.
 func NewUploadService(uploadDir string, maxSizeMB int, urlPrefix string, logger *zap.Logger) *UploadService {
 	if uploadDir == "" {
 		uploadDir = "./uploads"
@@ -60,16 +60,16 @@ func NewUploadService(uploadDir string, maxSizeMB int, urlPrefix string, logger 
 
 	return &UploadService{
 		uploadDir: uploadDir,
-		maxSize:   int64(maxSizeMB) << 20,
+		maxSize:   int64(maxSizeMB) << 20, //nolint:mnd // intentional constant.
 		urlPrefix: urlPrefix,
 		logger:    logger,
 	}
 }
 
-// UploadImage 上传图片文件
+// UploadImage 上传图片文件.
 func (s *UploadService) UploadImage(file *multipart.FileHeader) (*UploadResult, error) {
 	if file.Size > s.maxSize {
-		return nil, fmt.Errorf("文件大小超过限制（最大 %dMB）", s.maxSize>>20)
+		return nil, fmt.Errorf("文件大小超过限制（最大 %dMB）", s.maxSize>>20) //nolint:mnd // intentional constant.
 	}
 
 	contentType := file.Header.Get("Content-Type")
@@ -90,13 +90,14 @@ func (s *UploadService) UploadImage(file *multipart.FileHeader) (*UploadResult, 
 	subDir := filepath.Join("docs", fmt.Sprintf("%d", now.Year()), fmt.Sprintf("%02d", now.Month()))
 	absDir := filepath.Join(s.uploadDir, subDir)
 
-	if err := os.MkdirAll(absDir, 0755); err != nil {
+	//nolint:mnd // magic number for configuration/defaults.
+	if err := os.MkdirAll(absDir, 0o755); err != nil {
 		s.logger.Error("创建上传目录失败", zap.String("dir", absDir), zap.Error(err))
 		return nil, fmt.Errorf("创建存储目录失败")
 	}
 
 	// 生成随机文件名，避免冲突和路径遍历
-	randBytes := make([]byte, 12)
+	randBytes := make([]byte, 12) //nolint:mnd // intentional constant.
 	if _, err := rand.Read(randBytes); err != nil {
 		return nil, fmt.Errorf("生成文件名失败")
 	}
@@ -107,18 +108,18 @@ func (s *UploadService) UploadImage(file *multipart.FileHeader) (*UploadResult, 
 	if err != nil {
 		return nil, fmt.Errorf("读取上传文件失败")
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	dst, err := os.Create(absPath)
 	if err != nil {
 		s.logger.Error("创建目标文件失败", zap.String("path", absPath), zap.Error(err))
 		return nil, fmt.Errorf("保存文件失败")
 	}
-	defer dst.Close()
+	defer func() { _ = dst.Close() }()
 
 	if _, err := io.Copy(dst, src); err != nil {
 		s.logger.Error("写入文件失败", zap.String("path", absPath), zap.Error(err))
-		os.Remove(absPath)
+		_ = os.Remove(absPath)
 		return nil, fmt.Errorf("写入文件失败")
 	}
 

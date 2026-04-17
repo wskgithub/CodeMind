@@ -17,7 +17,7 @@ type AnthropicStreamReader struct {
 // NewAnthropicStreamReader creates an Anthropic SSE stream reader.
 func NewAnthropicStreamReader(body io.ReadCloser) *AnthropicStreamReader {
 	return &AnthropicStreamReader{
-		reader: bufio.NewReaderSize(body, 8192),
+		reader: bufio.NewReaderSize(body, 8192), //nolint:mnd // intentional constant.
 		body:   body,
 	}
 }

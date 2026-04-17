@@ -7,15 +7,15 @@ import (
 	"sync"
 )
 
-// ProviderManager manages multiple LLM providers with model routing
+// ProviderManager manages multiple LLM providers with model routing.
 type ProviderManager struct {
-	mu              sync.RWMutex
 	providers       map[string]Provider
 	modelRoutes     map[string]string
 	defaultProvider string
+	mu              sync.RWMutex
 }
 
-// NewProviderManager creates a provider manager
+// NewProviderManager creates a provider manager.
 func NewProviderManager(defaultProvider string) *ProviderManager {
 	return &ProviderManager{
 		providers:       make(map[string]Provider),
@@ -24,21 +24,21 @@ func NewProviderManager(defaultProvider string) *ProviderManager {
 	}
 }
 
-// Register registers a provider
+// Register registers a provider.
 func (m *ProviderManager) Register(provider Provider) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.providers[provider.Name()] = provider
 }
 
-// SetModelRoutes sets model routing rules (supports wildcards like "claude-*")
+// SetModelRoutes sets model routing rules (supports wildcards like "claude-*").
 func (m *ProviderManager) SetModelRoutes(routes map[string]string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.modelRoutes = routes
 }
 
-// GetProvider returns a provider by name
+// GetProvider returns a provider by name.
 func (m *ProviderManager) GetProvider(name string) (Provider, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -50,12 +50,12 @@ func (m *ProviderManager) GetProvider(name string) (Provider, error) {
 	return p, nil
 }
 
-// GetDefault returns the default provider
+// GetDefault returns the default provider.
 func (m *ProviderManager) GetDefault() (Provider, error) {
 	return m.GetProvider(m.defaultProvider)
 }
 
-// RouteByModel routes to the appropriate provider based on model name
+// RouteByModel routes to the appropriate provider based on model name.
 func (m *ProviderManager) RouteByModel(modelName string) (Provider, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -87,7 +87,7 @@ func (m *ProviderManager) RouteByModel(modelName string) (Provider, error) {
 	return m.GetDefault()
 }
 
-// ListProviders returns all registered provider names
+// ListProviders returns all registered provider names.
 func (m *ProviderManager) ListProviders() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -99,7 +99,7 @@ func (m *ProviderManager) ListProviders() []string {
 	return names
 }
 
-// GetProviderByFormat returns the first provider matching the format
+// GetProviderByFormat returns the first provider matching the format.
 func (m *ProviderManager) GetProviderByFormat(format ProviderFormat) (Provider, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -112,12 +112,12 @@ func (m *ProviderManager) GetProviderByFormat(format ProviderFormat) (Provider, 
 	return nil, fmt.Errorf("no provider with format '%s'", format)
 }
 
-// GetDefaultProviderName returns the default provider name
+// GetDefaultProviderName returns the default provider name.
 func (m *ProviderManager) GetDefaultProviderName() string {
 	return m.defaultProvider
 }
 
-// HasProvider checks if a provider exists
+// HasProvider checks if a provider exists.
 func (m *ProviderManager) HasProvider(name string) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -125,13 +125,13 @@ func (m *ProviderManager) HasProvider(name string) bool {
 	return ok
 }
 
-// ProviderInfo contains provider metadata for debugging
+// ProviderInfo contains provider metadata for debugging.
 type ProviderInfo struct {
 	Name   string         `json:"name"`
 	Format ProviderFormat `json:"format"`
 }
 
-// ListProviderInfo returns info for all providers
+// ListProviderInfo returns info for all providers.
 func (m *ProviderManager) ListProviderInfo() []ProviderInfo {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -146,7 +146,7 @@ func (m *ProviderManager) ListProviderInfo() []ProviderInfo {
 	return infos
 }
 
-// DebugRoutes returns routing rules for debugging
+// DebugRoutes returns routing rules for debugging.
 func (m *ProviderManager) DebugRoutes() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

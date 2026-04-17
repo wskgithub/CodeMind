@@ -10,7 +10,7 @@ import (
 )
 
 // OpenAIToAnthropic converts an OpenAI ChatCompletion request to Anthropic Messages format.
-func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
+func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest { //nolint:gocyclo // complex business logic.
 	anthropicReq := &AnthropicMessagesRequest{
 		Model:       req.Model,
 		Stream:      req.Stream,
@@ -77,7 +77,7 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
 				}
 				for _, tc := range msg.ToolCalls {
 					var input interface{}
-					json.Unmarshal([]byte(tc.Function.Arguments), &input)
+					_ = json.Unmarshal([]byte(tc.Function.Arguments), &input)
 					blocks = append(blocks, AnthropicContentBlock{
 						Type:  "tool_use",
 						ID:    tc.ID,
@@ -193,7 +193,7 @@ func AnthropicToOpenAI(req *AnthropicMessagesRequest) *ChatCompletionRequest {
 	return openaiReq
 }
 
-func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
+func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nolint:gocyclo // complex business logic.
 	if textContent, ok := msg.Content.(string); ok {
 		return []ChatMessage{{
 			Role:    msg.Role,
@@ -365,7 +365,7 @@ func OpenAIResponseToAnthropic(resp *ChatCompletionResponse) *AnthropicMessagesR
 		}
 		for _, tc := range choice.Message.ToolCalls {
 			var input interface{}
-			json.Unmarshal([]byte(tc.Function.Arguments), &input)
+			_ = json.Unmarshal([]byte(tc.Function.Arguments), &input)
 			content = append(content, AnthropicContentBlock{
 				Type:  "tool_use",
 				ID:    tc.ID,
@@ -478,7 +478,7 @@ type OpenAIToAnthropicState struct {
 }
 
 // OpenAIChunkToAnthropicEvents converts an OpenAI stream chunk to Anthropic SSE format.
-func OpenAIChunkToAnthropicEvents(chunk *ChatCompletionChunk, isFirst bool, state *OpenAIToAnthropicState) string {
+func OpenAIChunkToAnthropicEvents(chunk *ChatCompletionChunk, isFirst bool, state *OpenAIToAnthropicState) string { //nolint:gocyclo // complex business logic.
 	var sb strings.Builder
 
 	if isFirst {
@@ -580,7 +580,7 @@ type AnthropicToOpenAIState struct {
 }
 
 // AnthropicEventToOpenAIChunk converts an Anthropic stream event to OpenAI SSE format.
-func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, model string, state *AnthropicToOpenAIState) string {
+func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, model string, state *AnthropicToOpenAIState) string { //nolint:gocyclo // complex business logic.
 	chunkID := "chatcmpl-" + uuid.New().String()[:8]
 	now := time.Now().Unix()
 

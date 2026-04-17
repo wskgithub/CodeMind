@@ -10,40 +10,40 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Config holds the application configuration
+// Config holds the application configuration.
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
 	LLM      LLMConfig      `mapstructure:"llm"`
-	System   SystemConfig   `mapstructure:"system"`
-	Upload   UploadConfig   `mapstructure:"upload"`
 	Log      LogConfig      `mapstructure:"log"`
+	Upload   UploadConfig   `mapstructure:"upload"`
+	Server   ServerConfig   `mapstructure:"server"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
+	Redis    RedisConfig    `mapstructure:"redis"`
+	Database DatabaseConfig `mapstructure:"database"`
+	System   SystemConfig   `mapstructure:"system"`
 }
 
-// ServerConfig holds HTTP server settings
+// ServerConfig holds HTTP server settings.
 type ServerConfig struct {
-	Host           string   `mapstructure:"host"`
-	Port           int      `mapstructure:"port"`
-	Mode           string   `mapstructure:"mode"` // debug | release | production | test
-	CORSOrigins    []string `mapstructure:"cors_origins"`
+	Host        string   `mapstructure:"host"`
+	Mode        string   `mapstructure:"mode"`
+	CORSOrigins []string `mapstructure:"cors_origins"`
+	Port        int      `mapstructure:"port"`
 }
 
-// DatabaseConfig holds database connection settings
+// DatabaseConfig holds database connection settings.
 type DatabaseConfig struct {
 	Host               string `mapstructure:"host"`
-	Port               int    `mapstructure:"port"`
 	Name               string `mapstructure:"name"`
 	User               string `mapstructure:"user"`
 	Password           string `mapstructure:"password"`
 	SSLMode            string `mapstructure:"sslmode"`
+	Port               int    `mapstructure:"port"`
 	MaxOpenConns       int    `mapstructure:"max_open_conns"`
 	MaxIdleConns       int    `mapstructure:"max_idle_conns"`
 	ConnMaxLifetimeMin int    `mapstructure:"conn_max_lifetime_minutes"`
 }
 
-// DSN returns the PostgreSQL connection string
+// DSN returns the PostgreSQL connection string.
 func (d *DatabaseConfig) DSN() string {
 	sslmode := d.SSLMode
 	if sslmode == "" {
@@ -55,42 +55,39 @@ func (d *DatabaseConfig) DSN() string {
 	)
 }
 
-// RedisConfig holds Redis connection settings
+// RedisConfig holds Redis connection settings.
 type RedisConfig struct {
 	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
 	Password string `mapstructure:"password"`
+	Port     int    `mapstructure:"port"`
 	DB       int    `mapstructure:"db"`
 	PoolSize int    `mapstructure:"pool_size"`
 }
 
-// Addr returns the Redis address
+// Addr returns the Redis address.
 func (r *RedisConfig) Addr() string {
 	return fmt.Sprintf("%s:%d", r.Host, r.Port)
 }
 
-// JWTConfig holds JWT authentication settings
+// JWTConfig holds JWT authentication settings.
 type JWTConfig struct {
 	Secret      string `mapstructure:"secret"`
 	ExpireHours int    `mapstructure:"expire_hours"`
 }
 
-// LLMConfig holds LLM service settings with multi-provider support
+// LLMConfig holds LLM service settings with multi-provider support.
 type LLMConfig struct {
-	// Legacy single-provider config (for backward compatibility)
-	BaseURL              string `mapstructure:"base_url"`
-	APIKey               string `mapstructure:"api_key"`
-	TimeoutSeconds       int    `mapstructure:"timeout_seconds"`
-	StreamTimeoutSeconds int    `mapstructure:"stream_timeout_seconds"`
-	MaxRetries           int    `mapstructure:"max_retries"`
-
-	// Multi-provider config
-	Providers       []ProviderConfig  `mapstructure:"providers"`
-	DefaultProvider string            `mapstructure:"default_provider"`
-	ModelRouting    map[string]string `mapstructure:"model_routing"`
+	ModelRouting         map[string]string `mapstructure:"model_routing"`
+	BaseURL              string            `mapstructure:"base_url"`
+	APIKey               string            `mapstructure:"api_key"`
+	DefaultProvider      string            `mapstructure:"default_provider"`
+	Providers            []ProviderConfig  `mapstructure:"providers"`
+	TimeoutSeconds       int               `mapstructure:"timeout_seconds"`
+	StreamTimeoutSeconds int               `mapstructure:"stream_timeout_seconds"`
+	MaxRetries           int               `mapstructure:"max_retries"`
 }
 
-// ProviderConfig holds settings for a single LLM provider
+// ProviderConfig holds settings for a single LLM provider.
 type ProviderConfig struct {
 	Name                 string `mapstructure:"name"`
 	Format               string `mapstructure:"format"`
@@ -100,7 +97,7 @@ type ProviderConfig struct {
 	StreamTimeoutSeconds int    `mapstructure:"stream_timeout_seconds"`
 }
 
-// GetEffectiveProviders returns the provider list, falling back to legacy config if needed
+// GetEffectiveProviders returns the provider list, falling back to legacy config if needed.
 func (c *LLMConfig) GetEffectiveProviders() []ProviderConfig {
 	if len(c.Providers) > 0 {
 		return c.Providers
@@ -118,7 +115,7 @@ func (c *LLMConfig) GetEffectiveProviders() []ProviderConfig {
 	}
 }
 
-// GetDefaultProviderName returns the default provider name
+// GetDefaultProviderName returns the default provider name.
 func (c *LLMConfig) GetDefaultProviderName() string {
 	if c.DefaultProvider != "" {
 		return c.DefaultProvider
@@ -130,7 +127,7 @@ func (c *LLMConfig) GetDefaultProviderName() string {
 	return "default"
 }
 
-// SystemConfig holds system-level business settings
+// SystemConfig holds system-level business settings.
 type SystemConfig struct {
 	MaxKeysPerUser       int  `mapstructure:"max_keys_per_user"`
 	DefaultConcurrency   int  `mapstructure:"default_concurrency"`
@@ -139,24 +136,24 @@ type SystemConfig struct {
 	ForceChangePassword  bool `mapstructure:"force_change_password"`
 }
 
-// UploadConfig holds file upload settings
+// UploadConfig holds file upload settings.
 type UploadConfig struct {
 	Dir       string `mapstructure:"dir"`
-	MaxSizeMB int    `mapstructure:"max_size_mb"`
 	URLPrefix string `mapstructure:"url_prefix"`
+	MaxSizeMB int    `mapstructure:"max_size_mb"`
 }
 
-// LogConfig holds logging settings
+// LogConfig holds logging settings.
 type LogConfig struct {
-	Level    string `mapstructure:"level"`    // debug | info | warn | error
-	Format   string `mapstructure:"format"`   // json | console
-	Output   string `mapstructure:"output"`   // stdout | file
+	Level    string `mapstructure:"level"`  // debug | info | warn | error
+	Format   string `mapstructure:"format"` // json | console
+	Output   string `mapstructure:"output"` // stdout | file
 	FilePath string `mapstructure:"file_path"`
 }
 
 var globalConfig *Config
 
-// Load loads configuration from file and environment variables
+// Load loads configuration from file and environment variables.
 func Load(configPath string) (*Config, error) {
 	v := viper.New()
 
@@ -190,43 +187,43 @@ func Load(configPath string) (*Config, error) {
 	return cfg, nil
 }
 
-// Get returns the global config instance
+// Get returns the global config instance.
 func Get() *Config {
 	return globalConfig
 }
 
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.host", "0.0.0.0")
-	v.SetDefault("server.port", 8080)
+	v.SetDefault("server.port", 8080) //nolint:mnd // intentional constant.
 	v.SetDefault("server.mode", "debug")
 
 	v.SetDefault("database.host", "localhost")
-	v.SetDefault("database.port", 5432)
+	v.SetDefault("database.port", 5432) //nolint:mnd // intentional constant.
 	v.SetDefault("database.name", "codemind")
 	v.SetDefault("database.user", "codemind")
-	v.SetDefault("database.max_open_conns", 50)
-	v.SetDefault("database.max_idle_conns", 10)
-	v.SetDefault("database.conn_max_lifetime_minutes", 60)
+	v.SetDefault("database.max_open_conns", 50)            //nolint:mnd // intentional constant.
+	v.SetDefault("database.max_idle_conns", 10)            //nolint:mnd // intentional constant.
+	v.SetDefault("database.conn_max_lifetime_minutes", 60) //nolint:mnd // intentional constant.
 
 	v.SetDefault("redis.host", "localhost")
-	v.SetDefault("redis.port", 6379)
+	v.SetDefault("redis.port", 6379) //nolint:mnd // intentional constant.
 	v.SetDefault("redis.db", 0)
-	v.SetDefault("redis.pool_size", 20)
+	v.SetDefault("redis.pool_size", 20) //nolint:mnd // intentional constant.
 
-	v.SetDefault("jwt.expire_hours", 24)
+	v.SetDefault("jwt.expire_hours", 24) //nolint:mnd // intentional constant.
 
-	v.SetDefault("llm.timeout_seconds", 300)
-	v.SetDefault("llm.stream_timeout_seconds", 600)
+	v.SetDefault("llm.timeout_seconds", 300)        //nolint:mnd // intentional constant.
+	v.SetDefault("llm.stream_timeout_seconds", 600) //nolint:mnd // intentional constant.
 	v.SetDefault("llm.max_retries", 0)
 
-	v.SetDefault("system.max_keys_per_user", 10)
-	v.SetDefault("system.default_concurrency", 5)
-	v.SetDefault("system.default_daily_tokens", 1000000)
-	v.SetDefault("system.default_monthly_tokens", 20000000)
+	v.SetDefault("system.max_keys_per_user", 10)            //nolint:mnd // intentional constant.
+	v.SetDefault("system.default_concurrency", 5)           //nolint:mnd // intentional constant.
+	v.SetDefault("system.default_daily_tokens", 1000000)    //nolint:mnd // intentional constant.
+	v.SetDefault("system.default_monthly_tokens", 20000000) //nolint:mnd // intentional constant.
 	v.SetDefault("system.force_change_password", true)
 
 	v.SetDefault("upload.dir", "./uploads")
-	v.SetDefault("upload.max_size_mb", 5)
+	v.SetDefault("upload.max_size_mb", 5) //nolint:mnd // intentional constant.
 	v.SetDefault("upload.url_prefix", "/uploads")
 
 	v.SetDefault("log.level", "info")
@@ -261,7 +258,7 @@ func bindEnvVars(v *viper.Viper) {
 	}
 }
 
-// InitLogger initializes the Zap logger
+// InitLogger initializes the Zap logger.
 func InitLogger(cfg *LogConfig) (*zap.Logger, error) {
 	var level zapcore.Level
 	if err := level.UnmarshalText([]byte(cfg.Level)); err != nil {
@@ -280,7 +277,8 @@ func InitLogger(cfg *LogConfig) (*zap.Logger, error) {
 	if cfg.Output == "file" && cfg.FilePath != "" {
 		zapCfg.OutputPaths = []string{cfg.FilePath}
 		zapCfg.ErrorOutputPaths = []string{cfg.FilePath}
-		if err := os.MkdirAll(cfg.FilePath[:strings.LastIndex(cfg.FilePath, "/")], 0755); err != nil {
+		//nolint:mnd // magic number for configuration/defaults.
+		if err := os.MkdirAll(cfg.FilePath[:strings.LastIndex(cfg.FilePath, "/")], 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
 	}

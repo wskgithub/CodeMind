@@ -1,12 +1,11 @@
 package handler
 
 import (
-	"encoding/json"
+	"codemind/internal/middleware"
+	"codemind/internal/service"
 	"fmt"
 	"net/http"
 
-	"codemind/internal/middleware"
-	"codemind/internal/service"
 	mcpPkg "codemind/pkg/mcp"
 
 	"github.com/gin-gonic/gin"
@@ -29,8 +28,7 @@ func NewMCPGatewayHandler(mcpService *service.MCPService, logger *zap.Logger) *M
 	}
 }
 
-// SSEConnect establishes SSE connection (MCP SSE transport).
-// GET /mcp/sse
+// SSEConnect handles GET /mcp/sse requests.
 func (h *MCPGatewayHandler) SSEConnect(c *gin.Context) {
 	messageBaseURL := h.getMessageBaseURL(c)
 	session, err := mcpPkg.NewSSESession(c.Writer, messageBaseURL)
@@ -67,8 +65,7 @@ func (h *MCPGatewayHandler) SSEConnect(c *gin.Context) {
 	}
 }
 
-// HandleMessage handles JSON-RPC messages.
-// POST /mcp/message
+// HandleMessage handles POST /mcp/message requests.
 func (h *MCPGatewayHandler) HandleMessage(c *gin.Context) {
 	sessionID := c.Query("sessionId")
 	if sessionID == "" {
@@ -118,8 +115,7 @@ func (h *MCPGatewayHandler) HandleMessage(c *gin.Context) {
 	c.Status(http.StatusAccepted)
 }
 
-// HandleStreamableHTTP handles Streamable HTTP transport.
-// POST /mcp/
+// HandleStreamableHTTP handles POST /mcp/ requests.
 func (h *MCPGatewayHandler) HandleStreamableHTTP(c *gin.Context) {
 	var request mcpPkg.JSONRPCRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -181,9 +177,4 @@ func (h *MCPGatewayHandler) getMessageBaseURL(c *gin.Context) string {
 // GetSessionCount returns the current active session count.
 func (h *MCPGatewayHandler) GetSessionCount() int {
 	return h.sessionManager.Count()
-}
-
-func encodeJSON(v interface{}) json.RawMessage {
-	data, _ := json.Marshal(v)
-	return data
 }

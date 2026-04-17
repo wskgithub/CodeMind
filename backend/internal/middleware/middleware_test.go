@@ -1,6 +1,10 @@
 package middleware
 
 import (
+	"codemind/internal/pkg/crypto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/jwt"
+	"codemind/internal/pkg/response"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,11 +13,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"codemind/internal/pkg/crypto"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/pkg/jwt"
-	"codemind/internal/pkg/response"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
@@ -27,10 +26,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）.
 const testJWTSecret = "01234567890123456789012345678901"
 
-// setupTestRedis 创建测试用的 Redis 实例
+// setupTestRedis 创建测试用的 Redis 实例.
 func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{
@@ -39,13 +38,13 @@ func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 	return mr, rdb
 }
 
-// setupTestGin 设置测试用的 Gin 引擎
+// setupTestGin 设置测试用的 Gin 引擎.
 func setupTestGin() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
 }
 
-// setupTestDB 创建测试用的 SQLite 数据库
+// setupTestDB 创建测试用的 SQLite 数据库.
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -54,7 +53,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// MockMonitorStats 监控统计的 mock 实现
+// MockMonitorStats 监控统计的 mock 实现.
 type MockMonitorStats struct {
 	mock.Mock
 }
@@ -95,7 +94,7 @@ func TestCORS(t *testing.T) {
 		// CORS 中间件会自动处理 OPTIONS 请求
 		// 状态码可能是 204 或由路由决定
 		assert.Contains(t, []int{200, 204}, w.Code)
-		
+
 		// 验证 CORS 响应头
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Origin"))
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Methods"))
@@ -105,7 +104,7 @@ func TestCORS(t *testing.T) {
 		router.POST("/test", func(c *gin.Context) {
 			c.String(200, "OK")
 		})
-		
+
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/test", nil)
 		req.Header.Set("Origin", "http://localhost:3000")
@@ -491,8 +490,8 @@ func TestRequireManager(t *testing.T) {
 
 func TestGetUserID(t *testing.T) {
 	tests := []struct {
-		name         string
 		setupContext func(*gin.Context)
+		name         string
 		expectedID   int64
 	}{
 		{
@@ -569,9 +568,9 @@ func TestGetUserRole(t *testing.T) {
 
 func TestGetDepartmentID(t *testing.T) {
 	tests := []struct {
-		name         string
 		setupContext func(*gin.Context)
 		expectedID   *int64
+		name         string
 	}{
 		{
 			name: "正常获取部门ID",
@@ -606,10 +605,10 @@ func TestGetDepartmentID(t *testing.T) {
 
 func TestGetClaims(t *testing.T) {
 	tests := []struct {
-		name          string
 		setupContext  func(*gin.Context)
-		expectedNil   bool
 		expectedClaim *jwt.Claims
+		name          string
+		expectedNil   bool
 	}{
 		{
 			name: "正常获取 Claims",
@@ -699,9 +698,9 @@ func TestRequestMonitor(t *testing.T) {
 
 func TestExtractAPIKey(t *testing.T) {
 	tests := []struct {
-		name          string
-		setupHeaders  func(*http.Request)
-		expectedKey   string
+		name         string
+		setupHeaders func(*http.Request)
+		expectedKey  string
 	}{
 		{
 			name: "从 x-api-key 提取",
@@ -726,9 +725,9 @@ func TestExtractAPIKey(t *testing.T) {
 			expectedKey: "cm-from-x-api-key",
 		},
 		{
-			name:        "无 API Key",
+			name:         "无 API Key",
 			setupHeaders: func(req *http.Request) {},
-			expectedKey: "",
+			expectedKey:  "",
 		},
 		{
 			name: "错误的 Authorization 格式",
@@ -1124,9 +1123,9 @@ func TestGetAPIKeyInfo(t *testing.T) {
 		// 注意：当前实现中，当记录不存在时 GORM 不会返回错误
 		// 而是返回零值的结构体（所有字段为 0）
 		// 这可能是代码中的问题，但这里测试当前行为
-		assert.NoError(t, err) // 当前行为：不返回错误
-		assert.NotNil(t, info) // 返回空结构体而不是 nil
-		assert.Equal(t, int64(0), info.UserID) // 零值
+		assert.NoError(t, err)                    // 当前行为：不返回错误
+		assert.NotNil(t, info)                    // 返回空结构体而不是 nil
+		assert.Equal(t, int64(0), info.UserID)    // 零值
 		assert.Equal(t, int16(0), info.KeyStatus) // 零值
 	})
 }
@@ -1147,7 +1146,7 @@ func TestGetAPIKeyInfoDatabaseError(t *testing.T) {
 	})
 }
 
-// MockDB 用于模拟数据库错误的 mock
+// MockDB 用于模拟数据库错误的 mock.
 type MockDB struct {
 	errorOnQuery bool
 }

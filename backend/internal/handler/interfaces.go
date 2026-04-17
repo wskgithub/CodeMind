@@ -1,14 +1,14 @@
 package handler
 
 import (
-	"context"
-
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
+	"context"
+
 	jwtPkg "codemind/internal/pkg/jwt"
 )
 
-// DocumentService 文档服务接口
+// DocumentService 文档服务接口.
 type DocumentService interface {
 	List() ([]model.DocumentListItem, error)
 	GetBySlug(slug string) (*model.Document, error)

@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Handlers aggregates all HTTP handlers
+// Handlers aggregates all HTTP handlers.
 type Handlers struct {
 	Auth               *handler.AuthHandler
 	User               *handler.UserHandler
@@ -32,7 +32,7 @@ type Handlers struct {
 	ThirdPartyProvider *handler.ThirdPartyProviderHandler
 }
 
-// Setup initializes all routes
+// Setup initializes all routes.
 func Setup(
 	engine *gin.Engine,
 	handlers *Handlers,
@@ -47,14 +47,14 @@ func Setup(
 	engine.Use(middleware.Recovery(logger))
 	engine.Use(middleware.CORS(corsOrigins))
 	engine.Use(middleware.Logger(logger))
-	
+
 	if handlers.Monitor != nil {
 		engine.Use(middleware.RequestMonitor(handlers.Monitor))
 	}
 
 	// Health check (no auth)
 	engine.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(200, gin.H{"status": "ok"}) //nolint:mnd // intentional constant.
 	})
 
 	// 静态文件服务（上传的图片等资源）

@@ -13,7 +13,7 @@ import (
 // OpenAI Chat Completions 协议测试
 // ══════════════════════════════════
 
-// TestChatCompletionRequestSerialization 验证 ChatCompletionRequest 序列化包含所有关键字段
+// TestChatCompletionRequestSerialization 验证 ChatCompletionRequest 序列化包含所有关键字段.
 func TestChatCompletionRequestSerialization(t *testing.T) {
 	temp := 0.7
 	topP := 0.9
@@ -54,9 +54,11 @@ func TestChatCompletionRequestSerialization(t *testing.T) {
 	var raw map[string]interface{}
 	json.Unmarshal(data, &raw)
 
-	checks := []string{"model", "messages", "stream", "temperature", "top_p",
+	checks := []string{
+		"model", "messages", "stream", "temperature", "top_p",
 		"max_tokens", "seed", "parallel_tool_calls", "tools", "tool_choice",
-		"response_format", "stream_options"}
+		"response_format", "stream_options",
+	}
 	for _, key := range checks {
 		if _, ok := raw[key]; !ok {
 			t.Errorf("序列化结果缺少字段: %s", key)
@@ -64,7 +66,7 @@ func TestChatCompletionRequestSerialization(t *testing.T) {
 	}
 }
 
-// TestChatCompletionResponseDeserialization 验证完整响应体反序列化
+// TestChatCompletionResponseDeserialization 验证完整响应体反序列化.
 func TestChatCompletionResponseDeserialization(t *testing.T) {
 	respJSON := `{
 		"id": "chatcmpl-abc123",
@@ -134,7 +136,7 @@ func TestChatCompletionResponseDeserialization(t *testing.T) {
 	}
 }
 
-// TestChatCompletionWithToolCalls 测试包含工具调用的完整请求→响应流程
+// TestChatCompletionWithToolCalls 测试包含工具调用的完整请求→响应流程.
 func TestChatCompletionWithToolCalls(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 验证请求体包含 tools
@@ -194,7 +196,7 @@ func TestChatCompletionWithToolCalls(t *testing.T) {
 	}
 }
 
-// TestMultimodalContentMessage 验证多模态消息 Content 的 interface{} 类型处理
+// TestMultimodalContentMessage 验证多模态消息 Content 的 interface{} 类型处理.
 func TestMultimodalContentMessage(t *testing.T) {
 	msgJSON := `{
 		"role": "user",
@@ -221,7 +223,7 @@ func TestMultimodalContentMessage(t *testing.T) {
 // OpenAI Completions 协议测试
 // ══════════════════════════════════
 
-// TestCompletionRequestResponse 测试 Completions API 完整请求→响应
+// TestCompletionRequestResponse 测试 Completions API 完整请求→响应.
 func TestCompletionRequestResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/completions" {
@@ -264,7 +266,7 @@ func TestCompletionRequestResponse(t *testing.T) {
 // OpenAI Embeddings 协议测试
 // ══════════════════════════════════
 
-// TestEmbeddingRaw 测试 Embeddings 原始透传请求→响应
+// TestEmbeddingRaw 测试 Embeddings 原始透传请求→响应.
 func TestEmbeddingRaw(t *testing.T) {
 	expectedResp := `{
 		"object": "list",
@@ -308,7 +310,7 @@ func TestEmbeddingRaw(t *testing.T) {
 // OpenAI Responses API 协议测试
 // ══════════════════════════════════
 
-// TestResponsesRaw 测试 Responses API 非流式透传
+// TestResponsesRaw 测试 Responses API 非流式透传.
 func TestResponsesRaw(t *testing.T) {
 	respJSON := `{
 		"id": "resp_123",
@@ -346,7 +348,7 @@ func TestResponsesRaw(t *testing.T) {
 	}
 }
 
-// TestResponsesStreamReader 测试 Responses API 流式 SSE 读取
+// TestResponsesStreamReader 测试 Responses API 流式 SSE 读取.
 func TestResponsesStreamReader(t *testing.T) {
 	sseData := `event: response.created
 data: {"type":"response.created","response":{"id":"resp_001"}}
@@ -412,12 +414,12 @@ data: {"type":"response.completed","response":{"id":"resp_001","usage":{"input_t
 // OpenAI Raw Proxy 工具测试
 // ══════════════════════════════════
 
-// TestEnsureStreamOptions 验证自动注入 stream_options
+// TestEnsureStreamOptions 验证自动注入 stream_options.
 func TestEnsureStreamOptions(t *testing.T) {
 	tests := []struct {
+		check func(t *testing.T, result []byte)
 		name  string
 		input string
-		check func(t *testing.T, result []byte)
 	}{
 		{
 			name:  "无 stream_options 时应新增",
@@ -456,7 +458,7 @@ func TestEnsureStreamOptions(t *testing.T) {
 	}
 }
 
-// TestExtractUsageFromResponse 验证从原始响应中提取 usage
+// TestExtractUsageFromResponse 验证从原始响应中提取 usage.
 func TestExtractUsageFromResponse(t *testing.T) {
 	resp := `{"id":"x","usage":{"prompt_tokens":10,"completion_tokens":20,"total_tokens":30}}`
 	usage := ExtractUsageFromResponse([]byte(resp))
@@ -474,7 +476,7 @@ func TestExtractUsageFromResponse(t *testing.T) {
 	}
 }
 
-// TestChatCompletionRawPassthrough 测试原始请求体透传保留所有字段
+// TestChatCompletionRawPassthrough 测试原始请求体透传保留所有字段.
 func TestChatCompletionRawPassthrough(t *testing.T) {
 	var receivedBody []byte
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -500,7 +502,7 @@ func TestChatCompletionRawPassthrough(t *testing.T) {
 // OpenAI 错误响应测试
 // ══════════════════════════════════
 
-// TestErrorResponseSerialization 验证错误响应格式
+// TestErrorResponseSerialization 验证错误响应格式.
 func TestErrorResponseSerialization(t *testing.T) {
 	errResp := ErrorResponse{
 		Error: ErrorDetail{

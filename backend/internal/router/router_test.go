@@ -1,15 +1,14 @@
 package router
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-
 	"codemind/internal/model"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/jwt"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
@@ -23,7 +22,7 @@ import (
 
 // ==================== Test Helpers ====================
 
-// testJWTSecret 路由测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+// testJWTSecret 路由测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）.
 const testJWTSecret = "test-secret-key-for-unit-testing-minimum-32-chars"
 
 func setupTestDB(t *testing.T) *gorm.DB {

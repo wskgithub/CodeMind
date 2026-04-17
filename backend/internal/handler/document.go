@@ -9,17 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DocumentHandler 文档请求处理器
+// DocumentHandler 文档请求处理器.
 type DocumentHandler struct {
 	svc DocumentService
 }
 
-// NewDocumentHandler 创建文档处理器
+// NewDocumentHandler 创建文档处理器.
 func NewDocumentHandler(svc DocumentService) *DocumentHandler {
 	return &DocumentHandler{svc: svc}
 }
 
-// ListDocuments 获取已发布的文档列表（用户端）
+// ListDocuments 获取已发布的文档列表（用户端）.
 func (h *DocumentHandler) ListDocuments(c *gin.Context) {
 	docs, err := h.svc.List()
 	if err != nil {
@@ -29,7 +29,7 @@ func (h *DocumentHandler) ListDocuments(c *gin.Context) {
 	response.Success(c, docs)
 }
 
-// GetDocument 根据 slug 获取文档详情（用户端）
+// GetDocument 根据 slug 获取文档详情（用户端）.
 func (h *DocumentHandler) GetDocument(c *gin.Context) {
 	slug := c.Param("slug")
 	if slug == "" {
@@ -45,7 +45,7 @@ func (h *DocumentHandler) GetDocument(c *gin.Context) {
 	response.Success(c, doc)
 }
 
-// ListAllDocuments 获取全部文档（管理端）
+// ListAllDocuments 获取全部文档（管理端）.
 func (h *DocumentHandler) ListAllDocuments(c *gin.Context) {
 	docs, err := h.svc.ListAll()
 	if err != nil {
@@ -55,7 +55,7 @@ func (h *DocumentHandler) ListAllDocuments(c *gin.Context) {
 	response.Success(c, docs)
 }
 
-// GetDocumentByID 根据 ID 获取文档（管理端）
+// GetDocumentByID 根据 ID 获取文档（管理端）.
 func (h *DocumentHandler) GetDocumentByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -71,7 +71,7 @@ func (h *DocumentHandler) GetDocumentByID(c *gin.Context) {
 	response.Success(c, doc)
 }
 
-// CreateDocument 创建文档（管理端）
+// CreateDocument 创建文档（管理端）.
 func (h *DocumentHandler) CreateDocument(c *gin.Context) {
 	var req dto.CreateDocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *DocumentHandler) CreateDocument(c *gin.Context) {
 	response.Success(c, doc)
 }
 
-// UpdateDocument 更新文档（管理端）
+// UpdateDocument 更新文档（管理端）.
 func (h *DocumentHandler) UpdateDocument(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -109,7 +109,7 @@ func (h *DocumentHandler) UpdateDocument(c *gin.Context) {
 	response.Success(c, doc)
 }
 
-// DeleteDocument 删除文档（管理端）
+// DeleteDocument 删除文档（管理端）.
 func (h *DocumentHandler) DeleteDocument(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

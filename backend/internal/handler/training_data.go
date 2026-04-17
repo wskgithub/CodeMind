@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"net/http"
-	"strconv"
-	"time"
-
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/response"
 	"codemind/internal/repository"
 	"codemind/internal/service"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -28,8 +27,7 @@ func NewTrainingDataHandler(trainingService *service.TrainingDataService, logger
 	}
 }
 
-// List returns training data list.
-// GET /api/v1/training-data
+// List handles GET /api/v1/training-data requests.
 func (h *TrainingDataHandler) List(c *gin.Context) {
 	var query dto.TrainingDataQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -53,7 +51,7 @@ func (h *TrainingDataHandler) List(c *gin.Context) {
 	}
 	if query.EndDate != "" {
 		if t, err := time.Parse("2006-01-02", query.EndDate); err == nil {
-			end := t.Add(24 * time.Hour)
+			end := t.Add(24 * time.Hour) //nolint:mnd // intentional constant.
 			filter.EndDate = &end
 		}
 	}
@@ -67,8 +65,7 @@ func (h *TrainingDataHandler) List(c *gin.Context) {
 	response.SuccessWithPage(c, items, total, query.GetPage(), query.GetPageSize())
 }
 
-// GetDetail returns training data details.
-// GET /api/v1/training-data/:id
+// GetDetail handles GET /api/v1/training-data/:id requests.
 func (h *TrainingDataHandler) GetDetail(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -85,8 +82,7 @@ func (h *TrainingDataHandler) GetDetail(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// UpdateExcluded updates training data excluded status.
-// PUT /api/v1/training-data/:id/exclude
+// UpdateExcluded handles PUT /api/v1/training-data/:id/exclude requests.
 func (h *TrainingDataHandler) UpdateExcluded(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -108,8 +104,7 @@ func (h *TrainingDataHandler) UpdateExcluded(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetStats returns training data statistics.
-// GET /api/v1/training-data/stats
+// GetStats handles GET /api/v1/training-data/stats requests.
 func (h *TrainingDataHandler) GetStats(c *gin.Context) {
 	stats, err := h.trainingService.GetStats()
 	if err != nil {
@@ -120,8 +115,7 @@ func (h *TrainingDataHandler) GetStats(c *gin.Context) {
 	response.Success(c, stats)
 }
 
-// Export exports training data as JSONL format.
-// POST /api/v1/training-data/export
+// Export handles POST /api/v1/training-data/export requests.
 func (h *TrainingDataHandler) Export(c *gin.Context) {
 	var query dto.TrainingDataExportQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -141,7 +135,7 @@ func (h *TrainingDataHandler) Export(c *gin.Context) {
 	}
 	if query.EndDate != "" {
 		if t, err := time.Parse("2006-01-02", query.EndDate); err == nil {
-			end := t.Add(24 * time.Hour)
+			end := t.Add(24 * time.Hour) //nolint:mnd // intentional constant.
 			filter.EndDate = &end
 		}
 	}

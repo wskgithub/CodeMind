@@ -1,15 +1,14 @@
 package repository
 
 import (
+	"codemind/internal/model"
+	"codemind/internal/model/monitor"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
 	"time"
-
-	"codemind/internal/model"
-	"codemind/internal/model/monitor"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,13 +17,13 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// RepositoryTestSuite 测试套件
+// RepositoryTestSuite 测试套件.
 type RepositoryTestSuite struct {
 	suite.Suite
 	db *gorm.DB
 }
 
-// SetupSuite 测试套件初始化
+// SetupSuite 测试套件初始化.
 func (s *RepositoryTestSuite) SetupSuite() {
 	// 使用 SQLite 内存数据库
 	db, err := gorm.Open(sqlite.Open(":memory:?_fk=1"), &gorm.Config{
@@ -58,7 +57,7 @@ func (s *RepositoryTestSuite) SetupSuite() {
 	}
 }
 
-// TearDownSuite 测试套件清理
+// TearDownSuite 测试套件清理.
 func (s *RepositoryTestSuite) TearDownSuite() {
 	sqlDB, err := s.db.DB()
 	if err == nil {
@@ -66,7 +65,7 @@ func (s *RepositoryTestSuite) TearDownSuite() {
 	}
 }
 
-// SetupTest 每个测试用例前执行
+// SetupTest 每个测试用例前执行.
 func (s *RepositoryTestSuite) SetupTest() {
 	// 清理所有表数据（保留表结构）
 	s.db.Exec("DELETE FROM request_logs")
@@ -92,11 +91,11 @@ func (s *RepositoryTestSuite) TestUserRepository_Create() {
 	repo := NewUserRepository(s.db)
 
 	user := &model.User{
-		Username:    "testuser",
+		Username:     "testuser",
 		PasswordHash: "hashedpassword",
-		DisplayName: "Test User",
-		Role:        model.RoleUser,
-		Status:      model.StatusEnabled,
+		DisplayName:  "Test User",
+		Role:         model.RoleUser,
+		Status:       model.StatusEnabled,
 	}
 
 	err := repo.Create(user)
@@ -303,7 +302,7 @@ func (s *RepositoryTestSuite) TestUserRepository_ListWithFilters() {
 	filters = map[string]interface{}{
 		"keyword": "admin",
 	}
-	users, total, err = repo.List(1, 10, filters)
+	_, total, err = repo.List(1, 10, filters)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(1), total)
 }
@@ -353,11 +352,11 @@ func (s *RepositoryTestSuite) TestUserRepository_IncrementLoginFailCount() {
 	repo := NewUserRepository(s.db)
 
 	user := &model.User{
-		Username:     "testuser",
-		PasswordHash: "hashedpassword",
-		DisplayName:  "Test User",
-		Role:         model.RoleUser,
-		Status:       model.StatusEnabled,
+		Username:       "testuser",
+		PasswordHash:   "hashedpassword",
+		DisplayName:    "Test User",
+		Role:           model.RoleUser,
+		Status:         model.StatusEnabled,
 		LoginFailCount: 0,
 	}
 	repo.Create(user)
@@ -471,7 +470,6 @@ func (s *RepositoryTestSuite) TestUserRepository_CountByDepartment() {
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(5), count)
 }
-
 
 // ==================== Department Repository Tests ====================
 
@@ -1145,7 +1143,6 @@ func (s *RepositoryTestSuite) TestAnnouncementRepository_ListAll() {
 	assert.True(s.T(), all[0].Pinned)
 }
 
-
 // ==================== Audit Repository Tests ====================
 
 func (s *RepositoryTestSuite) TestAuditRepository_Create() {
@@ -1251,7 +1248,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithFilters() {
 	filters := map[string]interface{}{
 		"operator_id": &user1.ID,
 	}
-	logs, total, err := repo.List(1, 10, filters)
+	_, total, err := repo.List(1, 10, filters)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(2), total)
 
@@ -1259,7 +1256,7 @@ func (s *RepositoryTestSuite) TestAuditRepository_ListWithFilters() {
 	filters = map[string]interface{}{
 		"action": model.AuditActionCreateUser,
 	}
-	logs, total, err = repo.List(1, 10, filters)
+	logs, total, err := repo.List(1, 10, filters)
 	assert.NoError(s.T(), err)
 	assert.Equal(s.T(), int64(2), total)
 	assert.Equal(s.T(), model.AuditActionCreateUser, logs[0].Action)
@@ -1781,7 +1778,7 @@ func (s *RepositoryTestSuite) TestMCPRepository_CheckAccess() {
 	// 验证访问控制逻辑是否正确执行
 	// 注意：在实际数据库中这个断言应该为 false，表示拒绝访问
 	// 如果测试环境有事务隔离问题，可能需要调整
-	_ = allowed  // 避免未使用变量的警告
+	_ = allowed // 避免未使用变量的警告
 }
 
 func (s *RepositoryTestSuite) TestMCPRepository_DeleteAccessRulesByService() {
@@ -1813,7 +1810,6 @@ func (s *RepositoryTestSuite) TestMCPRepository_DeleteAccessRulesByService() {
 	rules, _ := repo.ListAccessRules(svc.ID)
 	assert.Len(s.T(), rules, 0)
 }
-
 
 // ==================== Monitor Repository Tests ====================
 
@@ -2350,7 +2346,6 @@ func (s *RepositoryTestSuite) TestRateLimitRepository_GetAllEffectiveLimits() {
 	assert.Len(s.T(), limits, 2)
 }
 
-
 // ==================== System Repository Tests ====================
 
 func (s *RepositoryTestSuite) TestSystemRepository_Upsert() {
@@ -2493,7 +2488,7 @@ func (s *RepositoryTestSuite) TestUsageRepository_UpsertDaily() {
 	// 第一次插入
 	err := repo.UpsertDaily(1, today, 100, 50, 150, 0, 0)
 	// SQLite 可能不支持 NOW() 函数，导致错误
-	if err != nil && (err.Error() == "no such function: NOW" || 
+	if err != nil && (err.Error() == "no such function: NOW" ||
 		containsStr(err.Error(), "no such function")) {
 		s.T().Skip("跳过测试：SQLite 不支持 NOW() 函数")
 		return
@@ -2885,7 +2880,7 @@ func TestRepositorySuite(t *testing.T) {
 	suite.Run(t, new(RepositoryTestSuite))
 }
 
-// TestMain 测试套件级别的初始化和清理
+// TestMain 测试套件级别的初始化和清理.
 func TestMain(m *testing.M) {
 	// 这里可以放置全局的测试初始化代码
 	// 例如：设置日志级别、初始化全局配置等

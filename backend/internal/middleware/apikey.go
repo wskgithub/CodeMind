@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"codemind/internal/pkg/crypto"
+	"codemind/internal/pkg/errcode"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,21 +10,18 @@ import (
 	"strings"
 	"time"
 
-	"codemind/internal/pkg/crypto"
-	"codemind/internal/pkg/errcode"
-
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
-// APIKeyInfo represents cached API key information in Redis
+// APIKeyInfo represents cached API key information in Redis.
 type APIKeyInfo struct {
-	UserID       int64  `json:"user_id"`
+	DepartmentID *int64 `json:"department_id"`
 	Username     string `json:"username"`
 	Role         string `json:"role"`
-	DepartmentID *int64 `json:"department_id"`
+	UserID       int64  `json:"user_id"`
 	KeyID        int64  `json:"key_id"`
 	KeyStatus    int16  `json:"key_status"`
 	UserStatus   int16  `json:"user_status"`
@@ -34,7 +33,7 @@ const (
 	CtxKeyLLMProtocol = "llm_protocol"
 )
 
-// SetLLMProtocol sets the LLM protocol format for proper error responses
+// SetLLMProtocol sets the LLM protocol format for proper error responses.
 func SetLLMProtocol(protocol string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(CtxKeyLLMProtocol, protocol)
@@ -42,7 +41,7 @@ func SetLLMProtocol(protocol string) gin.HandlerFunc {
 	}
 }
 
-// sendProtocolError sends error response in the appropriate protocol format
+// sendProtocolError sends error response in the appropriate protocol format.
 func sendProtocolError(c *gin.Context, httpStatus int, msg string) {
 	protocol, _ := c.Get(CtxKeyLLMProtocol)
 	switch protocol {
@@ -82,7 +81,7 @@ func anthropicErrorType(status int) string {
 		return "not_found_error"
 	case status == http.StatusTooManyRequests:
 		return "rate_limit_error"
-	case status >= 500:
+	case status >= 500: //nolint:mnd // intentional constant.
 		return "api_error"
 	default:
 		return "invalid_request_error"
@@ -97,14 +96,14 @@ func openaiErrorType(status int) string {
 		return "insufficient_quota"
 	case status == http.StatusTooManyRequests:
 		return "rate_limit_exceeded"
-	case status >= 500:
+	case status >= 500: //nolint:mnd // intentional constant.
 		return "server_error"
 	default:
 		return "invalid_request_error"
 	}
 }
 
-// APIKeyAuth validates API keys from Authorization or x-api-key headers
+// APIKeyAuth validates API keys from Authorization or x-api-key headers.
 func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Detect self-loop: reject if request comes from CodeMind's own LLM client
@@ -134,7 +133,7 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerF
 		}
 
 		keyHash := crypto.HashAPIKey(apiKey)
-		
+
 		if logger != nil {
 			logger.Debug("API key hash computed",
 				zap.String("key_hash_prefix", keyHash[:16]+"..."),
@@ -179,7 +178,7 @@ func APIKeyAuth(db *gorm.DB, rdb *redis.Client, logger *zap.Logger) gin.HandlerF
 	}
 }
 
-// extractAPIKey extracts API key from headers (x-api-key takes precedence)
+// extractAPIKey extracts API key from headers (x-api-key takes precedence).
 func extractAPIKey(c *gin.Context) string {
 	if key := c.GetHeader("x-api-key"); key != "" {
 		return key
@@ -187,7 +186,7 @@ func extractAPIKey(c *gin.Context) string {
 
 	authHeader := c.GetHeader("Authorization")
 	if authHeader != "" {
-		parts := strings.SplitN(authHeader, " ", 2)
+		parts := strings.SplitN(authHeader, " ", 2) //nolint:mnd // intentional constant.
 		if len(parts) == 2 && strings.EqualFold(parts[0], "Bearer") {
 			return parts[1]
 		}
@@ -196,7 +195,7 @@ func extractAPIKey(c *gin.Context) string {
 	return ""
 }
 
-// getAPIKeyInfo retrieves API key info, with Redis cache
+// getAPIKeyInfo retrieves API key info, with Redis cache.
 func getAPIKeyInfo(ctx context.Context, db *gorm.DB, rdb *redis.Client, keyHash string) (*APIKeyInfo, error) {
 	cacheKey := fmt.Sprintf("codemind:apikey:%s", keyHash)
 
@@ -209,14 +208,14 @@ func getAPIKeyInfo(ctx context.Context, db *gorm.DB, rdb *redis.Client, keyHash 
 	}
 
 	var result struct {
-		KeyID        int64
-		KeyStatus    int16
-		UserID       int64
+		DepartmentID *int64
+		ExpiresAt    *time.Time
 		Username     string
 		Role         string
-		DepartmentID *int64
+		KeyID        int64
+		UserID       int64
+		KeyStatus    int16
 		UserStatus   int16
-		ExpiresAt    *time.Time
 	}
 
 	query := `
@@ -236,7 +235,6 @@ func getAPIKeyInfo(ctx context.Context, db *gorm.DB, rdb *redis.Client, keyHash 
 	`
 
 	err = db.Raw(query, keyHash).Scan(&result).Error
-
 	if err != nil {
 		return nil, fmt.Errorf("API key lookup failed: %w", err)
 	}
@@ -256,7 +254,7 @@ func getAPIKeyInfo(ctx context.Context, db *gorm.DB, rdb *redis.Client, keyHash 
 	}
 
 	if data, err := json.Marshal(info); err == nil {
-		rdb.Set(ctx, cacheKey, string(data), 5*time.Minute)
+		rdb.Set(ctx, cacheKey, string(data), 5*time.Minute) //nolint:mnd // intentional constant.
 	}
 
 	return info, nil

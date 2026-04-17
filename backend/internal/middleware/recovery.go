@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Recovery handles panics and returns 500 errors with stack traces logged
+// Recovery handles panics and returns 500 errors with stack traces logged.
 func Recovery(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {

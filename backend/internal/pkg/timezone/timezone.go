@@ -1,3 +1,4 @@
+// Package timezone provides timezone utilities for Asia/Shanghai.
 package timezone
 
 import "time"
@@ -8,7 +9,7 @@ var Shanghai *time.Location
 func loadShanghaiLocation(tzName string) *time.Location {
 	loc, err := time.LoadLocation(tzName)
 	if err != nil {
-		return time.FixedZone("CST", 8*60*60)
+		return time.FixedZone("CST", 8*60*60) //nolint:mnd // 8 hours in seconds
 	}
 	return loc
 }

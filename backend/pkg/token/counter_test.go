@@ -2,7 +2,7 @@ package token
 
 import "testing"
 
-// TestEstimateTokens 测试 Token 估算
+// TestEstimateTokens 测试 Token 估算.
 func TestEstimateTokens(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -28,7 +28,7 @@ func TestEstimateTokens(t *testing.T) {
 	}
 }
 
-// TestEstimateMessagesTokens 测试消息列表 Token 估算
+// TestEstimateMessagesTokens 测试消息列表 Token 估算.
 func TestEstimateMessagesTokens(t *testing.T) {
 	messages := []map[string]string{
 		{"role": "user", "content": "Hello, how are you?"},
@@ -50,7 +50,7 @@ func TestEstimateMessagesTokens(t *testing.T) {
 	}
 }
 
-// TestEstimateTokensEmpty 测试空输入
+// TestEstimateTokensEmpty 测试空输入.
 func TestEstimateTokensEmpty(t *testing.T) {
 	if EstimateTokens("") != 0 {
 		t.Error("空字符串应返回 0")

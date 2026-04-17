@@ -1,16 +1,15 @@
 package handler
 
 import (
+	"codemind/internal/middleware"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/response"
+	"codemind/internal/service"
 	"encoding/csv"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
-
-	"codemind/internal/middleware"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/response"
-	"codemind/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,8 +24,7 @@ func NewStatsHandler(statsService *service.StatsService) *StatsHandler {
 	return &StatsHandler{statsService: statsService}
 }
 
-// Overview returns usage overview.
-// GET /api/v1/stats/overview
+// GET /api/v1/stats/overview.
 func (h *StatsHandler) Overview(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	role := middleware.GetUserRole(c)
@@ -41,8 +39,7 @@ func (h *StatsHandler) Overview(c *gin.Context) {
 	response.Success(c, overview)
 }
 
-// Usage returns usage statistics.
-// GET /api/v1/stats/usage
+// GET /api/v1/stats/usage.
 func (h *StatsHandler) Usage(c *gin.Context) {
 	var query dto.StatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -63,8 +60,7 @@ func (h *StatsHandler) Usage(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// Ranking returns usage rankings.
-// GET /api/v1/stats/ranking
+// GET /api/v1/stats/ranking.
 func (h *StatsHandler) Ranking(c *gin.Context) {
 	var query dto.RankingQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -89,8 +85,7 @@ func (h *StatsHandler) Ranking(c *gin.Context) {
 	response.Success(c, items)
 }
 
-// KeyUsageSummary returns key usage summary.
-// GET /api/v1/stats/key-usage
+// GET /api/v1/stats/key-usage.
 func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
 	var query dto.KeyUsageQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -111,8 +106,7 @@ func (h *StatsHandler) KeyUsageSummary(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// ExportCSV exports usage report as CSV.
-// GET /api/v1/stats/export/csv
+// GET /api/v1/stats/export/csv.
 func (h *StatsHandler) ExportCSV(c *gin.Context) {
 	var query dto.StatsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -135,7 +129,7 @@ func (h *StatsHandler) ExportCSV(c *gin.Context) {
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.Header("X-Content-Type-Options", "nosniff")
 
-	c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
+	_, _ = c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
 
 	writer := csv.NewWriter(c.Writer)
 	defer writer.Flush()

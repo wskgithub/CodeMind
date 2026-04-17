@@ -1,14 +1,13 @@
 package service
 
 import (
+	"codemind/internal/model"
+	"codemind/internal/repository"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"time"
-
-	"codemind/internal/model"
-	"codemind/internal/repository"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -21,13 +20,12 @@ const (
 
 // TrainingDataDeduplicator deduplicates training data using Redis.
 type TrainingDataDeduplicator struct {
+	lastRefresh   time.Time
 	rdb           *redis.Client
 	sysConfigRepo *repository.SystemRepository
 	logger        *zap.Logger
 	ttl           time.Duration
-
-	enabled     bool
-	lastRefresh time.Time
+	enabled       bool
 }
 
 // NewTrainingDataDeduplicator creates a new deduplicator.
@@ -116,8 +114,8 @@ func (d *TrainingDataDeduplicator) extractPrompt(body json.RawMessage) string {
 
 	var chatReq struct {
 		Messages []struct {
-			Role    string `json:"role"`
 			Content interface{} `json:"content"`
+			Role    string      `json:"role"`
 		} `json:"messages"`
 	}
 	if err := json.Unmarshal(body, &chatReq); err == nil && len(chatReq.Messages) > 0 {
@@ -163,11 +161,11 @@ func (d *TrainingDataDeduplicator) extractResponse(body json.RawMessage) string 
 	}
 
 	var anthropicResp struct {
+		Role    string `json:"role"`
 		Content []struct {
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"content"`
-		Role string `json:"role"`
 	}
 	if err := json.Unmarshal(body, &anthropicResp); err == nil && anthropicResp.Role == "assistant" {
 		var result string

@@ -19,8 +19,7 @@ func NewLLMBackendHandler(backendService *service.LLMBackendService) *LLMBackend
 	return &LLMBackendHandler{backendService: backendService}
 }
 
-// List returns all LLM backend nodes.
-// GET /api/v1/system/llm-backends
+// List handles GET /api/v1/system/llm-backends requests.
 func (h *LLMBackendHandler) List(c *gin.Context) {
 	backends, err := h.backendService.List()
 	if err != nil {
@@ -53,8 +52,7 @@ func (h *LLMBackendHandler) List(c *gin.Context) {
 	response.Success(c, items)
 }
 
-// Create creates an LLM backend node.
-// POST /api/v1/system/llm-backends
+// Create handles POST /api/v1/system/llm-backends requests.
 func (h *LLMBackendHandler) Create(c *gin.Context) {
 	var req dto.CreateLLMBackendRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -71,8 +69,7 @@ func (h *LLMBackendHandler) Create(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// Update updates an LLM backend node.
-// PUT /api/v1/system/llm-backends/:id
+// Update handles PUT /api/v1/system/llm-backends/:id requests.
 func (h *LLMBackendHandler) Update(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -95,8 +92,7 @@ func (h *LLMBackendHandler) Update(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// Delete deletes an LLM backend node.
-// DELETE /api/v1/system/llm-backends/:id
+// Delete handles DELETE /api/v1/system/llm-backends/:id requests.
 func (h *LLMBackendHandler) Delete(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {

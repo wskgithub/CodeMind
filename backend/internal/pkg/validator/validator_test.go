@@ -2,7 +2,7 @@ package validator
 
 import "testing"
 
-// TestValidatePassword 测试密码强度验证
+// TestValidatePassword 测试密码强度验证.
 func TestValidatePassword(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -30,7 +30,7 @@ func TestValidatePassword(t *testing.T) {
 	}
 }
 
-// TestValidateUsername 测试用户名格式验证
+// TestValidateUsername 测试用户名格式验证.
 func TestValidateUsername(t *testing.T) {
 	tests := []struct {
 		name     string

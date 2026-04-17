@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// TestSystemMetric_TableName 测试 SystemMetric 表名
+// TestSystemMetric_TableName 测试 SystemMetric 表名.
 func TestSystemMetric_TableName(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -28,7 +28,7 @@ func TestSystemMetric_TableName(t *testing.T) {
 	}
 }
 
-// TestSystemMetric_Constants 测试 MetricType 常量
+// TestSystemMetric_Constants 测试 MetricType 常量.
 func TestSystemMetric_Constants(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -71,7 +71,7 @@ func TestSystemMetric_Constants(t *testing.T) {
 	}
 }
 
-// TestSystemMetric_Struct 测试 SystemMetric 结构体创建和字段赋值
+// TestSystemMetric_Struct 测试 SystemMetric 结构体创建和字段赋值.
 func TestSystemMetric_Struct(t *testing.T) {
 	now := time.Now()
 
@@ -148,7 +148,7 @@ func TestSystemMetric_Struct(t *testing.T) {
 	}
 }
 
-// TestSystemMetricsSummary_Struct 测试 SystemMetricsSummary 结构体
+// TestSystemMetricsSummary_Struct 测试 SystemMetricsSummary 结构体.
 func TestSystemMetricsSummary_Struct(t *testing.T) {
 	now := time.Now()
 
@@ -197,23 +197,23 @@ func TestSystemMetricsSummary_Struct(t *testing.T) {
 		{
 			name: "should create SystemMetricsSummary with all fields",
 			data: SystemMetricsSummary{
-				CPUUsage:     cpuMetrics,
-				MemoryUsage:  memoryMetrics,
-				DiskUsage:    diskMetrics,
-				NetworkIO:    networkMetrics,
-				LoadAverage:  loadMetrics,
-				RecordedAt:   now,
+				CPUUsage:    cpuMetrics,
+				MemoryUsage: memoryMetrics,
+				DiskUsage:   diskMetrics,
+				NetworkIO:   networkMetrics,
+				LoadAverage: loadMetrics,
+				RecordedAt:  now,
 			},
 		},
 		{
 			name: "should create SystemMetricsSummary with nil fields",
 			data: SystemMetricsSummary{
-				CPUUsage:     nil,
-				MemoryUsage:  nil,
-				DiskUsage:    nil,
-				NetworkIO:    nil,
-				LoadAverage:  nil,
-				RecordedAt:   now,
+				CPUUsage:    nil,
+				MemoryUsage: nil,
+				DiskUsage:   nil,
+				NetworkIO:   nil,
+				LoadAverage: nil,
+				RecordedAt:  now,
 			},
 		},
 	}
@@ -233,7 +233,7 @@ func TestSystemMetricsSummary_Struct(t *testing.T) {
 	}
 }
 
-// TestCPUMetrics_Struct 测试 CPUMetrics 结构体
+// TestCPUMetrics_Struct 测试 CPUMetrics 结构体.
 func TestCPUMetrics_Struct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -283,7 +283,7 @@ func TestCPUMetrics_Struct(t *testing.T) {
 	}
 }
 
-// TestMemoryMetrics_Struct 测试 MemoryMetrics 结构体
+// TestMemoryMetrics_Struct 测试 MemoryMetrics 结构体.
 func TestMemoryMetrics_Struct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -340,7 +340,7 @@ func TestMemoryMetrics_Struct(t *testing.T) {
 	}
 }
 
-// TestDiskMetrics_Struct 测试 DiskMetrics 结构体
+// TestDiskMetrics_Struct 测试 DiskMetrics 结构体.
 func TestDiskMetrics_Struct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -411,7 +411,7 @@ func TestDiskMetrics_Struct(t *testing.T) {
 	}
 }
 
-// TestNetworkMetrics_Struct 测试 NetworkMetrics 结构体
+// TestNetworkMetrics_Struct 测试 NetworkMetrics 结构体.
 func TestNetworkMetrics_Struct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -475,7 +475,7 @@ func TestNetworkMetrics_Struct(t *testing.T) {
 	}
 }
 
-// TestLoadMetrics_Struct 测试 LoadMetrics 结构体
+// TestLoadMetrics_Struct 测试 LoadMetrics 结构体.
 func TestLoadMetrics_Struct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -525,7 +525,7 @@ func TestLoadMetrics_Struct(t *testing.T) {
 	}
 }
 
-// TestLLMNodeMetric_TableName 测试 LLMNodeMetric 表名
+// TestLLMNodeMetric_TableName 测试 LLMNodeMetric 表名.
 func TestLLMNodeMetric_TableName(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -548,7 +548,7 @@ func TestLLMNodeMetric_TableName(t *testing.T) {
 	}
 }
 
-// TestLLMNodeMetric_Constants 测试 NodeStatus 常量
+// TestLLMNodeMetric_Constants 测试 NodeStatus 常量.
 func TestLLMNodeMetric_Constants(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -591,7 +591,7 @@ func TestLLMNodeMetric_Constants(t *testing.T) {
 	}
 }
 
-// TestLLMNodeMetric_Struct 测试 LLMNodeMetric 结构体创建和字段赋值
+// TestLLMNodeMetric_Struct 测试 LLMNodeMetric 结构体创建和字段赋值.
 func TestLLMNodeMetric_Struct(t *testing.T) {
 	now := time.Now()
 
@@ -694,7 +694,7 @@ func TestLLMNodeMetric_Struct(t *testing.T) {
 	}
 }
 
-// TestGPUInfo_Struct 测试 GPUInfo 结构体
+// TestGPUInfo_Struct 测试 GPUInfo 结构体.
 func TestGPUInfo_Struct(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -765,7 +765,7 @@ func TestGPUInfo_Struct(t *testing.T) {
 	}
 }
 
-// TestLoadedModelInfo_Struct 测试 LoadedModelInfo 结构体
+// TestLoadedModelInfo_Struct 测试 LoadedModelInfo 结构体.
 func TestLoadedModelInfo_Struct(t *testing.T) {
 	now := time.Now()
 	loadedAt := now.Add(-time.Hour)
@@ -825,7 +825,7 @@ func TestLoadedModelInfo_Struct(t *testing.T) {
 	}
 }
 
-// TestLLMNodeSummary_Struct 测试 LLMNodeSummary 结构体
+// TestLLMNodeSummary_Struct 测试 LLMNodeSummary 结构体.
 func TestLLMNodeSummary_Struct(t *testing.T) {
 	now := time.Now()
 

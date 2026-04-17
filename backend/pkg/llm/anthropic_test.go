@@ -13,7 +13,7 @@ import (
 // Anthropic Messages API — 类型序列化测试
 // ══════════════════════════════════
 
-// TestAnthropicRequestSerialization 验证请求体包含所有关键字段
+// TestAnthropicRequestSerialization 验证请求体包含所有关键字段.
 func TestAnthropicRequestSerialization(t *testing.T) {
 	temp := 0.7
 	topP := 0.9
@@ -25,9 +25,9 @@ func TestAnthropicRequestSerialization(t *testing.T) {
 		Messages: []AnthropicMessage{
 			{Role: "user", Content: "Hello"},
 		},
-		System:    "You are helpful.",
-		MaxTokens: 4096,
-		Stream:    true,
+		System:          "You are helpful.",
+		MaxTokens:       4096,
+		Stream:          true,
 		Temperature:     &temp,
 		TopP:            &topP,
 		TopK:            &topK,
@@ -51,9 +51,11 @@ func TestAnthropicRequestSerialization(t *testing.T) {
 	var raw map[string]interface{}
 	json.Unmarshal(data, &raw)
 
-	checks := []string{"model", "messages", "system", "max_tokens", "stream",
+	checks := []string{
+		"model", "messages", "system", "max_tokens", "stream",
 		"temperature", "top_p", "top_k", "stop_sequences", "tools",
-		"tool_choice", "thinking", "metadata", "parallel_tool_use"}
+		"tool_choice", "thinking", "metadata", "parallel_tool_use",
+	}
 	for _, key := range checks {
 		if _, ok := raw[key]; !ok {
 			t.Errorf("序列化结果缺少字段: %s", key)
@@ -70,7 +72,7 @@ func TestAnthropicRequestSerialization(t *testing.T) {
 	}
 }
 
-// TestAnthropicResponseDeserialization 验证完整响应体反序列化
+// TestAnthropicResponseDeserialization 验证完整响应体反序列化.
 func TestAnthropicResponseDeserialization(t *testing.T) {
 	respJSON := `{
 		"id": "msg_01abc",
@@ -137,7 +139,7 @@ func TestAnthropicResponseDeserialization(t *testing.T) {
 	}
 }
 
-// TestAnthropicContentBlockThinking 验证 thinking 内容块序列化
+// TestAnthropicContentBlockThinking 验证 thinking 内容块序列化.
 func TestAnthropicContentBlockThinking(t *testing.T) {
 	block := AnthropicContentBlock{
 		Type:      "thinking",
@@ -164,7 +166,7 @@ func TestAnthropicContentBlockThinking(t *testing.T) {
 	}
 }
 
-// TestAnthropicUsageToUsage 验证 Anthropic Usage 到通用 Usage 的转换
+// TestAnthropicUsageToUsage 验证 Anthropic Usage 到通用 Usage 的转换.
 func TestAnthropicUsageToUsage(t *testing.T) {
 	au := &AnthropicUsage{
 		InputTokens:              100,
@@ -195,7 +197,7 @@ func TestAnthropicUsageToUsage(t *testing.T) {
 // Anthropic Client — 请求/响应测试
 // ══════════════════════════════════
 
-// TestAnthropicClientMessages 测试非流式消息调用
+// TestAnthropicClientMessages 测试非流式消息调用.
 func TestAnthropicClientMessages(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 验证请求方法和路径
@@ -265,7 +267,7 @@ func TestAnthropicClientMessages(t *testing.T) {
 	}
 }
 
-// TestAnthropicClientMessagesRaw 测试原始请求体透传
+// TestAnthropicClientMessagesRaw 测试原始请求体透传.
 func TestAnthropicClientMessagesRaw(t *testing.T) {
 	var receivedBody []byte
 	var receivedHeaders http.Header
@@ -332,7 +334,7 @@ func TestAnthropicClientMessagesRaw(t *testing.T) {
 	}
 }
 
-// TestAnthropicClientMessagesStreamRaw 测试原始请求体流式透传
+// TestAnthropicClientMessagesStreamRaw 测试原始请求体流式透传.
 func TestAnthropicClientMessagesStreamRaw(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_stream","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null,"usage":{"input_tokens":25,"output_tokens":1}}}
@@ -374,7 +376,7 @@ data: {"type":"message_stop"}
 	}
 }
 
-// TestAnthropicClientErrorHandling 测试错误处理
+// TestAnthropicClientErrorHandling 测试错误处理.
 func TestAnthropicClientErrorHandling(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -420,7 +422,7 @@ func TestAnthropicClientErrorHandling(t *testing.T) {
 // Anthropic SSE 流式读取器测试
 // ══════════════════════════════════
 
-// TestAnthropicStreamReaderBasic 测试基本 SSE 事件读取
+// TestAnthropicStreamReaderBasic 测试基本 SSE 事件读取.
 func TestAnthropicStreamReaderBasic(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null,"usage":{"input_tokens":25,"output_tokens":1}}}
@@ -488,7 +490,7 @@ data: {"type":"message_stop"}
 	}
 }
 
-// TestAnthropicStreamReaderToolUse 测试工具调用流式事件
+// TestAnthropicStreamReaderToolUse 测试工具调用流式事件.
 func TestAnthropicStreamReaderToolUse(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_tool","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null,"usage":{"input_tokens":50,"output_tokens":2}}}
@@ -551,7 +553,7 @@ data: {"type":"message_stop"}
 	}
 }
 
-// TestAnthropicStreamReaderThinking 测试扩展思考流式事件
+// TestAnthropicStreamReaderThinking 测试扩展思考流式事件.
 func TestAnthropicStreamReaderThinking(t *testing.T) {
 	sseData := `event: message_start
 data: {"type":"message_start","message":{"id":"msg_think","type":"message","role":"assistant","content":[],"model":"claude-sonnet-4-20250514","stop_reason":null}}
@@ -647,7 +649,7 @@ data: {"type":"message_stop"}
 	}
 }
 
-// TestAnthropicStreamReaderEmpty 测试空流
+// TestAnthropicStreamReaderEmpty 测试空流.
 func TestAnthropicStreamReaderEmpty(t *testing.T) {
 	body := io.NopCloser(strings.NewReader(""))
 	reader := NewAnthropicStreamReader(body)
@@ -663,7 +665,7 @@ func TestAnthropicStreamReaderEmpty(t *testing.T) {
 // Anthropic 错误响应测试
 // ══════════════════════════════════
 
-// TestAnthropicErrorResponseSerialization 验证错误响应格式
+// TestAnthropicErrorResponseSerialization 验证错误响应格式.
 func TestAnthropicErrorResponseSerialization(t *testing.T) {
 	errResp := AnthropicErrorResponse{
 		Type: "error",

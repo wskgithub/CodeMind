@@ -1,18 +1,17 @@
 package response
 
 import (
-	"net/http"
-
 	"codemind/internal/pkg/errcode"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Response represents a unified API response structure.
 type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
+	Message string      `json:"message"`
+	Code    int         `json:"code"`
 }
 
 // Pagination represents pagination information.

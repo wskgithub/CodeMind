@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestHashPassword 测试密码哈希
+// TestHashPassword 测试密码哈希.
 func TestHashPassword(t *testing.T) {
 	password := "Test@12345"
 	hash, err := HashPassword(password)
@@ -23,7 +23,7 @@ func TestHashPassword(t *testing.T) {
 	}
 }
 
-// TestCheckPassword 测试密码校验
+// TestCheckPassword 测试密码校验.
 func TestCheckPassword(t *testing.T) {
 	password := "Test@12345"
 	hash, _ := HashPassword(password)
@@ -39,7 +39,7 @@ func TestCheckPassword(t *testing.T) {
 	}
 }
 
-// TestGenerateAPIKey 测试 API Key 生成
+// TestGenerateAPIKey 测试 API Key 生成.
 func TestGenerateAPIKey(t *testing.T) {
 	fullKey, prefix, hash, err := GenerateAPIKey()
 	if err != nil {
@@ -73,7 +73,7 @@ func TestGenerateAPIKey(t *testing.T) {
 	}
 }
 
-// TestHashAPIKey 测试 API Key 哈希
+// TestHashAPIKey 测试 API Key 哈希.
 func TestHashAPIKey(t *testing.T) {
 	key1 := "cm-abcdef1234567890abcdef12345678"
 	key2 := "cm-abcdef1234567890abcdef12345679"
@@ -92,7 +92,7 @@ func TestHashAPIKey(t *testing.T) {
 	}
 }
 
-// TestGenerateAPIKeyUniqueness 测试 API Key 唯一性
+// TestGenerateAPIKeyUniqueness 测试 API Key 唯一性.
 func TestGenerateAPIKeyUniqueness(t *testing.T) {
 	keys := make(map[string]bool)
 	for i := 0; i < 100; i++ {

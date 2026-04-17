@@ -1,27 +1,26 @@
 package handler
 
 import (
-	"strconv"
-
 	"codemind/internal/middleware"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-// UserHandler handles user management endpoints
+// UserHandler handles user management endpoints.
 type UserHandler struct {
 	userService UserService
 }
 
-// NewUserHandler creates a user handler
+// NewUserHandler creates a user handler.
 func NewUserHandler(userService UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
-// List returns paginated user list
+// List returns paginated user list.
 func (h *UserHandler) List(c *gin.Context) {
 	var query dto.UserListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -41,7 +40,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	response.SuccessWithPage(c, users, total, query.GetPage(), query.GetPageSize())
 }
 
-// Create creates a new user
+// Create creates a new user.
 func (h *UserHandler) Create(c *gin.Context) {
 	var req dto.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,7 +61,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 	response.Success(c, user)
 }
 
-// GetDetail returns user details
+// GetDetail returns user details.
 func (h *UserHandler) GetDetail(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -79,7 +78,7 @@ func (h *UserHandler) GetDetail(c *gin.Context) {
 	response.Success(c, user)
 }
 
-// Update updates user information
+// Update updates user information.
 func (h *UserHandler) Update(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -105,7 +104,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// Delete soft-deletes a user
+// Delete soft-deletes a user.
 func (h *UserHandler) Delete(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -123,7 +122,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// UpdateStatus toggles user status
+// UpdateStatus toggles user status.
 func (h *UserHandler) UpdateStatus(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -149,7 +148,7 @@ func (h *UserHandler) UpdateStatus(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// ResetPassword resets a user's password
+// ResetPassword resets a user's password.
 func (h *UserHandler) ResetPassword(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -175,7 +174,7 @@ func (h *UserHandler) ResetPassword(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// UnlockUser unlocks a locked user account
+// UnlockUser unlocks a locked user account.
 func (h *UserHandler) UnlockUser(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {

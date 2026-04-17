@@ -1,11 +1,11 @@
 package middleware
 
 import (
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/response"
 	"strings"
 
 	jwtPkg "codemind/internal/pkg/jwt"
-	"codemind/internal/pkg/response"
-	"codemind/internal/pkg/errcode"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +18,7 @@ const (
 	CtxKeyClaims       = "claims"
 )
 
-// JWTAuth validates JWT tokens from Authorization header
+// JWTAuth validates JWT tokens from Authorization header.
 func JWTAuth(jwtManager *jwtPkg.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -28,7 +28,7 @@ func JWTAuth(jwtManager *jwtPkg.Manager) gin.HandlerFunc {
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
+		parts := strings.SplitN(authHeader, " ", 2) //nolint:mnd // intentional constant.
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 			response.Error(c, errcode.ErrTokenInvalid)
 			c.Abort()
@@ -61,7 +61,7 @@ func JWTAuth(jwtManager *jwtPkg.Manager) gin.HandlerFunc {
 	}
 }
 
-// RequireRole restricts access to specified roles
+// RequireRole restricts access to specified roles.
 func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get(CtxKeyRole)
@@ -84,17 +84,17 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 	}
 }
 
-// RequireAdmin restricts access to super admins
+// RequireAdmin restricts access to super admins.
 func RequireAdmin() gin.HandlerFunc {
 	return RequireRole("super_admin")
 }
 
-// RequireManager restricts access to admins and dept managers
+// RequireManager restricts access to admins and dept managers.
 func RequireManager() gin.HandlerFunc {
 	return RequireRole("super_admin", "dept_manager")
 }
 
-// GetUserID returns the current user ID from context
+// GetUserID returns the current user ID from context.
 func GetUserID(c *gin.Context) int64 {
 	id, _ := c.Get(CtxKeyUserID)
 	if id == nil {
@@ -103,7 +103,7 @@ func GetUserID(c *gin.Context) int64 {
 	return id.(int64)
 }
 
-// GetUserRole returns the current user role from context
+// GetUserRole returns the current user role from context.
 func GetUserRole(c *gin.Context) string {
 	role, _ := c.Get(CtxKeyRole)
 	if role == nil {
@@ -112,7 +112,7 @@ func GetUserRole(c *gin.Context) string {
 	return role.(string)
 }
 
-// GetDepartmentID returns the current user department ID from context
+// GetDepartmentID returns the current user department ID from context.
 func GetDepartmentID(c *gin.Context) *int64 {
 	deptID, exists := c.Get(CtxKeyDepartmentID)
 	if !exists {
@@ -122,7 +122,7 @@ func GetDepartmentID(c *gin.Context) *int64 {
 	return &id
 }
 
-// GetClaims returns the JWT claims from context
+// GetClaims returns the JWT claims from context.
 func GetClaims(c *gin.Context) *jwtPkg.Claims {
 	claims, _ := c.Get(CtxKeyClaims)
 	if claims == nil {

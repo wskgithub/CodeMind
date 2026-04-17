@@ -1,28 +1,27 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/validator"
 	"codemind/internal/repository"
+	"encoding/json"
+	"fmt"
 
 	"go.uber.org/zap"
 )
 
-// UserService handles user management operations
+// UserService handles user management operations.
 type UserService struct {
-	userRepo *repository.UserRepository
-	deptRepo *repository.DepartmentRepository
+	userRepo  *repository.UserRepository
+	deptRepo  *repository.DepartmentRepository
 	auditRepo *repository.AuditRepository
-	logger   *zap.Logger
+	logger    *zap.Logger
 }
 
-// NewUserService creates a new UserService
+// NewUserService creates a new UserService.
 func NewUserService(
 	userRepo *repository.UserRepository,
 	deptRepo *repository.DepartmentRepository,
@@ -37,8 +36,8 @@ func NewUserService(
 	}
 }
 
-// Create creates a new user
-func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) (*dto.UserDetail, error) {
+// Create creates a new user.
+func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) (*dto.UserDetail, error) { //nolint:gocyclo // complex business logic.
 	if ok, msg := validator.ValidateUsername(req.Username); !ok {
 		return nil, errcode.ErrInvalidParams.WithMessage(msg)
 	}
@@ -137,7 +136,7 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 	return s.GetDetail(user.ID)
 }
 
-// GetDetail retrieves user details by ID
+// GetDetail retrieves user details by ID.
 func (s *UserService) GetDetail(id int64) (*dto.UserDetail, error) {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -168,8 +167,8 @@ func (s *UserService) GetDetail(id int64) (*dto.UserDetail, error) {
 	return detail, nil
 }
 
-// Update updates user information
-func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
+// Update updates user information.
+func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error { //nolint:gocyclo // complex business logic.
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
 		return errcode.ErrUserNotFound
@@ -224,7 +223,7 @@ func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID in
 	return nil
 }
 
-// Delete soft-deletes a user (super admin only)
+// Delete soft-deletes a user (super admin only).
 func (s *UserService) Delete(id int64, operatorID int64, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -245,7 +244,7 @@ func (s *UserService) Delete(id int64, operatorID int64, clientIP string) error 
 	return nil
 }
 
-// UpdateStatus toggles user status
+// UpdateStatus toggles user status.
 func (s *UserService) UpdateStatus(id int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -272,7 +271,7 @@ func (s *UserService) UpdateStatus(id int64, status int16, operatorID int64, ope
 	return nil
 }
 
-// ResetPassword resets a user's password
+// ResetPassword resets a user's password.
 func (s *UserService) ResetPassword(id int64, newPassword string, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -305,7 +304,7 @@ func (s *UserService) ResetPassword(id int64, newPassword string, operatorID int
 	return nil
 }
 
-// UnlockUser unlocks a locked user account
+// UnlockUser unlocks a locked user account.
 func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string, operatorDeptID *int64, reason string, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -337,7 +336,7 @@ func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string
 	return nil
 }
 
-// List returns a paginated list of users
+// List returns a paginated list of users.
 func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operatorDeptID *int64) ([]dto.UserDetail, int64, error) {
 	filters := map[string]interface{}{
 		"keyword":       query.Keyword,
@@ -359,19 +358,19 @@ func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operat
 	var details []dto.UserDetail
 	for _, u := range users {
 		d := dto.UserDetail{
-			ID:              u.ID,
-			Username:        u.Username,
-			DisplayName:     u.DisplayName,
-			Email:           u.Email,
-			Phone:           u.Phone,
-			AvatarURL:       u.AvatarURL,
-			Role:            u.Role,
-			DepartmentID:    u.DepartmentID,
-			Status:          u.Status,
-			LastLoginAt:     u.LastLoginAt,
-			LoginFailCount:  u.LoginFailCount,
-			LockedUntil:     u.LockedUntil,
-			CreatedAt:       u.CreatedAt,
+			ID:             u.ID,
+			Username:       u.Username,
+			DisplayName:    u.DisplayName,
+			Email:          u.Email,
+			Phone:          u.Phone,
+			AvatarURL:      u.AvatarURL,
+			Role:           u.Role,
+			DepartmentID:   u.DepartmentID,
+			Status:         u.Status,
+			LastLoginAt:    u.LastLoginAt,
+			LoginFailCount: u.LoginFailCount,
+			LockedUntil:    u.LockedUntil,
+			CreatedAt:      u.CreatedAt,
 		}
 		if u.Department != nil {
 			d.Department = &dto.DeptBrief{
@@ -410,7 +409,7 @@ func (s *UserService) recordAudit(operatorID int64, action, targetType string, t
 	}
 }
 
-// ImportUsers imports users from CSV
+// ImportUsers imports users from CSV.
 func (s *UserService) ImportUsers(users []dto.CreateUserRequest, operatorID int64, clientIP string) (int, []string, error) {
 	var successCount int
 	var errors []string
@@ -418,7 +417,7 @@ func (s *UserService) ImportUsers(users []dto.CreateUserRequest, operatorID int6
 	for i, req := range users {
 		_, err := s.Create(&req, operatorID, model.RoleSuperAdmin, nil, clientIP)
 		if err != nil {
-			errors = append(errors, fmt.Sprintf("row %d: %s", i+2, err.Error()))
+			errors = append(errors, fmt.Sprintf("row %d: %s", i+2, err.Error())) //nolint:mnd // intentional constant.
 			continue
 		}
 		successCount++

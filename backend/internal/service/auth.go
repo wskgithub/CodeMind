@@ -1,34 +1,34 @@
 package service
 
 import (
+	"codemind/internal/model"
+	"codemind/internal/model/dto"
+	"codemind/internal/pkg/crypto"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/pkg/validator"
+	"codemind/internal/repository"
 	"context"
 	"encoding/json"
 	"errors"
 	"time"
 
-	"codemind/internal/model"
-	"codemind/internal/model/dto"
-	"codemind/internal/pkg/crypto"
-	"codemind/internal/pkg/errcode"
 	jwtPkg "codemind/internal/pkg/jwt"
-	"codemind/internal/pkg/validator"
-	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
 
-// LoginLockConfig defines account lockout parameters
+// LoginLockConfig defines account lockout parameters.
 var LoginLockConfig = struct {
 	MaxFailCount    int
 	InitialLockTime time.Duration
 	MaxLockTime     time.Duration
 }{
-	MaxFailCount:    5,
-	InitialLockTime: 5 * time.Minute,
-	MaxLockTime:     24 * time.Hour,
+	MaxFailCount:    5,               //nolint:mnd // intentional constant.
+	InitialLockTime: 5 * time.Minute, //nolint:mnd // intentional constant.
+	MaxLockTime:     24 * time.Hour,  //nolint:mnd // intentional constant.
 }
 
-// AuthService handles authentication operations
+// AuthService handles authentication operations.
 type AuthService struct {
 	userRepo   *repository.UserRepository
 	auditRepo  *repository.AuditRepository
@@ -36,7 +36,7 @@ type AuthService struct {
 	logger     *zap.Logger
 }
 
-// NewAuthService creates a new AuthService
+// NewAuthService creates a new AuthService.
 func NewAuthService(
 	userRepo *repository.UserRepository,
 	auditRepo *repository.AuditRepository,
@@ -51,20 +51,20 @@ func NewAuthService(
 	}
 }
 
-// LoginResult contains login outcome with possible error details
+// LoginResult contains login outcome with possible error details.
 type LoginResult struct {
-	Success       bool
-	Response      *dto.LoginResponse
 	Err           error
-	Locked        bool
+	Response      *dto.LoginResponse
 	RemainingTime int64
 	FailCount     int
+	Success       bool
+	Locked        bool
 }
 
-// Used for timing-safe comparison when user doesn't exist
+// Used for timing-safe comparison when user doesn't exist.
 var dummyPasswordHash, _ = crypto.HashPassword("codemind-timing-safe-dummy")
 
-// Login authenticates a user and returns a JWT token
+// Login authenticates a user and returns a JWT token.
 func (s *AuthService) Login(req *dto.LoginRequest, clientIP string) (*dto.LoginResponse, error) {
 	user, err := s.userRepo.FindByUsername(req.Username)
 	if err != nil {
@@ -90,7 +90,7 @@ func (s *AuthService) Login(req *dto.LoginRequest, clientIP string) (*dto.LoginR
 				errors.New("account is locked, please try again later").Error(),
 			)
 		}
-		
+
 		return nil, errcode.ErrInvalidCredentials
 	}
 
@@ -138,7 +138,7 @@ func (s *AuthService) Login(req *dto.LoginRequest, clientIP string) (*dto.LoginR
 	return resp, nil
 }
 
-// handleLoginFailure increments fail count and may lock the account
+// handleLoginFailure increments fail count and may lock the account.
 func (s *AuthService) handleLoginFailure(userID int64) (*model.User, error) {
 	user, err := s.userRepo.IncrementLoginFailCount(userID)
 	if err != nil {
@@ -148,27 +148,27 @@ func (s *AuthService) handleLoginFailure(userID int64) (*model.User, error) {
 	if user.LoginFailCount >= LoginLockConfig.MaxFailCount {
 		lockDuration := s.calculateLockDuration(user.LoginFailCount)
 		lockedUntil := time.Now().Add(lockDuration)
-		
+
 		if err := s.userRepo.LockAccount(userID, lockedUntil); err != nil {
 			s.logger.Error("failed to lock account", zap.Error(err), zap.Int64("user_id", userID))
 			return user, err
 		}
-		
+
 		return s.userRepo.FindByID(userID)
 	}
 
 	return user, nil
 }
 
-// calculateLockDuration calculates lock duration based on fail count (doubles each time)
+// calculateLockDuration calculates lock duration based on fail count (doubles each time).
 func (s *AuthService) calculateLockDuration(failCount int) time.Duration {
 	baseDuration := LoginLockConfig.InitialLockTime
-	
+
 	excessCount := failCount - LoginLockConfig.MaxFailCount
 	if excessCount < 0 {
 		excessCount = 0
 	}
-	
+
 	duration := baseDuration
 	for i := 0; i < excessCount; i++ {
 		duration *= 2
@@ -177,11 +177,11 @@ func (s *AuthService) calculateLockDuration(failCount int) time.Duration {
 			break
 		}
 	}
-	
+
 	return duration
 }
 
-// GetLoginLockStatus retrieves user's login lock status
+// GetLoginLockStatus retrieves user's login lock status.
 func (s *AuthService) GetLoginLockStatus(userID int64) (*dto.LoginLockStatusResponse, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
@@ -196,7 +196,7 @@ func (s *AuthService) GetLoginLockStatus(userID int64) (*dto.LoginLockStatusResp
 	}, nil
 }
 
-// GetLoginLockStatusByUsername retrieves login lock status by username
+// GetLoginLockStatusByUsername retrieves login lock status by username.
 func (s *AuthService) GetLoginLockStatusByUsername(username string) (*dto.LoginLockStatusResponse, error) {
 	user, err := s.userRepo.FindByUsername(username)
 	if err != nil {
@@ -211,7 +211,7 @@ func (s *AuthService) GetLoginLockStatusByUsername(username string) (*dto.LoginL
 	}, nil
 }
 
-// Logout invalidates the user's token
+// Logout invalidates the user's token.
 func (s *AuthService) Logout(claims *jwtPkg.Claims) error {
 	return s.jwtManager.Blacklist(
 		context.Background(),
@@ -220,7 +220,7 @@ func (s *AuthService) Logout(claims *jwtPkg.Claims) error {
 	)
 }
 
-// GetProfile retrieves current user's profile
+// GetProfile retrieves current user's profile.
 func (s *AuthService) GetProfile(userID int64) (*dto.UserDetail, error) {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
@@ -228,19 +228,19 @@ func (s *AuthService) GetProfile(userID int64) (*dto.UserDetail, error) {
 	}
 
 	detail := &dto.UserDetail{
-		ID:              user.ID,
-		Username:        user.Username,
-		DisplayName:     user.DisplayName,
-		Email:           user.Email,
-		Phone:           user.Phone,
-		AvatarURL:       user.AvatarURL,
-		Role:            user.Role,
-		DepartmentID:    user.DepartmentID,
-		Status:          user.Status,
-		LastLoginAt:     user.LastLoginAt,
-		LoginFailCount:  user.LoginFailCount,
-		LockedUntil:     user.LockedUntil,
-		CreatedAt:       user.CreatedAt,
+		ID:             user.ID,
+		Username:       user.Username,
+		DisplayName:    user.DisplayName,
+		Email:          user.Email,
+		Phone:          user.Phone,
+		AvatarURL:      user.AvatarURL,
+		Role:           user.Role,
+		DepartmentID:   user.DepartmentID,
+		Status:         user.Status,
+		LastLoginAt:    user.LastLoginAt,
+		LoginFailCount: user.LoginFailCount,
+		LockedUntil:    user.LockedUntil,
+		CreatedAt:      user.CreatedAt,
 	}
 
 	if user.Department != nil {
@@ -253,7 +253,7 @@ func (s *AuthService) GetProfile(userID int64) (*dto.UserDetail, error) {
 	return detail, nil
 }
 
-// UpdateProfile updates current user's profile
+// UpdateProfile updates current user's profile.
 func (s *AuthService) UpdateProfile(userID int64, req *dto.UpdateProfileRequest) error {
 	user, err := s.userRepo.FindByID(userID)
 	if err != nil {
@@ -284,7 +284,7 @@ func (s *AuthService) UpdateProfile(userID int64, req *dto.UpdateProfileRequest)
 	return s.userRepo.UpdateFields(userID, fields)
 }
 
-// ChangePassword changes user's password and invalidates current token
+// ChangePassword changes user's password and invalidates current token.
 func (s *AuthService) ChangePassword(userID int64, req *dto.ChangePasswordRequest, claims *jwtPkg.Claims, clientIP string) error {
 	if ok, msg := validator.ValidatePassword(req.NewPassword); !ok {
 		return errcode.ErrInvalidParams.WithMessage(msg)

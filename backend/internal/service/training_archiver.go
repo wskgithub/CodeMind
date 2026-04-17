@@ -2,6 +2,8 @@ package service
 
 import (
 	"archive/tar"
+	"codemind/internal/model"
+	"codemind/internal/repository"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
@@ -10,9 +12,6 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-
-	"codemind/internal/model"
-	"codemind/internal/repository"
 
 	"go.uber.org/zap"
 )
@@ -26,10 +25,10 @@ const (
 
 // ArchiveMetadata contains metadata for archived files.
 type ArchiveMetadata struct {
+	ArchivedAt   time.Time `json:"archived_at"`
 	MinID        int64     `json:"min_id"`
 	MaxID        int64     `json:"max_id"`
 	RecordCount  int64     `json:"record_count"`
-	ArchivedAt   time.Time `json:"archived_at"`
 	OriginalSize int64     `json:"original_size"`
 }
 
@@ -37,11 +36,10 @@ type ArchiveMetadata struct {
 type TrainingDataArchiver struct {
 	repo       *repository.TrainingDataRepository
 	logger     *zap.Logger
+	stopCh     chan struct{}
 	archiveDir string
-
-	stopCh chan struct{}
-	wg     sync.WaitGroup
-	mu     sync.Mutex
+	wg         sync.WaitGroup
+	mu         sync.Mutex
 }
 
 // NewTrainingDataArchiver creates and starts the archiver service.
@@ -61,7 +59,8 @@ func NewTrainingDataArchiver(
 		stopCh:     make(chan struct{}),
 	}
 
-	if err := os.MkdirAll(archiveDir, 0755); err != nil {
+	//nolint:mnd // magic number for configuration/defaults.
+	if err := os.MkdirAll(archiveDir, 0o755); err != nil {
 		logger.Error("failed to create archive directory", zap.String("dir", archiveDir), zap.Error(err))
 	}
 
@@ -155,7 +154,7 @@ func (a *TrainingDataArchiver) doArchive() error {
 	if err != nil {
 		return fmt.Errorf("failed to export training data: %w", err)
 	}
-	defer os.Remove(tmpFile)
+	defer func() { _ = os.Remove(tmpFile) }()
 
 	archivePath, err := a.compressArchive(tmpFile, minID, maxID, recordCount)
 	if err != nil {
@@ -209,10 +208,10 @@ func (a *TrainingDataArchiver) exportToTempFile(maxID int64) (string, int64, err
 		return nil
 	})
 
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	if exportErr != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return "", 0, exportErr
 	}
 
@@ -228,13 +227,13 @@ func (a *TrainingDataArchiver) compressArchive(jsonlPath string, minID, maxID, r
 	if err != nil {
 		return "", err
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	gzWriter := gzip.NewWriter(outFile)
-	defer gzWriter.Close()
+	defer func() { _ = gzWriter.Close() }()
 
 	tarWriter := tar.NewWriter(gzWriter)
-	defer tarWriter.Close()
+	defer func() { _ = tarWriter.Close() }()
 
 	jsonlInfo, err := os.Stat(jsonlPath)
 	if err != nil {
@@ -253,7 +252,7 @@ func (a *TrainingDataArchiver) compressArchive(jsonlPath string, minID, maxID, r
 	if err := tarWriter.WriteHeader(&tar.Header{
 		Name:    "metadata.json",
 		Size:    int64(len(metaBytes)),
-		Mode:    0644,
+		Mode:    0o644, //nolint:mnd // intentional constant.
 		ModTime: time.Now(),
 	}); err != nil {
 		return "", err
@@ -265,7 +264,7 @@ func (a *TrainingDataArchiver) compressArchive(jsonlPath string, minID, maxID, r
 	if err := tarWriter.WriteHeader(&tar.Header{
 		Name:    "training_data.jsonl",
 		Size:    jsonlInfo.Size(),
-		Mode:    0644,
+		Mode:    0o644, //nolint:mnd // intentional constant.
 		ModTime: time.Now(),
 	}); err != nil {
 		return "", err
@@ -275,7 +274,7 @@ func (a *TrainingDataArchiver) compressArchive(jsonlPath string, minID, maxID, r
 	if err != nil {
 		return "", err
 	}
-	defer jsonlFile.Close()
+	defer func() { _ = jsonlFile.Close() }()
 
 	if _, err := io.Copy(tarWriter, jsonlFile); err != nil {
 		return "", err

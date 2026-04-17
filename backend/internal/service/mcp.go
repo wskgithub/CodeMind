@@ -1,12 +1,12 @@
 package service
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/repository"
+	"encoding/json"
+	"fmt"
+
 	mcpPkg "codemind/pkg/mcp"
 
 	"go.uber.org/zap"
@@ -14,9 +14,9 @@ import (
 
 // MCPService handles MCP service management.
 type MCPService struct {
-	mcpRepo  *repository.MCPRepository
-	proxy    *mcpPkg.Proxy
-	logger   *zap.Logger
+	mcpRepo *repository.MCPRepository
+	proxy   *mcpPkg.Proxy
+	logger  *zap.Logger
 }
 
 // NewMCPService creates a new MCP service instance.

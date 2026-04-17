@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-// TestShanghaiInitialization 测试 Shanghai 时区是否正确初始化
+// TestShanghaiInitialization 测试 Shanghai 时区是否正确初始化.
 func TestShanghaiInitialization(t *testing.T) {
 	tests := []struct {
-		name     string
 		validate func(*time.Location) bool
+		name     string
 	}{
 		{
 			name: "Shanghai 时区不应为 nil",
@@ -46,11 +46,11 @@ func TestShanghaiInitialization(t *testing.T) {
 	}
 }
 
-// TestNow 测试 Now() 返回上海时区时间
+// TestNow 测试 Now() 返回上海时区时间.
 func TestNow(t *testing.T) {
 	tests := []struct {
-		name     string
 		validate func(time.Time) bool
+		name     string
 	}{
 		{
 			name: "返回的时间时区应为 Shanghai",
@@ -86,11 +86,11 @@ func TestNow(t *testing.T) {
 	}
 }
 
-// TestToday 测试 Today() 返回今日零点且时区为 UTC
+// TestToday 测试 Today() 返回今日零点且时区为 UTC.
 func TestToday(t *testing.T) {
 	tests := []struct {
-		name     string
 		validate func(time.Time) bool
+		name     string
 	}{
 		{
 			name: "返回的时间时区应为 UTC",
@@ -123,11 +123,11 @@ func TestToday(t *testing.T) {
 	}
 }
 
-// TestTodayStr 测试 TodayStr() 格式正确
+// TestTodayStr 测试 TodayStr() 格式正确.
 func TestTodayStr(t *testing.T) {
 	tests := []struct {
-		name     string
 		validate func(string) bool
+		name     string
 	}{
 		{
 			name: "格式应为 YYYY-MM-DD",
@@ -166,11 +166,11 @@ func TestTodayStr(t *testing.T) {
 	}
 }
 
-// TestMonthStr 测试 MonthStr() 格式正确
+// TestMonthStr 测试 MonthStr() 格式正确.
 func TestMonthStr(t *testing.T) {
 	tests := []struct {
-		name     string
 		validate func(string) bool
+		name     string
 	}{
 		{
 			name: "格式应为 YYYY-MM",
@@ -209,13 +209,13 @@ func TestMonthStr(t *testing.T) {
 	}
 }
 
-// TestCrossDayTimezoneHandling 测试跨天时区处理
+// TestCrossDayTimezoneHandling 测试跨天时区处理.
 func TestCrossDayTimezoneHandling(t *testing.T) {
 	tests := []struct {
-		name           string
 		inputTime      time.Time
-		expectedHour   int // 转换后的上海时区小时
-		expectedOffset int // 预期偏移量（秒）
+		name           string
+		expectedHour   int
+		expectedOffset int
 	}{
 		{
 			name:           "UTC 零点转换为上海时区",
@@ -247,12 +247,12 @@ func TestCrossDayTimezoneHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// 将输入时间转换为上海时区
 			shanghaiTime := tt.inputTime.In(Shanghai)
-			
+
 			// 验证小时
 			if shanghaiTime.Hour() != tt.expectedHour {
 				t.Errorf("小时不匹配: expected %d, got %d", tt.expectedHour, shanghaiTime.Hour())
 			}
-			
+
 			// 验证偏移量
 			_, offset := shanghaiTime.Zone()
 			if offset != tt.expectedOffset {
@@ -262,42 +262,41 @@ func TestCrossDayTimezoneHandling(t *testing.T) {
 	}
 }
 
-// TestDaylightSavingTime 测试夏令时处理
-// 注：中国自1991年起不再使用夏令时，但时区库应正确处理其他地区的夏令时
+// 注：中国自1991年起不再使用夏令时，但时区库应正确处理其他地区的夏令时.
 func TestDaylightSavingTime(t *testing.T) {
 	tests := []struct {
-		name          string
-		locationName  string
-		testTime      time.Time
-		expectDST     bool // 是否预期为夏令时
-		expectedOffset int // 预期偏移量（秒）
+		testTime       time.Time
+		name           string
+		locationName   string
+		expectedOffset int
+		expectDST      bool
 	}{
 		{
-			name:          "上海时区不使用夏令时",
-			locationName:  "Asia/Shanghai",
-			testTime:      time.Date(2024, 7, 15, 12, 0, 0, 0, time.UTC), // 夏季
-			expectDST:     false,
+			name:           "上海时区不使用夏令时",
+			locationName:   "Asia/Shanghai",
+			testTime:       time.Date(2024, 7, 15, 12, 0, 0, 0, time.UTC), // 夏季
+			expectDST:      false,
 			expectedOffset: 8 * 60 * 60, // 始终是 +8
 		},
 		{
-			name:          "上海时区冬季不使用夏令时",
-			locationName:  "Asia/Shanghai",
-			testTime:      time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC), // 冬季
-			expectDST:     false,
+			name:           "上海时区冬季不使用夏令时",
+			locationName:   "Asia/Shanghai",
+			testTime:       time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC), // 冬季
+			expectDST:      false,
 			expectedOffset: 8 * 60 * 60, // 始终是 +8
 		},
 		{
-			name:          "美国东部夏令时",
-			locationName:  "America/New_York",
-			testTime:      time.Date(2024, 7, 15, 12, 0, 0, 0, time.UTC), // 夏季
-			expectDST:     true,
+			name:           "美国东部夏令时",
+			locationName:   "America/New_York",
+			testTime:       time.Date(2024, 7, 15, 12, 0, 0, 0, time.UTC), // 夏季
+			expectDST:      true,
 			expectedOffset: -4 * 60 * 60, // EDT = UTC-4
 		},
 		{
-			name:          "美国东部标准时间",
-			locationName:  "America/New_York",
-			testTime:      time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC), // 冬季
-			expectDST:     false,
+			name:           "美国东部标准时间",
+			locationName:   "America/New_York",
+			testTime:       time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC), // 冬季
+			expectDST:      false,
 			expectedOffset: -5 * 60 * 60, // EST = UTC-5
 		},
 	}
@@ -320,22 +319,22 @@ func TestDaylightSavingTime(t *testing.T) {
 	}
 }
 
-// TestTodayConsistency 测试 Today() 与 TodayStr() 的一致性
+// TestTodayConsistency 测试 Today() 与 TodayStr() 的一致性.
 func TestTodayConsistency(t *testing.T) {
 	// Today() 返回的时间应该与 TodayStr() 表示的日期一致
 	today := Today()
 	todayStr := TodayStr()
-	
+
 	// TodayStr() 基于上海时区，Today() 也基于上海时区的当前日期
 	// 但 Today() 返回的是 UTC 包装的时间
 	// 需要比较的是日期值，而不是字符串表示
 	nowShanghai := Now()
 	expectedDate := time.Date(nowShanghai.Year(), nowShanghai.Month(), nowShanghai.Day(), 0, 0, 0, 0, time.UTC)
-	
+
 	if !today.Equal(expectedDate) {
 		t.Errorf("Today() 日期不匹配: expected %v, got %v", expectedDate, today)
 	}
-	
+
 	// TodayStr 应该表示上海时区的当前日期
 	expectedStr := nowShanghai.Format("2006-01-02")
 	if todayStr != expectedStr {
@@ -343,46 +342,46 @@ func TestTodayConsistency(t *testing.T) {
 	}
 }
 
-// TestMonthStrConsistency 测试 MonthStr() 与 Now() 的一致性
+// TestMonthStrConsistency 测试 MonthStr() 与 Now() 的一致性.
 func TestMonthStrConsistency(t *testing.T) {
 	now := Now()
 	monthStr := MonthStr()
 	expectedStr := now.Format("2006-01")
-	
+
 	if monthStr != expectedStr {
 		t.Errorf("MonthStr() 不匹配: expected %s, got %s", expectedStr, monthStr)
 	}
 }
 
-// BenchmarkNow 基准测试 Now()
+// BenchmarkNow 基准测试 Now().
 func BenchmarkNow(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Now()
 	}
 }
 
-// BenchmarkToday 基准测试 Today()
+// BenchmarkToday 基准测试 Today().
 func BenchmarkToday(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Today()
 	}
 }
 
-// BenchmarkTodayStr 基准测试 TodayStr()
+// BenchmarkTodayStr 基准测试 TodayStr().
 func BenchmarkTodayStr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		TodayStr()
 	}
 }
 
-// BenchmarkMonthStr 基准测试 MonthStr()
+// BenchmarkMonthStr 基准测试 MonthStr().
 func BenchmarkMonthStr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		MonthStr()
 	}
 }
 
-// TestLoadShanghaiLocation 测试 loadShanghaiLocation 函数的两种分支
+// TestLoadShanghaiLocation 测试 loadShanghaiLocation 函数的两种分支.
 func TestLoadShanghaiLocation(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -407,17 +406,17 @@ func TestLoadShanghaiLocation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			loc := loadShanghaiLocation(tt.tzName)
-			
+
 			if loc == nil {
 				t.Fatal("loadShanghaiLocation() 返回 nil")
 			}
-			
+
 			// 验证时区名称
 			name := loc.String()
 			if name != tt.expectedName {
 				t.Errorf("时区名称错误: expected %s, got %s", tt.expectedName, name)
 			}
-			
+
 			// 验证偏移量
 			ref := time.Date(2024, 1, 1, 12, 0, 0, 0, loc)
 			_, offset := ref.Zone()
@@ -428,34 +427,33 @@ func TestLoadShanghaiLocation(t *testing.T) {
 	}
 }
 
-// TestShanghaiTimezoneFallback 测试 Shanghai 时区回退逻辑
-// 验证手动创建的 CST 时区与从数据库加载的 Asia/Shanghai 功能等效
+// 验证手动创建的 CST 时区与从数据库加载的 Asia/Shanghai 功能等效.
 func TestShanghaiTimezoneFallback(t *testing.T) {
 	// 创建手动 CST 时区（模拟 init 中的回退逻辑）
 	cstZone := time.FixedZone("CST", 8*60*60)
 	if cstZone == nil {
 		t.Error("无法创建 CST 时区")
 	}
-	
+
 	// 验证手动创建的时区名称
 	if cstZone.String() != "CST" {
 		t.Errorf("CST 时区名称错误: expected CST, got %s", cstZone.String())
 	}
-	
+
 	// 验证手动创建的时区可以正确转换时间
 	utcTime := time.Date(2024, 1, 15, 12, 0, 0, 0, time.UTC)
 	cstTime := utcTime.In(cstZone)
-	
+
 	// UTC 12:00 = CST 20:00
 	if cstTime.Hour() != 20 {
 		t.Errorf("CST 时间转换错误: expected hour 20, got %d", cstTime.Hour())
 	}
-	
+
 	// 验证 Shanghai 时区已被正确初始化（无论是加载的还是手动创建的）
 	if Shanghai == nil {
 		t.Error("Shanghai 时区不应为 nil")
 	}
-	
+
 	// 验证 Shanghai 和 CST 时区功能等效
 	shanghaiTime := utcTime.In(Shanghai)
 	if shanghaiTime.Hour() != 20 {

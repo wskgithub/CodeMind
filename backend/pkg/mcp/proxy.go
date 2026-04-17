@@ -10,17 +10,17 @@ import (
 
 // ServiceConnection represents an upstream MCP service connection.
 type ServiceConnection struct {
-	ServiceName string
-	MessageURL  string
 	Client      *SSEClient
 	Events      <-chan SSEEvent
+	ServiceName string
+	MessageURL  string
 }
 
 // Proxy forwards requests to upstream MCP services.
 type Proxy struct {
-	mu          sync.RWMutex
-	connections map[string]*ServiceConnection // serviceName -> connection
+	connections map[string]*ServiceConnection
 	logger      *zap.Logger
+	mu          sync.RWMutex
 }
 
 // NewProxy creates a new MCP proxy.

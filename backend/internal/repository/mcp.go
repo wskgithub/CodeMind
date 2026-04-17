@@ -118,7 +118,7 @@ func (r *MCPRepository) DeleteAccessRule(id int64) error {
 
 // CheckAccess checks if user has access to specified service.
 // Priority: user rule > department rule > role rule > default allow.
-func (r *MCPRepository) CheckAccess(serviceID, userID int64, deptID *int64, role string) bool {
+func (r *MCPRepository) CheckAccess(serviceID, userID int64, deptID *int64, _ string) bool {
 	var userRule model.MCPAccessRule
 	if r.db.Where("service_id = ? AND target_type = ? AND target_id = ?",
 		serviceID, model.MCPTargetUser, userID).First(&userRule).Error == nil {

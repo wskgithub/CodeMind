@@ -19,7 +19,7 @@ func RequestMonitor(stats MonitorStats) gin.HandlerFunc {
 		c.Next()
 
 		duration := time.Since(start)
-		responseTimeMs := float64(duration.Microseconds()) / 1000.0
+		responseTimeMs := float64(duration.Microseconds()) / 1000.0 //nolint:mnd // intentional constant.
 
 		statusCode := c.Writer.Status()
 

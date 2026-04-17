@@ -1,12 +1,11 @@
 package response
 
 import (
+	"codemind/internal/pkg/errcode"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"codemind/internal/pkg/errcode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -90,10 +89,10 @@ func TestSuccessWithPage(t *testing.T) {
 
 func TestSuccessWithPage_TotalPagesCalculation(t *testing.T) {
 	tests := []struct {
-		name       string
-		total      int64
-		pageSize   int
-		wantPages  int
+		name      string
+		total     int64
+		pageSize  int
+		wantPages int
 	}{
 		{"exact division", 20, 10, 2},
 		{"with remainder", 21, 10, 3},
@@ -142,11 +141,11 @@ func TestError(t *testing.T) {
 
 func TestErrorWithDifferentErrorCodes(t *testing.T) {
 	tests := []struct {
-		name       string
-		errCode    *errcode.ErrCode
-		wantHTTP   int
-		wantCode   int
-		wantMsg    string
+		errCode  *errcode.ErrCode
+		name     string
+		wantMsg  string
+		wantHTTP int
+		wantCode int
 	}{
 		{
 			name:     "internal error",
@@ -314,8 +313,8 @@ func TestResponseStructures(t *testing.T) {
 
 func TestSuccessWithComplexData(t *testing.T) {
 	tests := []struct {
-		name string
 		data interface{}
+		name string
 	}{
 		{
 			name: "string slice",
@@ -336,8 +335,8 @@ func TestSuccessWithComplexData(t *testing.T) {
 		{
 			name: "struct",
 			data: struct {
-				ID   int    `json:"id"`
 				Name string `json:"name"`
+				ID   int    `json:"id"`
 			}{ID: 1, Name: "test"},
 		},
 	}

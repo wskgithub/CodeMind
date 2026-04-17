@@ -1,11 +1,10 @@
 package handler
 
 import (
-	"strconv"
-
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/response"
 	"codemind/internal/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -25,8 +24,7 @@ func NewMCPAdminHandler(mcpService *service.MCPService, logger *zap.Logger) *MCP
 	}
 }
 
-// ListServices returns MCP service list.
-// GET /api/v1/mcp/services
+// GET /api/v1/mcp/services.
 func (h *MCPAdminHandler) ListServices(c *gin.Context) {
 	status := c.Query("status")
 	services, err := h.mcpService.ListServices(status)
@@ -38,8 +36,7 @@ func (h *MCPAdminHandler) ListServices(c *gin.Context) {
 	response.Success(c, services)
 }
 
-// CreateService creates an MCP service.
-// POST /api/v1/mcp/services
+// POST /api/v1/mcp/services.
 func (h *MCPAdminHandler) CreateService(c *gin.Context) {
 	var req dto.CreateMCPServiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,8 +54,7 @@ func (h *MCPAdminHandler) CreateService(c *gin.Context) {
 	response.Success(c, svc)
 }
 
-// UpdateService updates an MCP service.
-// PUT /api/v1/mcp/services/:id
+// PUT /api/v1/mcp/services/:id.
 func (h *MCPAdminHandler) UpdateService(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -81,8 +77,7 @@ func (h *MCPAdminHandler) UpdateService(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteService deletes an MCP service.
-// DELETE /api/v1/mcp/services/:id
+// DELETE /api/v1/mcp/services/:id.
 func (h *MCPAdminHandler) DeleteService(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -99,8 +94,7 @@ func (h *MCPAdminHandler) DeleteService(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// SyncTools synchronizes MCP service tools.
-// POST /api/v1/mcp/services/:id/sync
+// POST /api/v1/mcp/services/:id/sync.
 func (h *MCPAdminHandler) SyncTools(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -117,8 +111,7 @@ func (h *MCPAdminHandler) SyncTools(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetServiceTools returns MCP service tools.
-// GET /api/v1/mcp/services/:id/tools
+// GET /api/v1/mcp/services/:id/tools.
 func (h *MCPAdminHandler) GetServiceTools(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -136,8 +129,7 @@ func (h *MCPAdminHandler) GetServiceTools(c *gin.Context) {
 	response.Success(c, tools)
 }
 
-// ListAccessRules returns MCP access rules.
-// GET /api/v1/mcp/access-rules
+// GET /api/v1/mcp/access-rules.
 func (h *MCPAdminHandler) ListAccessRules(c *gin.Context) {
 	serviceIDStr := c.Query("service_id")
 	var serviceID int64
@@ -160,8 +152,7 @@ func (h *MCPAdminHandler) ListAccessRules(c *gin.Context) {
 	response.Success(c, rules)
 }
 
-// SetAccessRule sets an MCP access rule.
-// POST /api/v1/mcp/access-rules
+// POST /api/v1/mcp/access-rules.
 func (h *MCPAdminHandler) SetAccessRule(c *gin.Context) {
 	var req dto.SetMCPAccessRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -178,8 +169,7 @@ func (h *MCPAdminHandler) SetAccessRule(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteAccessRule deletes an MCP access rule.
-// DELETE /api/v1/mcp/access-rules/:id
+// DELETE /api/v1/mcp/access-rules/:id.
 func (h *MCPAdminHandler) DeleteAccessRule(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

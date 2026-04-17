@@ -1,13 +1,12 @@
 package service
 
 import (
-	"encoding/json"
-	"time"
-
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
+	"encoding/json"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -160,7 +159,7 @@ func (s *SystemService) ListAuditLogs(query *dto.AuditLogQuery) ([]model.AuditLo
 	}
 	if query.EndDate != "" {
 		if t, err := time.Parse("2006-01-02", query.EndDate); err == nil {
-			filters["end_date"] = t.Add(24 * time.Hour)
+			filters["end_date"] = t.Add(24 * time.Hour) //nolint:mnd // intentional constant.
 		}
 	}
 

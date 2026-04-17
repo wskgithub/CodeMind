@@ -1,11 +1,10 @@
 package service
 
 import (
-	"sync"
-	"time"
-
 	"codemind/internal/model"
 	"codemind/internal/repository"
+	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )

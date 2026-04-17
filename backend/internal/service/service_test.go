@@ -1,18 +1,18 @@
 package service
 
 import (
-	"context"
-	"errors"
-	"testing"
-	"time"
-
 	"codemind/internal/config"
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
-	jwtPkg "codemind/internal/pkg/jwt"
 	"codemind/internal/repository"
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	jwtPkg "codemind/internal/pkg/jwt"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
@@ -24,12 +24,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）.
 const testJWTSecret = "01234567890123456789012345678901"
 
 // ==================== Mock Repository Types ====================
 
-// MockUserRepository mocks the UserRepository
+// MockUserRepository mocks the UserRepository.
 type MockUserRepository struct {
 	mock.Mock
 }
@@ -126,7 +126,7 @@ func (m *MockUserRepository) LockAccount(id int64, lockedUntil time.Time) error 
 	return args.Error(0)
 }
 
-// MockAPIKeyRepository mocks the APIKeyRepository
+// MockAPIKeyRepository mocks the APIKeyRepository.
 type MockAPIKeyRepository struct {
 	mock.Mock
 }
@@ -182,7 +182,7 @@ func (m *MockAPIKeyRepository) Delete(id int64) error {
 	return args.Error(0)
 }
 
-// MockDepartmentRepository mocks the DepartmentRepository
+// MockDepartmentRepository mocks the DepartmentRepository.
 type MockDepartmentRepository struct {
 	mock.Mock
 }
@@ -248,7 +248,7 @@ func (m *MockDepartmentRepository) HasChildren(id int64) (bool, error) {
 	return args.Bool(0), args.Error(1)
 }
 
-// MockRateLimitRepository mocks the RateLimitRepository
+// MockRateLimitRepository mocks the RateLimitRepository.
 type MockRateLimitRepository struct {
 	mock.Mock
 }
@@ -302,7 +302,7 @@ func (m *MockRateLimitRepository) GetAllEffectiveLimits(userID int64, deptID *in
 	return args.Get(0).([]model.RateLimit), args.Error(1)
 }
 
-// MockAuditRepository mocks the AuditRepository
+// MockAuditRepository mocks the AuditRepository.
 type MockAuditRepository struct {
 	mock.Mock
 }
@@ -317,7 +317,7 @@ func (m *MockAuditRepository) List(page, pageSize int, filters map[string]interf
 	return args.Get(0).([]model.AuditLog), args.Get(1).(int64), args.Error(2)
 }
 
-// MockSystemRepository mocks the SystemRepository
+// MockSystemRepository mocks the SystemRepository.
 type MockSystemRepository struct {
 	mock.Mock
 }
@@ -350,7 +350,7 @@ func (m *MockSystemRepository) Delete(key string) error {
 	return args.Error(0)
 }
 
-// MockAnnouncementRepository mocks the AnnouncementRepository
+// MockAnnouncementRepository mocks the AnnouncementRepository.
 type MockAnnouncementRepository struct {
 	mock.Mock
 }
@@ -393,7 +393,7 @@ func (m *MockAnnouncementRepository) ListAll() ([]model.Announcement, error) {
 	return args.Get(0).([]model.Announcement), args.Error(1)
 }
 
-// MockUsageRepository mocks the UsageRepository
+// MockUsageRepository mocks the UsageRepository.
 type MockUsageRepository struct {
 	mock.Mock
 }
@@ -473,15 +473,15 @@ func TestAuthService_Login_Success(t *testing.T) {
 	logger := setupLogger()
 	mr := setupMiniredis(t)
 	defer mr.Close()
-	
+
 	rdb := setupRedisClient(mr)
 	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
 	require.NoError(t, err)
-	
+
 	// Create auth service with mocked dependencies
 	// We need to use the actual repository types, so we'll need to adapt our approach
 	// For now, let's test what we can with the actual service
-	
+
 	_ = mockUserRepo
 	_ = mockAuditRepo
 	_ = jwtManager
@@ -494,7 +494,7 @@ func TestAPIKeyService_Create_Success(t *testing.T) {
 	mockKeyRepo := new(MockAPIKeyRepository)
 	mockAuditRepo := new(MockAuditRepository)
 	logger := setupLogger()
-	
+
 	// Initialize config
 	cfg := &config.Config{
 		System: config.SystemConfig{
@@ -502,7 +502,7 @@ func TestAPIKeyService_Create_Success(t *testing.T) {
 		},
 	}
 	_ = cfg
-	
+
 	// We need to wrap the mock to match the actual repository type
 	// For now, let's document the test structure
 	_ = mockKeyRepo
@@ -517,7 +517,7 @@ func TestUserService_Create_Success(t *testing.T) {
 	mockDeptRepo := new(MockDepartmentRepository)
 	mockAuditRepo := new(MockAuditRepository)
 	logger := setupLogger()
-	
+
 	_ = mockUserRepo
 	_ = mockDeptRepo
 	_ = mockAuditRepo
@@ -531,7 +531,7 @@ func TestDepartmentService_Create_Success(t *testing.T) {
 	mockUserRepo := new(MockUserRepository)
 	mockAuditRepo := new(MockAuditRepository)
 	logger := setupLogger()
-	
+
 	_ = mockDeptRepo
 	_ = mockUserRepo
 	_ = mockAuditRepo
@@ -547,9 +547,9 @@ func TestLimitService_CheckAllQuotas_Success(t *testing.T) {
 	logger := setupLogger()
 	mr := setupMiniredis(t)
 	defer mr.Close()
-	
+
 	rdb := setupRedisClient(mr)
-	
+
 	// Create service
 	_ = mockLimitRepo
 	_ = mockUsageRepo
@@ -565,7 +565,7 @@ func TestSystemService_GetConfigs_Success(t *testing.T) {
 	mockAuditRepo := new(MockAuditRepository)
 	mockAnnRepo := new(MockAnnouncementRepository)
 	logger := setupLogger()
-	
+
 	_ = mockConfigRepo
 	_ = mockAuditRepo
 	_ = mockAnnRepo
@@ -574,34 +574,34 @@ func TestSystemService_GetConfigs_Success(t *testing.T) {
 
 // ==================== Real Integration Tests with SQLite ====================
 
-// TestAuthService_WithSQLite tests AuthService with a real SQLite database
+// TestAuthService_WithSQLite tests AuthService with a real SQLite database.
 func TestAuthService_WithSQLite(t *testing.T) {
 	db := setupTestDB(t)
-	
+
 	// Auto migrate tables
 	db.AutoMigrate(&model.User{}, &model.AuditLog{})
-	
+
 	// Create repositories
 	userRepo := repository.NewUserRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
-	
+
 	// Setup miniredis
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	
+
 	// Setup JWT manager
 	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
 	require.NoError(t, err)
 	logger := setupLogger()
-	
+
 	// Create service
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
-	
+
 	// Generate password hash for testing
 	passwordHash, err := crypto.HashPassword("TestPass123")
 	assert.NoError(t, err)
-	
+
 	// Test login with non-existent user
 	t.Run("Login_UserNotFound", func(t *testing.T) {
 		req := &dto.LoginRequest{
@@ -612,7 +612,7 @@ func TestAuthService_WithSQLite(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrInvalidCredentials, err)
 	})
-	
+
 	// Create a test user
 	testUser := &model.User{
 		Username:     "testuser",
@@ -623,7 +623,7 @@ func TestAuthService_WithSQLite(t *testing.T) {
 	}
 	err = userRepo.Create(testUser)
 	assert.NoError(t, err)
-	
+
 	// Test login with wrong password
 	t.Run("Login_WrongPassword", func(t *testing.T) {
 		req := &dto.LoginRequest{
@@ -634,7 +634,7 @@ func TestAuthService_WithSQLite(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrInvalidCredentials, err)
 	})
-	
+
 	// Test login with correct password
 	t.Run("Login_Success", func(t *testing.T) {
 		req := &dto.LoginRequest{
@@ -649,23 +649,23 @@ func TestAuthService_WithSQLite(t *testing.T) {
 	})
 }
 
-// TestUserService_WithSQLite tests UserService with a real SQLite database
+// TestUserService_WithSQLite tests UserService with a real SQLite database.
 func TestUserService_WithSQLite(t *testing.T) {
 	db := setupTestDB(t)
-	
+
 	// Auto migrate tables
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	// Create repositories
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
-	
+
 	logger := setupLogger()
-	
+
 	// Create service
 	userService := NewUserService(userRepo, deptRepo, auditRepo, logger)
-	
+
 	// Test create user - invalid username
 	t.Run("CreateUser_InvalidUsername", func(t *testing.T) {
 		req := &dto.CreateUserRequest{
@@ -678,7 +678,7 @@ func TestUserService_WithSQLite(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test create user - invalid password
 	t.Run("CreateUser_InvalidPassword", func(t *testing.T) {
 		req := &dto.CreateUserRequest{
@@ -691,7 +691,7 @@ func TestUserService_WithSQLite(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test create user - success
 	t.Run("CreateUser_Success", func(t *testing.T) {
 		req := &dto.CreateUserRequest{
@@ -706,7 +706,7 @@ func TestUserService_WithSQLite(t *testing.T) {
 		assert.Equal(t, "newuser", resp.Username)
 		assert.Equal(t, "New User", resp.DisplayName)
 	})
-	
+
 	// Test create user - duplicate username
 	t.Run("CreateUser_DuplicateUsername", func(t *testing.T) {
 		req := &dto.CreateUserRequest{
@@ -719,21 +719,21 @@ func TestUserService_WithSQLite(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrUsernameExists, err)
 	})
-	
+
 	// Test get user detail
 	t.Run("GetDetail_Success", func(t *testing.T) {
 		resp, err := userService.GetDetail(1)
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 	})
-	
+
 	// Test get user detail - not found
 	t.Run("GetDetail_NotFound", func(t *testing.T) {
 		resp, err := userService.GetDetail(9999)
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrUserNotFound, err)
 	})
-	
+
 	// Test list users
 	t.Run("List_Success", func(t *testing.T) {
 		query := &dto.UserListQuery{
@@ -745,7 +745,7 @@ func TestUserService_WithSQLite(t *testing.T) {
 		assert.GreaterOrEqual(t, total, int64(0))
 		assert.NotNil(t, users)
 	})
-	
+
 	// Test update user
 	t.Run("Update_Success", func(t *testing.T) {
 		displayName := "Updated Name"
@@ -755,19 +755,19 @@ func TestUserService_WithSQLite(t *testing.T) {
 		err := userService.Update(1, req, 1, model.RoleSuperAdmin, nil, "127.0.0.1")
 		assert.NoError(t, err)
 	})
-	
+
 	// Test delete user
 	t.Run("Delete_SelfDelete", func(t *testing.T) {
 		err := userService.Delete(1, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test reset password - invalid password
 	t.Run("ResetPassword_InvalidPassword", func(t *testing.T) {
 		err := userService.ResetPassword(1, "weak", 1, model.RoleSuperAdmin, nil, "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test reset password - success
 	t.Run("ResetPassword_Success", func(t *testing.T) {
 		err := userService.ResetPassword(1, "NewPass123", 1, model.RoleSuperAdmin, nil, "127.0.0.1")
@@ -775,23 +775,23 @@ func TestUserService_WithSQLite(t *testing.T) {
 	})
 }
 
-// TestDepartmentService_WithSQLite tests DepartmentService with a real SQLite database
+// TestDepartmentService_WithSQLite tests DepartmentService with a real SQLite database.
 func TestDepartmentService_WithSQLite(t *testing.T) {
 	db := setupTestDB(t)
-	
+
 	// Auto migrate tables
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	// Create repositories
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
-	
+
 	logger := setupLogger()
-	
+
 	// Create service
 	deptService := NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
-	
+
 	// Test create department - success
 	t.Run("Create_Success", func(t *testing.T) {
 		req := &dto.CreateDepartmentRequest{
@@ -802,7 +802,7 @@ func TestDepartmentService_WithSQLite(t *testing.T) {
 		assert.NotNil(t, dept)
 		assert.Equal(t, "Engineering", dept.Name)
 	})
-	
+
 	// Test create department - duplicate name
 	t.Run("Create_DuplicateName", func(t *testing.T) {
 		req := &dto.CreateDepartmentRequest{
@@ -812,7 +812,7 @@ func TestDepartmentService_WithSQLite(t *testing.T) {
 		assert.Nil(t, dept)
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test get department - success
 	t.Run("GetByID_Success", func(t *testing.T) {
 		dept, err := deptService.GetByID(1)
@@ -820,14 +820,14 @@ func TestDepartmentService_WithSQLite(t *testing.T) {
 		assert.NotNil(t, dept)
 		assert.Equal(t, "Engineering", dept.Name)
 	})
-	
+
 	// Test get department - not found
 	t.Run("GetByID_NotFound", func(t *testing.T) {
 		dept, err := deptService.GetByID(9999)
 		assert.Nil(t, dept)
 		assert.Equal(t, errcode.ErrDeptNotFound, err)
 	})
-	
+
 	// Test update department
 	t.Run("Update_Success", func(t *testing.T) {
 		newName := "Updated Engineering"
@@ -836,12 +836,12 @@ func TestDepartmentService_WithSQLite(t *testing.T) {
 		}
 		err := deptService.Update(1, req, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify update
 		dept, _ := deptService.GetByID(1)
 		assert.Equal(t, "Updated Engineering", dept.Name)
 	})
-	
+
 	// Test delete department - has users (should fail)
 	t.Run("Delete_HasUsers", func(t *testing.T) {
 		// Create a user in the department first
@@ -854,11 +854,11 @@ func TestDepartmentService_WithSQLite(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(testUser)
-		
+
 		err := deptService.Delete(1, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrDeptHasUsers, err)
 	})
-	
+
 	// Test list tree
 	t.Run("ListTree_Success", func(t *testing.T) {
 		tree, err := deptService.ListTree()
@@ -867,7 +867,7 @@ func TestDepartmentService_WithSQLite(t *testing.T) {
 	})
 }
 
-// TestAPIKeyService_WithSQLite tests APIKeyService with a real SQLite database
+// TestAPIKeyService_WithSQLite tests APIKeyService with a real SQLite database.
 func TestAPIKeyService_WithSQLite(t *testing.T) {
 	// Initialize config first (required by APIKeyService)
 	config.Load("") // Load default config
@@ -878,12 +878,12 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 		// If config.Get() returns nil, we'll skip this test
 		t.Skip("Config not properly initialized, skipping APIKey tests")
 	}
-	
+
 	db := setupTestDB(t)
-	
+
 	// Auto migrate tables
 	db.AutoMigrate(&model.User{}, &model.APIKey{}, &model.AuditLog{})
-	
+
 	// Create a test user first
 	userRepo := repository.NewUserRepository(db)
 	testUser := &model.User{
@@ -895,20 +895,20 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 	}
 	err := userRepo.Create(testUser)
 	assert.NoError(t, err)
-	
+
 	// Create repositories
 	keyRepo := repository.NewAPIKeyRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	
+
 	// Create service
 	encryptor := crypto.NewEncryptor(testJWTSecret)
 	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger, encryptor)
-	
+
 	// Test create API key
 	t.Run("Create_Success", func(t *testing.T) {
 		req := &dto.CreateAPIKeyRequest{
@@ -921,7 +921,7 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 		assert.NotEmpty(t, resp.Key)
 		assert.NotEmpty(t, resp.KeyPrefix)
 	})
-	
+
 	// Test list API keys
 	t.Run("List_Success", func(t *testing.T) {
 		keys, err := keyService.List(testUser.ID)
@@ -929,17 +929,17 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 		assert.NotNil(t, keys)
 		assert.GreaterOrEqual(t, len(keys), 1)
 	})
-	
+
 	// Test update status
 	t.Run("UpdateStatus_Success", func(t *testing.T) {
 		err := keyService.UpdateStatus(1, model.StatusDisabled, testUser.ID, model.RoleUser, nil, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify
 		key, _ := keyRepo.FindByID(1)
 		assert.Equal(t, model.StatusDisabled, key.Status)
 	})
-	
+
 	// Test update status - forbidden (user trying to update another user's key)
 	t.Run("UpdateStatus_Forbidden", func(t *testing.T) {
 		// Create another user and key
@@ -951,7 +951,7 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(otherUser)
-		
+
 		otherKey := &model.APIKey{
 			UserID:    otherUser.ID,
 			Name:      "Other Key",
@@ -960,11 +960,11 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 			Status:    model.StatusEnabled,
 		}
 		keyRepo.Create(otherKey)
-		
+
 		err := keyService.UpdateStatus(otherKey.ID, model.StatusDisabled, testUser.ID, model.RoleUser, nil, "127.0.0.1")
 		assert.Equal(t, errcode.ErrForbidden, err)
 	})
-	
+
 	// Test delete API key
 	t.Run("Delete_Success", func(t *testing.T) {
 		// Create a key to delete
@@ -976,15 +976,15 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 			Status:    model.StatusEnabled,
 		}
 		keyRepo.Create(keyToDelete)
-		
+
 		err := keyService.Delete(keyToDelete.ID, testUser.ID, model.RoleUser, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify deletion
 		_, err = keyRepo.FindByID(keyToDelete.ID)
 		assert.Error(t, err) // Should return error (not found)
 	})
-	
+
 	// Test copy API key - success
 	t.Run("Copy_Success", func(t *testing.T) {
 		req := &dto.CreateAPIKeyRequest{
@@ -993,13 +993,13 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 		createResp, err := keyService.Create(req, testUser.ID, "127.0.0.1")
 		assert.NoError(t, err)
 		assert.NotNil(t, createResp)
-		
+
 		copyResp, err := keyService.Copy(createResp.ID, testUser.ID, model.RoleUser, "127.0.0.1")
 		assert.NoError(t, err)
 		assert.NotNil(t, copyResp)
 		assert.Equal(t, createResp.Key, copyResp.Key)
 	})
-	
+
 	// Test copy API key - not copyable (old data without key_encrypted)
 	t.Run("Copy_NotCopyable", func(t *testing.T) {
 		// Create a key without KeyEncrypted (simulating old data)
@@ -1012,37 +1012,37 @@ func TestAPIKeyService_WithSQLite(t *testing.T) {
 		}
 		err := keyRepo.Create(oldKey)
 		assert.NoError(t, err)
-		
+
 		_, err = keyService.Copy(oldKey.ID, testUser.ID, model.RoleUser, "127.0.0.1")
 		assert.Equal(t, errcode.ErrAPIKeyNotCopyable, err)
 	})
 }
 
-// TestLimitService_WithSQLite tests LimitService with a real SQLite database
+// TestLimitService_WithSQLite tests LimitService with a real SQLite database.
 func TestLimitService_WithSQLite(t *testing.T) {
 	db := setupTestDB(t)
-	
+
 	// Auto migrate tables
 	db.AutoMigrate(&model.RateLimit{}, &model.AuditLog{})
-	
+
 	// Create repositories
 	limitRepo := repository.NewRateLimitRepository(db)
 	usageRepo := repository.NewUsageRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
-	
+
 	// Setup miniredis
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	
+
 	logger := setupLogger()
-	
+
 	// Create service
 	limitService := NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
-	
+
 	ctx := context.Background()
 	userID := int64(1)
-	
+
 	// Test upsert rate limit
 	t.Run("Upsert_Success", func(t *testing.T) {
 		req := &dto.UpsertRateLimitRequest{
@@ -1055,7 +1055,7 @@ func TestLimitService_WithSQLite(t *testing.T) {
 		err := limitService.Upsert(req, 1, "127.0.0.1")
 		assert.NoError(t, err)
 	})
-	
+
 	// Test list rate limits
 	t.Run("List_Success", func(t *testing.T) {
 		query := &dto.LimitListQuery{
@@ -1066,17 +1066,17 @@ func TestLimitService_WithSQLite(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, limits)
 	})
-	
+
 	// Test check quotas - no limits (should pass)
 	t.Run("CheckAllQuotas_NoLimits", func(t *testing.T) {
 		// Delete all limits first
 		db.Exec("DELETE FROM rate_limits")
-		
+
 		ok, err := limitService.CheckAllQuotas(ctx, userID, nil)
 		assert.NoError(t, err)
 		assert.True(t, ok)
 	})
-	
+
 	// Test check quotas - within limit
 	t.Run("CheckAllQuotas_WithinLimit", func(t *testing.T) {
 		// Create a limit
@@ -1090,32 +1090,32 @@ func TestLimitService_WithSQLite(t *testing.T) {
 		}
 		err := limitRepo.Upsert(limit)
 		assert.NoError(t, err)
-		
+
 		ok, err := limitService.CheckAllQuotas(ctx, userID, nil)
 		assert.NoError(t, err)
 		assert.True(t, ok)
 	})
-	
+
 	// Test record usage
 	t.Run("RecordCycleUsage_Success", func(t *testing.T) {
 		limitService.RecordCycleUsage(ctx, userID, nil, 5000)
 		// No error to check, just verify it doesn't panic
 	})
-	
+
 	// Test get limit progress
 	t.Run("GetLimitProgress_Success", func(t *testing.T) {
 		progress, err := limitService.GetLimitProgress(userID, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, progress)
 	})
-	
+
 	// Test get my limits
 	t.Run("GetMyLimits_Success", func(t *testing.T) {
 		limits, err := limitService.GetMyLimits(userID, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, limits)
 	})
-	
+
 	// Test delete rate limit
 	t.Run("Delete_Success", func(t *testing.T) {
 		// Get the limit ID first
@@ -1125,7 +1125,7 @@ func TestLimitService_WithSQLite(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	})
-	
+
 	// Test delete - not found
 	t.Run("Delete_NotFound", func(t *testing.T) {
 		err := limitService.Delete(9999, 1, "127.0.0.1")
@@ -1133,30 +1133,30 @@ func TestLimitService_WithSQLite(t *testing.T) {
 	})
 }
 
-// TestSystemService_WithSQLite tests SystemService with a real SQLite database
+// TestSystemService_WithSQLite tests SystemService with a real SQLite database.
 func TestSystemService_WithSQLite(t *testing.T) {
 	db := setupTestDB(t)
-	
+
 	// Auto migrate tables
 	db.AutoMigrate(&model.SystemConfig{}, &model.Announcement{}, &model.AuditLog{}, &model.User{})
-	
+
 	// Create repositories
 	configRepo := repository.NewSystemRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	annRepo := repository.NewAnnouncementRepository(db)
-	
+
 	logger := setupLogger()
-	
+
 	// Create service
 	sysService := NewSystemService(configRepo, auditRepo, annRepo, logger)
-	
+
 	// Test get configs - empty
 	t.Run("GetConfigs_Empty", func(t *testing.T) {
 		configs, err := sysService.GetConfigs()
 		assert.NoError(t, err)
 		assert.Empty(t, configs)
 	})
-	
+
 	// Test update configs
 	t.Run("UpdateConfigs_Success", func(t *testing.T) {
 		req := &dto.UpdateConfigsRequest{
@@ -1168,21 +1168,21 @@ func TestSystemService_WithSQLite(t *testing.T) {
 		err := sysService.UpdateConfigs(req, 1, "127.0.0.1")
 		assert.NoError(t, err)
 	})
-	
+
 	// Test get configs - after update
 	t.Run("GetConfigs_AfterUpdate", func(t *testing.T) {
 		configs, err := sysService.GetConfigs()
 		assert.NoError(t, err)
 		assert.Len(t, configs, 2)
 	})
-	
+
 	// Test list announcements - empty
 	t.Run("ListAnnouncements_Empty", func(t *testing.T) {
 		anns, err := sysService.ListAnnouncements(false)
 		assert.NoError(t, err)
 		assert.Empty(t, anns)
 	})
-	
+
 	// Test create announcement
 	t.Run("CreateAnnouncement_Success", func(t *testing.T) {
 		req := &dto.CreateAnnouncementRequest{
@@ -1196,14 +1196,14 @@ func TestSystemService_WithSQLite(t *testing.T) {
 		assert.NotNil(t, ann)
 		assert.Equal(t, "Test Announcement", ann.Title)
 	})
-	
+
 	// Test list announcements - with data
 	t.Run("ListAnnouncements_WithData", func(t *testing.T) {
 		anns, err := sysService.ListAnnouncements(false)
 		assert.NoError(t, err)
 		assert.Len(t, anns, 1)
 	})
-	
+
 	// Test update announcement
 	t.Run("UpdateAnnouncement_Success", func(t *testing.T) {
 		newTitle := "Updated Title"
@@ -1212,28 +1212,28 @@ func TestSystemService_WithSQLite(t *testing.T) {
 		}
 		err := sysService.UpdateAnnouncement(1, req, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify
 		ann, _ := annRepo.FindByID(1)
 		assert.Equal(t, "Updated Title", ann.Title)
 	})
-	
+
 	// Test delete announcement
 	t.Run("DeleteAnnouncement_Success", func(t *testing.T) {
 		err := sysService.DeleteAnnouncement(1, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify deletion
 		_, err = annRepo.FindByID(1)
 		assert.Error(t, err)
 	})
-	
+
 	// Test delete announcement - not found
 	t.Run("DeleteAnnouncement_NotFound", func(t *testing.T) {
 		err := sysService.DeleteAnnouncement(9999, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrRecordNotFound, err)
 	})
-	
+
 	// Test list audit logs
 	t.Run("ListAuditLogs_Success", func(t *testing.T) {
 		query := &dto.AuditLogQuery{
@@ -1247,11 +1247,11 @@ func TestSystemService_WithSQLite(t *testing.T) {
 	})
 }
 
-// TestAuthService_AdditionalTests tests additional AuthService scenarios
+// TestAuthService_AdditionalTests tests additional AuthService scenarios.
 func TestAuthService_AdditionalTests(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	mr := setupMiniredis(t)
@@ -1260,12 +1260,12 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
 	require.NoError(t, err)
 	logger := setupLogger()
-	
+
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
-	
+
 	// Create a disabled user
 	passwordHash, _ := crypto.HashPassword("TestPass123")
-	
+
 	t.Run("Login_DisabledUser", func(t *testing.T) {
 		disabledUser := &model.User{
 			Username:     "disableduser_" + time.Now().Format("150405"),
@@ -1276,10 +1276,10 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 		}
 		err := userRepo.Create(disabledUser)
 		assert.NoError(t, err)
-		
+
 		// Manually update status to ensure it's disabled (SQLite might use default)
 		userRepo.UpdateFields(disabledUser.ID, map[string]interface{}{"status": model.StatusDisabled})
-		
+
 		req := &dto.LoginRequest{
 			Username: disabledUser.Username,
 			Password: "TestPass123",
@@ -1288,7 +1288,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrAccountDisabled, err)
 	})
-	
+
 	// Test get profile
 	t.Run("GetProfile_Success", func(t *testing.T) {
 		// Create a user first
@@ -1300,20 +1300,20 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		profile, err := authService.GetProfile(user.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, profile)
 		assert.Equal(t, "profileuser", profile.Username)
 	})
-	
+
 	// Test get profile - not found
 	t.Run("GetProfile_NotFound", func(t *testing.T) {
 		profile, err := authService.GetProfile(9999)
 		assert.Nil(t, profile)
 		assert.Equal(t, errcode.ErrUserNotFound, err)
 	})
-	
+
 	// Test update profile
 	t.Run("UpdateProfile_Success", func(t *testing.T) {
 		user := &model.User{
@@ -1324,7 +1324,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		newDisplayName := "Updated Name"
 		req := &dto.UpdateProfileRequest{
 			DisplayName: &newDisplayName,
@@ -1332,7 +1332,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 		err := authService.UpdateProfile(user.ID, req)
 		assert.NoError(t, err)
 	})
-	
+
 	// Test change password - wrong old password
 	t.Run("ChangePassword_WrongOldPassword", func(t *testing.T) {
 		pwdHash, _ := crypto.HashPassword("TestPass123")
@@ -1344,7 +1344,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		req := &dto.ChangePasswordRequest{
 			OldPassword: "WrongOldPass123",
 			NewPassword: "NewPass123",
@@ -1352,7 +1352,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 		err := authService.ChangePassword(user.ID, req, nil, "127.0.0.1")
 		assert.Equal(t, errcode.ErrOldPasswordWrong, err)
 	})
-	
+
 	// Test change password - weak new password
 	t.Run("ChangePassword_WeakPassword", func(t *testing.T) {
 		pwdHash, _ := crypto.HashPassword("TestPass123")
@@ -1364,7 +1364,7 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		req := &dto.ChangePasswordRequest{
 			OldPassword: "TestPass123",
 			NewPassword: "weak",
@@ -1372,25 +1372,25 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 		err := authService.ChangePassword(user.ID, req, nil, "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test logout
 	t.Run("Logout_Success", func(t *testing.T) {
 		// Create a token first
 		token, expiresAt, err := jwtManager.GenerateToken(1, "test", model.RoleUser, nil)
 		assert.NoError(t, err)
-		
+
 		claims, err := jwtManager.ParseToken(token)
 		assert.NoError(t, err)
-		
+
 		err = authService.Logout(claims)
 		assert.NoError(t, err)
-		
+
 		// Verify token is blacklisted
 		isBlacklisted := jwtManager.IsBlacklisted(context.Background(), claims.ID)
 		assert.True(t, isBlacklisted)
 		_ = expiresAt
 	})
-	
+
 	// Test get login lock status
 	t.Run("GetLoginLockStatus_Success", func(t *testing.T) {
 		user := &model.User{
@@ -1401,20 +1401,20 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		status, err := authService.GetLoginLockStatus(user.ID)
 		assert.NoError(t, err)
 		assert.NotNil(t, status)
 		assert.False(t, status.Locked)
 	})
-	
+
 	// Test get login lock status by username
 	t.Run("GetLoginLockStatusByUsername_Success", func(t *testing.T) {
 		status, err := authService.GetLoginLockStatusByUsername("lockuser")
 		assert.NoError(t, err)
 		assert.NotNil(t, status)
 	})
-	
+
 	// Test get login lock status - not found
 	t.Run("GetLoginLockStatus_NotFound", func(t *testing.T) {
 		status, err := authService.GetLoginLockStatus(9999)
@@ -1423,24 +1423,24 @@ func TestAuthService_AdditionalTests(t *testing.T) {
 	})
 }
 
-// TestUserService_AdditionalTests tests additional UserService scenarios
+// TestUserService_AdditionalTests tests additional UserService scenarios.
 func TestUserService_AdditionalTests(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	userService := NewUserService(userRepo, deptRepo, auditRepo, logger)
-	
+
 	// Create a department
 	dept := &model.Department{
 		Name: "Test Dept",
 	}
 	deptRepo.Create(dept)
-	
+
 	// Create users for testing
 	adminUser := &model.User{
 		Username:     "admin",
@@ -1450,7 +1450,7 @@ func TestUserService_AdditionalTests(t *testing.T) {
 		Status:       model.StatusEnabled,
 	}
 	userRepo.Create(adminUser)
-	
+
 	// Test create user with department
 	t.Run("CreateUser_WithDepartment", func(t *testing.T) {
 		req := &dto.CreateUserRequest{
@@ -1465,7 +1465,7 @@ func TestUserService_AdditionalTests(t *testing.T) {
 		assert.NotNil(t, resp)
 		assert.Equal(t, dept.ID, *resp.DepartmentID)
 	})
-	
+
 	// Test create user - non-existent department
 	t.Run("CreateUser_NonExistentDept", func(t *testing.T) {
 		nonExistentDeptID := int64(9999)
@@ -1480,11 +1480,11 @@ func TestUserService_AdditionalTests(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrDeptNotFound, err)
 	})
-	
+
 	// Test create user - duplicate email
 	t.Run("CreateUser_DuplicateEmail", func(t *testing.T) {
 		email := "duplicate@test.com"
-		
+
 		// First user with email
 		req1 := &dto.CreateUserRequest{
 			Username:    "emailuser1",
@@ -1495,7 +1495,7 @@ func TestUserService_AdditionalTests(t *testing.T) {
 		}
 		_, err := userService.Create(req1, adminUser.ID, model.RoleSuperAdmin, nil, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Second user with same email
 		req2 := &dto.CreateUserRequest{
 			Username:    "emailuser2",
@@ -1508,7 +1508,7 @@ func TestUserService_AdditionalTests(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrEmailExists, err)
 	})
-	
+
 	// Test update status
 	t.Run("UpdateStatus_Success", func(t *testing.T) {
 		user := &model.User{
@@ -1519,15 +1519,15 @@ func TestUserService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		err := userService.UpdateStatus(user.ID, model.StatusDisabled, adminUser.ID, model.RoleSuperAdmin, nil, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify
 		updatedUser, _ := userRepo.FindByID(user.ID)
 		assert.Equal(t, model.StatusDisabled, updatedUser.Status)
 	})
-	
+
 	// Test unlock user - not locked
 	t.Run("UnlockUser_NotLocked", func(t *testing.T) {
 		user := &model.User{
@@ -1538,24 +1538,24 @@ func TestUserService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(user)
-		
+
 		err := userService.UnlockUser(user.ID, adminUser.ID, model.RoleSuperAdmin, nil, "test reason", "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test import users
 	t.Run("ImportUsers_Success", func(t *testing.T) {
 		users := []dto.CreateUserRequest{
 			{Username: "import1", Password: "TestPass123", DisplayName: "Import 1", Role: model.RoleUser},
 			{Username: "import2", Password: "TestPass123", DisplayName: "Import 2", Role: model.RoleUser},
 		}
-		
+
 		successCount, errors, err := userService.ImportUsers(users, adminUser.ID, "127.0.0.1")
 		assert.NoError(t, err)
 		assert.Equal(t, 2, successCount)
 		assert.Empty(t, errors)
 	})
-	
+
 	// Test import users - partial failure
 	t.Run("ImportUsers_PartialFailure", func(t *testing.T) {
 		// First create a user that will cause duplicate
@@ -1567,12 +1567,12 @@ func TestUserService_AdditionalTests(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(existing)
-		
+
 		users := []dto.CreateUserRequest{
 			{Username: "importnew", Password: "TestPass123", DisplayName: "Import New", Role: model.RoleUser},
 			{Username: "existingimport", Password: "TestPass123", DisplayName: "Existing", Role: model.RoleUser}, // duplicate
 		}
-		
+
 		successCount, errs, err := userService.ImportUsers(users, adminUser.ID, "127.0.0.1")
 		assert.NoError(t, err)
 		assert.Equal(t, 1, successCount)
@@ -1581,24 +1581,24 @@ func TestUserService_AdditionalTests(t *testing.T) {
 	})
 }
 
-// TestDepartmentService_AdditionalTests tests additional DepartmentService scenarios
+// TestDepartmentService_AdditionalTests tests additional DepartmentService scenarios.
 func TestDepartmentService_AdditionalTests(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	deptService := NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
-	
+
 	// Create test data
 	parentDept := &model.Department{
 		Name: "Parent Dept",
 	}
 	deptRepo.Create(parentDept)
-	
+
 	// Test create department with parent
 	t.Run("Create_WithParent", func(t *testing.T) {
 		req := &dto.CreateDepartmentRequest{
@@ -1610,7 +1610,7 @@ func TestDepartmentService_AdditionalTests(t *testing.T) {
 		assert.NotNil(t, dept)
 		assert.Equal(t, parentDept.ID, *dept.ParentID)
 	})
-	
+
 	// Test create department - non-existent parent
 	t.Run("Create_NonExistentParent", func(t *testing.T) {
 		nonExistentID := int64(9999)
@@ -1622,28 +1622,28 @@ func TestDepartmentService_AdditionalTests(t *testing.T) {
 		assert.Nil(t, dept)
 		assert.Equal(t, errcode.ErrDeptNotFound.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test update department - set self as parent
 	t.Run("Update_SelfAsParent", func(t *testing.T) {
 		dept := &model.Department{
 			Name: "Self Parent",
 		}
 		deptRepo.Create(dept)
-		
+
 		req := &dto.UpdateDepartmentRequest{
 			ParentID: &dept.ID, // Setting self as parent
 		}
 		err := deptService.Update(dept.ID, req, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test update department - non-existent manager
 	t.Run("Update_NonExistentManager", func(t *testing.T) {
 		dept := &model.Department{
 			Name: "No Manager Dept",
 		}
 		deptRepo.Create(dept)
-		
+
 		nonExistentManagerID := int64(9999)
 		req := &dto.UpdateDepartmentRequest{
 			ManagerID: &nonExistentManagerID,
@@ -1651,14 +1651,14 @@ func TestDepartmentService_AdditionalTests(t *testing.T) {
 		err := deptService.Update(dept.ID, req, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrUserNotFound.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test delete department - has children
 	t.Run("Delete_HasChildren", func(t *testing.T) {
 		// Parent already has a child from earlier test
 		err := deptService.Delete(parentDept.ID, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrInvalidParams.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	// Test list tree with nested structure
 	t.Run("ListTree_Nested", func(t *testing.T) {
 		tree, err := deptService.ListTree()
@@ -1668,11 +1668,11 @@ func TestDepartmentService_AdditionalTests(t *testing.T) {
 	})
 }
 
-// TestLimitService_AdditionalTests tests additional LimitService scenarios
+// TestLimitService_AdditionalTests tests additional LimitService scenarios.
 func TestLimitService_AdditionalTests(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.RateLimit{}, &model.AuditLog{})
-	
+
 	limitRepo := repository.NewRateLimitRepository(db)
 	usageRepo := repository.NewUsageRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
@@ -1680,13 +1680,13 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
 	logger := setupLogger()
-	
+
 	limitService := NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
-	
+
 	ctx := context.Background()
 	userID := int64(1)
 	deptID := int64(1)
-	
+
 	// Test upsert with default values
 	t.Run("Upsert_WithDefaults", func(t *testing.T) {
 		req := &dto.UpsertRateLimitRequest{
@@ -1698,7 +1698,7 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 		}
 		err := limitService.Upsert(req, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify defaults were applied
 		limits, _ := limitRepo.ListAll(map[string]interface{}{})
 		assert.GreaterOrEqual(t, len(limits), 1)
@@ -1708,7 +1708,7 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 			assert.Equal(t, int16(80), limits[0].AlertThreshold)
 		}
 	})
-	
+
 	// Test check quotas with department
 	t.Run("CheckAllQuotas_WithDept", func(t *testing.T) {
 		// Create a department limit
@@ -1721,17 +1721,17 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 			Status:      model.StatusEnabled,
 		}
 		limitRepo.Upsert(limit)
-		
+
 		ok, err := limitService.CheckAllQuotas(ctx, userID, &deptID)
 		assert.NoError(t, err)
 		assert.True(t, ok)
 	})
-	
+
 	// Test record cycle usage - new cycle
 	t.Run("RecordCycleUsage_NewCycle", func(t *testing.T) {
 		// Clear any existing data
 		mr.FlushAll()
-		
+
 		limit := &model.RateLimit{
 			ID:          100,
 			TargetType:  model.TargetTypeUser,
@@ -1742,16 +1742,16 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 			Status:      model.StatusEnabled,
 		}
 		limitRepo.Upsert(limit)
-		
+
 		// Record usage
 		limitService.RecordCycleUsage(ctx, userID, nil, 1000)
-		
+
 		// Check progress
 		progress, err := limitService.GetLimitProgress(userID, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, progress)
 	})
-	
+
 	// Test list - no filters
 	t.Run("List_NoFilters", func(t *testing.T) {
 		query := &dto.LimitListQuery{}
@@ -1759,11 +1759,11 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, limits)
 	})
-	
+
 	// Test check quotas - exceeded
 	t.Run("CheckAllQuotas_Exceeded", func(t *testing.T) {
 		mr.FlushAll()
-		
+
 		// Create a limit with very low max
 		limit := &model.RateLimit{
 			ID:          200,
@@ -1775,28 +1775,28 @@ func TestLimitService_AdditionalTests(t *testing.T) {
 			Status:      model.StatusEnabled,
 		}
 		limitRepo.Upsert(limit)
-		
+
 		// Record usage that exceeds limit
 		limitService.RecordCycleUsage(ctx, 999, nil, 150)
-		
+
 		ok, err := limitService.CheckAllQuotas(ctx, 999, nil)
 		assert.NoError(t, err)
 		assert.False(t, ok) // Should be exceeded
 	})
 }
 
-// TestSystemService_AdditionalTests tests additional SystemService scenarios
+// TestSystemService_AdditionalTests tests additional SystemService scenarios.
 func TestSystemService_AdditionalTests(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.SystemConfig{}, &model.Announcement{}, &model.AuditLog{}, &model.User{})
-	
+
 	configRepo := repository.NewSystemRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	annRepo := repository.NewAnnouncementRepository(db)
 	logger := setupLogger()
-	
+
 	sysService := NewSystemService(configRepo, auditRepo, annRepo, logger)
-	
+
 	// Test update configs - empty
 	t.Run("UpdateConfigs_Empty", func(t *testing.T) {
 		req := &dto.UpdateConfigsRequest{
@@ -1805,7 +1805,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 		err := sysService.UpdateConfigs(req, 1, "127.0.0.1")
 		assert.NoError(t, err)
 	})
-	
+
 	// Test list announcements - admin vs non-admin
 	t.Run("ListAnnouncements_AdminVsNonAdmin", func(t *testing.T) {
 		// Create unique published and draft announcements
@@ -1816,7 +1816,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 			Status:   model.StatusEnabled,
 		}
 		annRepo.Create(published)
-		
+
 		draft := &model.Announcement{
 			Title:    "Draft_" + time.Now().Format("150405"),
 			Content:  "Draft Content",
@@ -1824,7 +1824,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 			Status:   model.StatusDisabled,
 		}
 		annRepo.Create(draft)
-		
+
 		// Non-admin should only see published
 		nonAdminAnns, err := sysService.ListAnnouncements(false)
 		assert.NoError(t, err)
@@ -1832,14 +1832,14 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 		for _, ann := range nonAdminAnns {
 			assert.Equal(t, model.StatusEnabled, ann.Status)
 		}
-		
+
 		// Admin should see all (including our newly created ones)
 		adminAnns, err := sysService.ListAnnouncements(true)
 		assert.NoError(t, err)
 		// Admin should see at least the 2 we just created
 		assert.GreaterOrEqual(t, len(adminAnns), 2)
 	})
-	
+
 	// Test create announcement - database error simulation (validation in handler)
 	t.Run("CreateAnnouncement_Validation", func(t *testing.T) {
 		// This would normally be validated at handler level
@@ -1853,7 +1853,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, ann)
 	})
-	
+
 	// Test update announcement - not found
 	t.Run("UpdateAnnouncement_NotFound", func(t *testing.T) {
 		newTitle := "New Title"
@@ -1863,7 +1863,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 		err := sysService.UpdateAnnouncement(9999, req, 1, "127.0.0.1")
 		assert.Equal(t, errcode.ErrRecordNotFound, err)
 	})
-	
+
 	// Test update announcement - no changes
 	t.Run("UpdateAnnouncement_NoChanges", func(t *testing.T) {
 		// Get an existing announcement
@@ -1874,7 +1874,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 			assert.NoError(t, err) // Should return nil when no changes
 		}
 	})
-	
+
 	// Test list audit logs with filters
 	t.Run("ListAuditLogs_WithFilters", func(t *testing.T) {
 		query := &dto.AuditLogQuery{
@@ -1890,7 +1890,7 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 		assert.NotNil(t, logs)
 		assert.GreaterOrEqual(t, total, int64(0))
 	})
-	
+
 	// Test list audit logs with invalid dates
 	t.Run("ListAuditLogs_InvalidDates", func(t *testing.T) {
 		query := &dto.AuditLogQuery{
@@ -1906,23 +1906,23 @@ func TestSystemService_AdditionalTests(t *testing.T) {
 	})
 }
 
-// TestConcurrencySafety tests concurrent operations
+// TestConcurrencySafety tests concurrent operations.
 func TestConcurrencySafety(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	userService := NewUserService(userRepo, deptRepo, auditRepo, logger)
-	
+
 	// Test concurrent user creation
 	t.Run("ConcurrentUserCreation", func(t *testing.T) {
 		// Get baseline count first
 		baselineCount, _ := userRepo.CountAll()
-		
+
 		// Create admin user first with unique name
 		admin := &model.User{
 			Username:     "concurrentadmin_" + time.Now().Format("150405"),
@@ -1932,7 +1932,7 @@ func TestConcurrencySafety(t *testing.T) {
 			Status:       model.StatusEnabled,
 		}
 		userRepo.Create(admin)
-		
+
 		// Try to create multiple users concurrently with same username
 		done := make(chan bool, 3)
 		for i := 0; i < 3; i++ {
@@ -1947,12 +1947,12 @@ func TestConcurrencySafety(t *testing.T) {
 				_, _ = userService.Create(req, admin.ID, model.RoleSuperAdmin, nil, "127.0.0.1")
 			}(i)
 		}
-		
+
 		// Wait for all goroutines
 		for i := 0; i < 3; i++ {
 			<-done
 		}
-		
+
 		// Only one should succeed due to username uniqueness
 		count, _ := userRepo.CountAll()
 		// Should have baseline + admin + at most 1 concurrent user
@@ -1960,18 +1960,18 @@ func TestConcurrencySafety(t *testing.T) {
 	})
 }
 
-// TestErrorScenarios tests various error scenarios
+// TestErrorScenarios tests various error scenarios.
 func TestErrorScenarios(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.APIKey{}, &model.RateLimit{}, &model.Announcement{}, &model.AuditLog{})
-	
+
 	// Test with closed database to simulate database errors
 	sqlDB, _ := db.DB()
 	sqlDB.Close()
-	
+
 	// Now operations should fail with database errors
 	userRepo := repository.NewUserRepository(db)
-	
+
 	t.Run("DatabaseError_Operations", func(t *testing.T) {
 		// Try to find user with closed DB
 		_, err := userRepo.FindByID(1)
@@ -1979,11 +1979,11 @@ func TestErrorScenarios(t *testing.T) {
 	})
 }
 
-// TestCalculateLockDuration tests the lock duration calculation
+// TestCalculateLockDuration tests the lock duration calculation.
 func TestCalculateLockDuration(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	mr := setupMiniredis(t)
@@ -1992,9 +1992,9 @@ func TestCalculateLockDuration(t *testing.T) {
 	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
 	require.NoError(t, err)
 	logger := setupLogger()
-	
+
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
-	
+
 	t.Run("LockDuration_Calculation", func(t *testing.T) {
 		// Test different fail counts
 		durations := []struct {
@@ -2009,7 +2009,7 @@ func TestCalculateLockDuration(t *testing.T) {
 			{10, 160 * time.Minute}, // 5 over
 			{15, 24 * time.Hour},    // Max cap
 		}
-		
+
 		for _, d := range durations {
 			duration := authService.calculateLockDuration(d.failCount)
 			assert.Equal(t, d.expected, duration, "Fail count: %d", d.failCount)
@@ -2017,29 +2017,29 @@ func TestCalculateLockDuration(t *testing.T) {
 	})
 }
 
-// Helper to check if error matches expected error code
+// Helper to check if error matches expected error code.
 func assertErrorCode(t *testing.T, expected *errcode.ErrCode, actual error) {
 	if actual == nil {
 		t.Errorf("expected error %v, got nil", expected)
 		return
 	}
-	
+
 	actualErrCode, ok := actual.(*errcode.ErrCode)
 	if !ok {
 		t.Errorf("expected *errcode.ErrCode, got %T", actual)
 		return
 	}
-	
+
 	if actualErrCode.Code != expected.Code {
 		t.Errorf("expected error code %d, got %d", expected.Code, actualErrCode.Code)
 	}
 }
 
-// TestLoginLockStatus tests login lock status scenarios
+// TestLoginLockStatus tests login lock status scenarios.
 func TestLoginLockStatus(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	mr := setupMiniredis(t)
@@ -2048,9 +2048,9 @@ func TestLoginLockStatus(t *testing.T) {
 	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
 	require.NoError(t, err)
 	logger := setupLogger()
-	
+
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
-	
+
 	// Create a locked user
 	lockedUntil := time.Now().Add(30 * time.Minute)
 	pwdHash, _ := crypto.HashPassword("TestPass123")
@@ -2064,7 +2064,7 @@ func TestLoginLockStatus(t *testing.T) {
 		LockedUntil:    &lockedUntil,
 	}
 	userRepo.Create(lockedUser)
-	
+
 	t.Run("Login_LockedAccount", func(t *testing.T) {
 		req := &dto.LoginRequest{
 			Username: "lockeduser",
@@ -2074,7 +2074,7 @@ func TestLoginLockStatus(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrAccountLocked.Code, err.(*errcode.ErrCode).Code)
 	})
-	
+
 	t.Run("GetLoginLockStatus_Locked", func(t *testing.T) {
 		status, err := authService.GetLoginLockStatus(lockedUser.ID)
 		assert.NoError(t, err)
@@ -2084,11 +2084,11 @@ func TestLoginLockStatus(t *testing.T) {
 	})
 }
 
-// TestAPIKeyLimit tests API key limit scenarios
+// TestAPIKeyLimit tests API key limit scenarios.
 func TestAPIKeyLimit(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.APIKey{}, &model.AuditLog{})
-	
+
 	// Create test user
 	userRepo := repository.NewUserRepository(db)
 	testUser := &model.User{
@@ -2099,21 +2099,21 @@ func TestAPIKeyLimit(t *testing.T) {
 		Status:       model.StatusEnabled,
 	}
 	userRepo.Create(testUser)
-	
+
 	keyRepo := repository.NewAPIKeyRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	mr := setupMiniredis(t)
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
-	
+
 	encryptor := crypto.NewEncryptor(testJWTSecret)
 	keyService := NewAPIKeyService(keyRepo, auditRepo, rdb, logger, encryptor)
-	
+
 	// Note: This test assumes config.Get() returns a valid config
 	// In a real scenario, you'd need to initialize the config properly
-	
+
 	t.Run("CreateKey_AtLimit", func(t *testing.T) {
 		// This test may fail if config is not properly initialized
 		// Create keys up to the limit
@@ -2127,7 +2127,7 @@ func TestAPIKeyLimit(t *testing.T) {
 			}
 			keyRepo.Create(key)
 		}
-		
+
 		// Now try to create another key via service
 		req := &dto.CreateAPIKeyRequest{
 			Name: "Over Limit Key",
@@ -2139,25 +2139,25 @@ func TestAPIKeyLimit(t *testing.T) {
 	})
 }
 
-// TestDepartmentHierarchy tests department hierarchy scenarios
+// TestDepartmentHierarchy tests department hierarchy scenarios.
 func TestDepartmentHierarchy(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	deptService := NewDepartmentService(deptRepo, userRepo, auditRepo, logger)
-	
+
 	// Create a hierarchy: Root -> Child -> GrandChild
 	t.Run("CreateHierarchy", func(t *testing.T) {
 		// Root
 		rootReq := &dto.CreateDepartmentRequest{Name: "Root"}
 		root, err := deptService.Create(rootReq, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Child
 		childReq := &dto.CreateDepartmentRequest{
 			Name:     "Child",
@@ -2165,7 +2165,7 @@ func TestDepartmentHierarchy(t *testing.T) {
 		}
 		child, err := deptService.Create(childReq, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// GrandChild
 		grandChildReq := &dto.CreateDepartmentRequest{
 			Name:     "GrandChild",
@@ -2173,12 +2173,12 @@ func TestDepartmentHierarchy(t *testing.T) {
 		}
 		grandChild, err := deptService.Create(grandChildReq, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// List tree and verify structure
 		tree, err := deptService.ListTree()
 		assert.NoError(t, err)
 		assert.NotNil(t, tree)
-		
+
 		// Find root in tree
 		var foundRoot *dto.DeptTree
 		for i := range tree {
@@ -2192,16 +2192,16 @@ func TestDepartmentHierarchy(t *testing.T) {
 		assert.Equal(t, "Child", foundRoot.Children[0].Name)
 		assert.Len(t, foundRoot.Children[0].Children, 1)
 		assert.Equal(t, "GrandChild", foundRoot.Children[0].Children[0].Name)
-		
+
 		_ = grandChild
 	})
 }
 
-// TestRateLimitPriority tests rate limit priority (user > dept > global)
+// TestRateLimitPriority tests rate limit priority (user > dept > global).
 func TestRateLimitPriority(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.RateLimit{}, &model.AuditLog{})
-	
+
 	limitRepo := repository.NewRateLimitRepository(db)
 	usageRepo := repository.NewUsageRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
@@ -2209,12 +2209,12 @@ func TestRateLimitPriority(t *testing.T) {
 	defer mr.Close()
 	rdb := setupRedisClient(mr)
 	logger := setupLogger()
-	
+
 	limitService := NewLimitService(limitRepo, usageRepo, auditRepo, rdb, logger)
-	
+
 	userID := int64(1)
 	deptID := int64(1)
-	
+
 	// Create limits at all levels
 	t.Run("Priority_UserOverDeptOverGlobal", func(t *testing.T) {
 		// Global limit
@@ -2227,7 +2227,7 @@ func TestRateLimitPriority(t *testing.T) {
 			Status:      model.StatusEnabled,
 		}
 		limitRepo.Upsert(globalLimit)
-		
+
 		// Dept limit
 		deptLimit := &model.RateLimit{
 			TargetType:  model.TargetTypeDepartment,
@@ -2238,7 +2238,7 @@ func TestRateLimitPriority(t *testing.T) {
 			Status:      model.StatusEnabled,
 		}
 		limitRepo.Upsert(deptLimit)
-		
+
 		// User limit
 		userLimit := &model.RateLimit{
 			TargetType:  model.TargetTypeUser,
@@ -2249,16 +2249,16 @@ func TestRateLimitPriority(t *testing.T) {
 			Status:      model.StatusEnabled,
 		}
 		limitRepo.Upsert(userLimit)
-		
+
 		// Get all effective limits
 		limits, err := limitRepo.GetAllEffectiveLimits(userID, &deptID)
 		assert.NoError(t, err)
 		assert.NotNil(t, limits)
-		
+
 		// Should have only one limit for this period (user level takes priority)
 		// The implementation may return multiple if different periods exist
 		// But for the same period, user should override dept which overrides global
-		
+
 		// Verify through the service
 		progress, err := limitService.GetLimitProgress(userID, &deptID)
 		assert.NoError(t, err)
@@ -2266,18 +2266,18 @@ func TestRateLimitPriority(t *testing.T) {
 	})
 }
 
-// TestAnnouncementStatus tests announcement status transitions
+// TestAnnouncementStatus tests announcement status transitions.
 func TestAnnouncementStatus(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.Announcement{}, &model.AuditLog{}, &model.User{})
-	
+
 	configRepo := repository.NewSystemRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	annRepo := repository.NewAnnouncementRepository(db)
 	logger := setupLogger()
-	
+
 	sysService := NewSystemService(configRepo, auditRepo, annRepo, logger)
-	
+
 	t.Run("Announcement_DraftToPublished", func(t *testing.T) {
 		// Create draft announcement
 		draftReq := &dto.CreateAnnouncementRequest{
@@ -2289,7 +2289,7 @@ func TestAnnouncementStatus(t *testing.T) {
 		draft, err := sysService.CreateAnnouncement(draftReq, 1, "127.0.0.1")
 		assert.NoError(t, err)
 		assert.NotNil(t, draft)
-		
+
 		// Publish it
 		publishedStatus := model.StatusEnabled
 		updateReq := &dto.UpdateAnnouncementRequest{
@@ -2297,11 +2297,11 @@ func TestAnnouncementStatus(t *testing.T) {
 		}
 		err = sysService.UpdateAnnouncement(draft.ID, updateReq, 1, "127.0.0.1")
 		assert.NoError(t, err)
-		
+
 		// Verify - non-admin should now see it
 		anns, err := sysService.ListAnnouncements(false)
 		assert.NoError(t, err)
-		
+
 		found := false
 		for _, a := range anns {
 			if a.ID == draft.ID {
@@ -2313,25 +2313,25 @@ func TestAnnouncementStatus(t *testing.T) {
 	})
 }
 
-// TestPermissionScenarios tests various permission scenarios
+// TestPermissionScenarios tests various permission scenarios.
 func TestPermissionScenarios(t *testing.T) {
 	db := setupTestDB(t)
 	db.AutoMigrate(&model.User{}, &model.Department{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	deptRepo := repository.NewDepartmentRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
 	logger := setupLogger()
-	
+
 	userService := NewUserService(userRepo, deptRepo, auditRepo, logger)
-	
+
 	// Create departments
 	dept1 := &model.Department{Name: "Dept 1"}
 	deptRepo.Create(dept1)
-	
+
 	dept2 := &model.Department{Name: "Dept 2"}
 	deptRepo.Create(dept2)
-	
+
 	// Create a dept manager
 	manager := &model.User{
 		Username:     "manager",
@@ -2342,7 +2342,7 @@ func TestPermissionScenarios(t *testing.T) {
 		Status:       model.StatusEnabled,
 	}
 	userRepo.Create(manager)
-	
+
 	t.Run("DeptManager_CanOnlyCreateInOwnDept", func(t *testing.T) {
 		// Try to create user in own dept - should succeed
 		req := &dto.CreateUserRequest{
@@ -2356,7 +2356,7 @@ func TestPermissionScenarios(t *testing.T) {
 		// This might succeed or fail based on implementation details
 		// The key is that trying to create in another dept should fail
 		_ = err
-		
+
 		// Try to create user in other dept - should fail
 		req2 := &dto.CreateUserRequest{
 			Username:     "otherdeptuser",
@@ -2369,7 +2369,7 @@ func TestPermissionScenarios(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Equal(t, errcode.ErrForbiddenUser, err)
 	})
-	
+
 	t.Run("DeptManager_CannotCreateAdmin", func(t *testing.T) {
 		req := &dto.CreateUserRequest{
 			Username:     "adminattempt",
@@ -2388,51 +2388,51 @@ func TestPermissionScenarios(t *testing.T) {
 // This is needed because the service expects concrete types, not interfaces
 // In a real refactoring, we'd use interfaces for better testability
 
-// TestDatabaseConnectionError tests behavior when database is unavailable
+// TestDatabaseConnectionError tests behavior when database is unavailable.
 func TestDatabaseConnectionError(t *testing.T) {
 	// Create a closed database connection
 	db, _ := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	sqlDB, _ := db.DB()
 	sqlDB.Close()
-	
+
 	// Try to use repositories with closed DB
 	userRepo := repository.NewUserRepository(db)
-	
+
 	t.Run("ClosedDB_OperationsFail", func(t *testing.T) {
 		_, err := userRepo.FindByID(1)
 		assert.Error(t, err)
-		
+
 		_, err = userRepo.FindByUsername("test")
 		assert.Error(t, err)
-		
+
 		err = userRepo.Create(&model.User{})
 		assert.Error(t, err)
 	})
 }
 
-// BenchmarkLogin benchmarks the login operation
+// BenchmarkLogin benchmarks the login operation.
 func BenchmarkLogin(b *testing.B) {
 	db, _ := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	db.AutoMigrate(&model.User{}, &model.AuditLog{})
-	
+
 	userRepo := repository.NewUserRepository(db)
 	auditRepo := repository.NewAuditRepository(db)
-	
+
 	mr, err := miniredis.Run()
 	if err != nil {
 		b.Fatal(err)
 	}
 	defer mr.Close()
 	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	
+
 	jwtManager, err := jwtPkg.NewManager(testJWTSecret, 24, rdb)
 	if err != nil {
 		b.Fatal(err)
 	}
 	logger, _ := zap.NewDevelopment()
-	
+
 	authService := NewAuthService(userRepo, auditRepo, jwtManager, logger)
-	
+
 	// Create test user
 	pwdHash, _ := crypto.HashPassword("TestPass123")
 	testUser := &model.User{
@@ -2443,19 +2443,19 @@ func BenchmarkLogin(b *testing.B) {
 		Status:       model.StatusEnabled,
 	}
 	userRepo.Create(testUser)
-	
+
 	req := &dto.LoginRequest{
 		Username: "benchuser",
 		Password: "TestPass123",
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		authService.Login(req, "127.0.0.1")
 	}
 }
 
-// toError converts string to error (helper for mock setup)
+// toError converts string to error (helper for mock setup).
 func toError(s string) error {
 	if s == "" {
 		return nil

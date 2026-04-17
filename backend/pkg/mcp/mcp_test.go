@@ -26,8 +26,8 @@ import (
 func TestJSONRPCRequest_MarshalUnmarshal(t *testing.T) {
 	tests := []struct {
 		name     string
-		request  JSONRPCRequest
 		expected string
+		request  JSONRPCRequest
 	}{
 		{
 			name: "基本请求",
@@ -380,7 +380,7 @@ func TestResourceReadResult_Marshal(t *testing.T) {
 func TestNewSSESession(t *testing.T) {
 	// 使用支持 Flusher 的 ResponseWriter
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 	assert.NotEmpty(t, session.ID)
@@ -394,7 +394,7 @@ func TestNewSSESession(t *testing.T) {
 
 func TestSSESession_SendEvent(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -409,7 +409,7 @@ func TestSSESession_SendEvent(t *testing.T) {
 
 func TestSSESession_SendEndpoint(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -423,7 +423,7 @@ func TestSSESession_SendEndpoint(t *testing.T) {
 
 func TestSSESession_SendMessage(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -443,13 +443,13 @@ func TestSSESession_SendMessage(t *testing.T) {
 
 func TestSSESession_Close(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
 	// 第一次关闭应该成功
 	session.Close()
-	
+
 	// 验证通道已关闭
 	select {
 	case <-session.Done:
@@ -478,7 +478,7 @@ func TestNewSessionManager(t *testing.T) {
 func TestSessionManager_Add(t *testing.T) {
 	sm := NewSessionManager()
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -489,7 +489,7 @@ func TestSessionManager_Add(t *testing.T) {
 func TestSessionManager_Get(t *testing.T) {
 	sm := NewSessionManager()
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -509,7 +509,7 @@ func TestSessionManager_Get(t *testing.T) {
 func TestSessionManager_Remove(t *testing.T) {
 	sm := NewSessionManager()
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -548,7 +548,7 @@ func TestSessionManager_Count(t *testing.T) {
 
 func TestSessionManager_CleanExpired(t *testing.T) {
 	sm := NewSessionManager()
-	
+
 	// 创建会话并手动设置创建时间
 	sessions := make([]*SSESession, 3)
 	for i := 0; i < 3; i++ {
@@ -619,35 +619,35 @@ func TestNewSSEClient(t *testing.T) {
 
 func TestSSEClient_applyAuth_Bearer(t *testing.T) {
 	client := NewSSEClient("http://localhost/sse", "bearer", "my-token", "")
-	
+
 	req, err := http.NewRequest("GET", "http://localhost", nil)
 	require.NoError(t, err)
 
 	client.applyAuth(req)
-	
+
 	authHeader := req.Header.Get("Authorization")
 	assert.Equal(t, "Bearer my-token", authHeader)
 }
 
 func TestSSEClient_applyAuth_Header(t *testing.T) {
 	client := NewSSEClient("http://localhost/sse", "header", "api-key-123", "X-API-Key")
-	
+
 	req, err := http.NewRequest("GET", "http://localhost", nil)
 	require.NoError(t, err)
 
 	client.applyAuth(req)
-	
+
 	assert.Equal(t, "api-key-123", req.Header.Get("X-API-Key"))
 }
 
 func TestSSEClient_applyAuth_None(t *testing.T) {
 	client := NewSSEClient("http://localhost/sse", "none", "", "")
-	
+
 	req, err := http.NewRequest("GET", "http://localhost", nil)
 	require.NoError(t, err)
 
 	client.applyAuth(req)
-	
+
 	assert.Empty(t, req.Header.Get("Authorization"))
 }
 
@@ -659,7 +659,7 @@ func TestSSEClient_Connect(t *testing.T) {
 
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		
+
 		flusher, ok := w.(http.Flusher)
 		require.True(t, ok)
 
@@ -706,7 +706,7 @@ func TestSSEClient_Connect_Timeout(t *testing.T) {
 	client := NewSSEClient(server.URL, "none", "", "")
 	// 设置非常短的读取超时
 	client.httpClient.Timeout = 50 * time.Millisecond
-	
+
 	_, _, err := client.Connect()
 
 	assert.Error(t, err)
@@ -738,7 +738,7 @@ func TestSSEClient_SendMessage(t *testing.T) {
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	
+
 	req := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -758,7 +758,7 @@ func TestSSEClient_SendMessage_ErrorStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	
+
 	req := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -777,7 +777,7 @@ func TestSSEClient_SendMessage_NoContent(t *testing.T) {
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	
+
 	req := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -932,7 +932,7 @@ func TestProxy_ForwardRequest(t *testing.T) {
 		case "POST":
 			var req JSONRPCRequest
 			json.NewDecoder(r.Body).Decode(&req)
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(JSONRPCResponse{
@@ -1166,7 +1166,7 @@ func TestProxy_handleToolsCall(t *testing.T) {
 		case "POST":
 			var req JSONRPCRequest
 			json.NewDecoder(r.Body).Decode(&req)
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(JSONRPCResponse{
@@ -1437,7 +1437,7 @@ func TestProxy_waitForResponse_NotMatching(t *testing.T) {
 // Mock and Integration Tests
 // ═══════════════════════════════════════════════════════════
 
-// MockSSEClient 用于测试的 SSE 客户端 mock
+// MockSSEClient 用于测试的 SSE 客户端 mock.
 type MockSSEClient struct {
 	ConnectFunc     func() (string, <-chan SSEEvent, error)
 	SendMessageFunc func(string, interface{}) (*json.RawMessage, error)
@@ -1471,13 +1471,13 @@ func TestProxy_ConcurrentRequests(t *testing.T) {
 		case "POST":
 			var req JSONRPCRequest
 			json.NewDecoder(r.Body).Decode(&req)
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			
+
 			// 模拟处理延迟
 			time.Sleep(10 * time.Millisecond)
-			
+
 			json.NewEncoder(w).Encode(JSONRPCResponse{
 				JSONRPC: "2.0",
 				ID:      req.ID,
@@ -1556,11 +1556,11 @@ func TestUUIDGeneration(t *testing.T) {
 	// 测试 UUID 生成
 	id1 := uuid.New().String()
 	id2 := uuid.New().String()
-	
+
 	assert.NotEmpty(t, id1)
 	assert.NotEmpty(t, id2)
 	assert.NotEqual(t, id1, id2)
-	
+
 	// 验证 UUID 格式
 	_, err := uuid.Parse(id1)
 	assert.NoError(t, err)
@@ -1633,7 +1633,7 @@ func BenchmarkJSONRPCResponse_Marshal(b *testing.B) {
 
 func BenchmarkSessionManager_Concurrent(b *testing.B) {
 	sm := NewSessionManager()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		i := 0
@@ -1655,11 +1655,11 @@ func BenchmarkSessionManager_Concurrent(b *testing.B) {
 
 func TestErrorResponseFormatting(t *testing.T) {
 	tests := []struct {
-		name       string
-		code       int
-		message    string
-		wantCode   int
-		wantMsg    string
+		name     string
+		message  string
+		wantMsg  string
+		code     int
+		wantCode int
 	}{
 		{
 			name:     "解析错误",
@@ -1701,7 +1701,7 @@ func TestErrorResponseFormatting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp := NewErrorResponse("test-id", tt.code, tt.message)
-			
+
 			assert.Equal(t, JSONRPCVersion, resp.JSONRPC)
 			assert.Equal(t, "test-id", resp.ID)
 			require.NotNil(t, resp.Error)
@@ -1712,7 +1712,7 @@ func TestErrorResponseFormatting(t *testing.T) {
 			// 验证 JSON 序列化
 			data, err := json.Marshal(resp)
 			require.NoError(t, err)
-			
+
 			var decoded JSONRPCResponse
 			err = json.Unmarshal(data, &decoded)
 			require.NoError(t, err)
@@ -1727,9 +1727,9 @@ func TestErrorResponseFormatting(t *testing.T) {
 
 func TestSSEEventParsing(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		events   []SSEEvent
+		name   string
+		input  string
+		events []SSEEvent
 	}{
 		{
 			name:  "单个事件",
@@ -1810,8 +1810,6 @@ func mustMarshalJSON(v interface{}) json.RawMessage {
 	return json.RawMessage(data)
 }
 
-
-
 // ═══════════════════════════════════════════════════════════
 // Integration Tests
 // ═══════════════════════════════════════════════════════════
@@ -1833,14 +1831,14 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 			messageURL := fmt.Sprintf("%s/messages?sessionId=%s", serverURL, uuid.New().String())
 			fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", messageURL)
 			flusher.Flush()
-			
+
 			// 保持连接打开一段时间
 			time.Sleep(200 * time.Millisecond)
 
 		case "POST":
 			// 处理消息
 			body, _ := io.ReadAll(r.Body)
-			
+
 			var req JSONRPCRequest
 			if err := json.Unmarshal(body, &req); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -1849,7 +1847,7 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			
+
 			var result interface{}
 			switch req.Method {
 			case "initialize":

@@ -18,8 +18,7 @@ func NewThirdPartyProviderHandler(service ThirdPartyProviderService) *ThirdParty
 	return &ThirdPartyProviderHandler{service: service}
 }
 
-// ListTemplatesAdmin returns all templates (admin).
-// GET /api/v1/system/provider-templates
+// GET /api/v1/system/provider-templates.
 func (h *ThirdPartyProviderHandler) ListTemplatesAdmin(c *gin.Context) {
 	templates, err := h.service.ListTemplates()
 	if err != nil {
@@ -29,8 +28,7 @@ func (h *ThirdPartyProviderHandler) ListTemplatesAdmin(c *gin.Context) {
 	response.Success(c, templates)
 }
 
-// CreateTemplate creates a template.
-// POST /api/v1/system/provider-templates
+// POST /api/v1/system/provider-templates.
 func (h *ThirdPartyProviderHandler) CreateTemplate(c *gin.Context) {
 	var req dto.CreateProviderTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -51,8 +49,7 @@ func (h *ThirdPartyProviderHandler) CreateTemplate(c *gin.Context) {
 	response.Success(c, template)
 }
 
-// UpdateTemplate updates a template.
-// PUT /api/v1/system/provider-templates/:id
+// PUT /api/v1/system/provider-templates/:id.
 func (h *ThirdPartyProviderHandler) UpdateTemplate(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -78,8 +75,7 @@ func (h *ThirdPartyProviderHandler) UpdateTemplate(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteTemplate deletes a template.
-// DELETE /api/v1/system/provider-templates/:id
+// DELETE /api/v1/system/provider-templates/:id.
 func (h *ThirdPartyProviderHandler) DeleteTemplate(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -94,8 +90,7 @@ func (h *ThirdPartyProviderHandler) DeleteTemplate(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// ListProviders returns user's third-party providers.
-// GET /api/v1/models/third-party
+// GET /api/v1/models/third-party.
 func (h *ThirdPartyProviderHandler) ListProviders(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	providers, err := h.service.ListProviders(userID)
@@ -106,8 +101,7 @@ func (h *ThirdPartyProviderHandler) ListProviders(c *gin.Context) {
 	response.Success(c, providers)
 }
 
-// CreateProvider creates a third-party provider.
-// POST /api/v1/models/third-party
+// POST /api/v1/models/third-party.
 func (h *ThirdPartyProviderHandler) CreateProvider(c *gin.Context) {
 	var req dto.CreateThirdPartyProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -127,8 +121,7 @@ func (h *ThirdPartyProviderHandler) CreateProvider(c *gin.Context) {
 	response.Success(c, provider)
 }
 
-// UpdateProvider updates a third-party provider.
-// PUT /api/v1/models/third-party/:id
+// PUT /api/v1/models/third-party/:id.
 func (h *ThirdPartyProviderHandler) UpdateProvider(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -153,8 +146,7 @@ func (h *ThirdPartyProviderHandler) UpdateProvider(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// UpdateProviderStatus toggles provider status.
-// PUT /api/v1/models/third-party/:id/status
+// PUT /api/v1/models/third-party/:id/status.
 func (h *ThirdPartyProviderHandler) UpdateProviderStatus(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -176,8 +168,7 @@ func (h *ThirdPartyProviderHandler) UpdateProviderStatus(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteProvider deletes a third-party provider.
-// DELETE /api/v1/models/third-party/:id
+// DELETE /api/v1/models/third-party/:id.
 func (h *ThirdPartyProviderHandler) DeleteProvider(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -193,8 +184,7 @@ func (h *ThirdPartyProviderHandler) DeleteProvider(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// ListTemplatesForUser returns available templates for users.
-// GET /api/v1/models/templates
+// GET /api/v1/models/templates.
 func (h *ThirdPartyProviderHandler) ListTemplatesForUser(c *gin.Context) {
 	templates, err := h.service.ListActiveTemplates()
 	if err != nil {
@@ -204,8 +194,7 @@ func (h *ThirdPartyProviderHandler) ListTemplatesForUser(c *gin.Context) {
 	response.Success(c, templates)
 }
 
-// ListPlatformModels returns platform model list.
-// GET /api/v1/models/platform
+// GET /api/v1/models/platform.
 func (h *ThirdPartyProviderHandler) ListPlatformModels(c *gin.Context) {
 	models, err := h.service.ListPlatformModels()
 	if err != nil {
@@ -214,4 +203,3 @@ func (h *ThirdPartyProviderHandler) ListPlatformModels(c *gin.Context) {
 	}
 	response.Success(c, models)
 }
-

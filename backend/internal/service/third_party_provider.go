@@ -1,16 +1,15 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"time"
-
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -202,7 +201,7 @@ func (s *ThirdPartyProviderService) ListProviders(userID int64) ([]model.UserThi
 }
 
 // UpdateProvider updates a third-party provider.
-func (s *ThirdPartyProviderService) UpdateProvider(
+func (s *ThirdPartyProviderService) UpdateProvider( //nolint:gocyclo // complex business logic.
 	id, userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey *string,
 	models []string, format *string, status *int16,
 ) error {

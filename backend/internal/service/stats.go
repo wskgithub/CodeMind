@@ -1,14 +1,13 @@
 package service
 
 import (
-	"sort"
-	"sync"
-	"time"
-
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/timezone"
 	"codemind/internal/repository"
+	"sort"
+	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -57,7 +56,7 @@ func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*
 	)
 
 	var wg sync.WaitGroup
-	wg.Add(10)
+	wg.Add(10) //nolint:mnd // intentional constant.
 
 	go func() { defer wg.Done(); todayTokens, _ = s.usageRepo.GetTodayTotalTokens(filterUserID) }()
 	go func() { defer wg.Done(); todayRequests, _ = s.usageRepo.GetTodayRequestCount(filterUserID) }()
@@ -72,7 +71,7 @@ func (s *StatsService) GetOverview(userID *int64, role string, deptID *int64) (*
 	go func() { defer wg.Done(); tpMonthRequests, _ = s.usageRepo.GetThirdPartyMonthRequestCount(filterUserID) }()
 
 	if role != "user" {
-		wg.Add(3)
+		wg.Add(3) //nolint:mnd // intentional constant.
 		go func() { defer wg.Done(); totalUsers, _ = s.userRepo.CountAll() }()
 		go func() { defer wg.Done(); totalDepts, _ = s.deptRepo.CountAll() }()
 		go func() { defer wg.Done(); totalKeys, _ = s.keyRepo.CountAll() }()
@@ -129,7 +128,7 @@ func (s *StatsService) GetUsageStats(query *dto.StatsQuery, operatorRole string,
 	var platformErr, tpErr error
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(2) //nolint:mnd // intentional constant.
 
 	go func() {
 		defer wg.Done()
@@ -324,7 +323,7 @@ func (s *StatsService) GetKeyUsageSummary(query *dto.KeyUsageQuery, operatorRole
 	var platformErr, tpErr error
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(2) //nolint:mnd // intentional constant.
 
 	go func() {
 		defer wg.Done()

@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testJWTSecret 单元测试用 JWT 密钥（至少 32 字符，满足 NewManager 校验）
+// testJWTSecret 单元测试用 JWT 密钥（至少 32 字符，满足 NewManager 校验）.
 const testJWTSecret = "test-secret-key-for-unit-testing-minimum-32-chars"
 
-// setupTestManager 创建测试用的 JWT Manager 和 miniredis
+// setupTestManager 创建测试用的 JWT Manager 和 miniredis.
 func setupTestManager(t *testing.T, expireHours int) (*Manager, *miniredis.Miniredis) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{
@@ -65,11 +65,11 @@ func TestGenerateToken(t *testing.T) {
 	defer mr.Close()
 
 	tests := []struct {
+		deptID   *int64
 		name     string
-		userID   int64
 		username string
 		role     string
-		deptID   *int64
+		userID   int64
 	}{
 		{
 			name:     "生成带部门ID的Token",
@@ -239,9 +239,9 @@ func TestBlacklist(t *testing.T) {
 	defer mr.Close()
 
 	tests := []struct {
+		expiration time.Time
 		name       string
 		jti        string
-		expiration time.Time
 		wantErr    bool
 		wantBlack  bool
 	}{

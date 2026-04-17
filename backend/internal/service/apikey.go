@@ -1,22 +1,21 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-
 	"codemind/internal/config"
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
+	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
-// APIKeyService handles API key management
+// APIKeyService handles API key management.
 type APIKeyService struct {
 	keyRepo   *repository.APIKeyRepository
 	auditRepo *repository.AuditRepository
@@ -25,7 +24,7 @@ type APIKeyService struct {
 	encryptor *crypto.Encryptor
 }
 
-// NewAPIKeyService creates a new APIKeyService
+// NewAPIKeyService creates a new APIKeyService.
 func NewAPIKeyService(
 	keyRepo *repository.APIKeyRepository,
 	auditRepo *repository.AuditRepository,
@@ -42,7 +41,7 @@ func NewAPIKeyService(
 	}
 }
 
-// Create creates a new API key (returns full key only once)
+// Create creates a new API key (returns full key only once).
 func (s *APIKeyService) Create(req *dto.CreateAPIKeyRequest, userID int64, clientIP string) (*dto.APIKeyCreateResponse, error) {
 	count, err := s.keyRepo.CountByUserID(userID)
 	if err != nil {
@@ -97,7 +96,7 @@ func (s *APIKeyService) Create(req *dto.CreateAPIKeyRequest, userID int64, clien
 	}, nil
 }
 
-// Copy decrypts and returns the full API key
+// Copy decrypts and returns the full API key.
 func (s *APIKeyService) Copy(keyID int64, operatorID int64, operatorRole string, clientIP string) (*dto.APIKeyCopyResponse, error) {
 	key, err := s.keyRepo.FindByID(keyID)
 	if err != nil {
@@ -129,7 +128,7 @@ func (s *APIKeyService) Copy(keyID int64, operatorID int64, operatorRole string,
 	return &dto.APIKeyCopyResponse{Key: fullKey}, nil
 }
 
-// List returns user's API keys
+// List returns user's API keys.
 func (s *APIKeyService) List(userID int64) ([]dto.APIKeyResponse, error) {
 	keys, err := s.keyRepo.ListByUserID(userID)
 	if err != nil {
@@ -155,7 +154,7 @@ func (s *APIKeyService) List(userID int64) ([]dto.APIKeyResponse, error) {
 	return resp, nil
 }
 
-// UpdateStatus toggles API key status
+// UpdateStatus toggles API key status.
 func (s *APIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
 	key, err := s.keyRepo.FindByID(keyID)
 	if err != nil {
@@ -183,7 +182,7 @@ func (s *APIKeyService) UpdateStatus(keyID int64, status int16, operatorID int64
 	return nil
 }
 
-// Delete removes an API key
+// Delete removes an API key.
 func (s *APIKeyService) Delete(keyID int64, operatorID int64, operatorRole string, clientIP string) error {
 	key, err := s.keyRepo.FindByID(keyID)
 	if err != nil {
@@ -216,7 +215,7 @@ func (s *APIKeyService) invalidateKeyCache(keyHash string) {
 	}
 }
 
-// recordAudit records an audit log entry for API key operations
+// recordAudit records an audit log entry for API key operations.
 func (s *APIKeyService) recordAudit(operatorID int64, action, targetType string, targetID *int64, detail interface{}, clientIP string) {
 	var detailJSON json.RawMessage
 	if detail != nil {

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// TestChatCompletion 测试非流式对话补全
+// TestChatCompletion 测试非流式对话补全.
 func TestChatCompletion(t *testing.T) {
 	// 模拟 LLM 服务
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -74,7 +74,7 @@ func TestChatCompletion(t *testing.T) {
 	}
 }
 
-// TestListModels 测试获取模型列表
+// TestListModels 测试获取模型列表.
 func TestListModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -102,7 +102,7 @@ func TestListModels(t *testing.T) {
 	}
 }
 
-// TestLLMErrorHandling 测试 LLM 错误处理
+// TestLLMErrorHandling 测试 LLM 错误处理.
 func TestLLMErrorHandling(t *testing.T) {
 	// 测试 500 错误
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func TestLLMErrorHandling(t *testing.T) {
 	}
 }
 
-// TestLLMRateLimitHandling 测试 429 限流处理
+// TestLLMRateLimitHandling 测试 429 限流处理.
 func TestLLMRateLimitHandling(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
@@ -157,7 +157,7 @@ func TestLLMRateLimitHandling(t *testing.T) {
 	}
 }
 
-// TestChatCompletionStream 测试流式对话（基本连通性）
+// TestChatCompletionStream 测试流式对话（基本连通性）.
 func TestChatCompletionStream(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")

@@ -1,27 +1,26 @@
 package handler
 
 import (
-	"strconv"
-
 	"codemind/internal/middleware"
 	"codemind/internal/model/dto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-// AuthHandler handles authentication endpoints
+// AuthHandler handles authentication endpoints.
 type AuthHandler struct {
 	authService AuthService
 }
 
-// NewAuthHandler creates an auth handler
+// NewAuthHandler creates an auth handler.
 func NewAuthHandler(authService AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
-// Login authenticates a user
+// Login authenticates a user.
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,26 +63,28 @@ func (h *AuthHandler) formatLockMessage(status *dto.LoginLockStatusResponse) str
 	if !status.Locked {
 		return "too many failed attempts, try again later"
 	}
-	
+
 	remaining := status.RemainingTime
+	//nolint:mnd // magic number for configuration/defaults.
 	if remaining < 60 {
 		return "account locked, try again later"
 	}
-	
-	minutes := remaining / 60
+
+	minutes := remaining / 60 //nolint:mnd // intentional constant.
+	//nolint:mnd // magic number for configuration/defaults.
 	if minutes < 60 {
 		return "account locked, try again in " + strconv.FormatInt(minutes, 10) + " minutes"
 	}
-	
-	hours := minutes / 60
-	remainingMinutes := minutes % 60
+
+	hours := minutes / 60            //nolint:mnd // intentional constant.
+	remainingMinutes := minutes % 60 //nolint:mnd // intentional constant.
 	if remainingMinutes > 0 {
 		return "account locked, try again in " + strconv.FormatInt(hours, 10) + " hours " + strconv.FormatInt(remainingMinutes, 10) + " minutes"
 	}
 	return "account locked, try again in " + strconv.FormatInt(hours, 10) + " hours"
 }
 
-// Logout invalidates the current session
+// Logout invalidates the current session.
 func (h *AuthHandler) Logout(c *gin.Context) {
 	claims := middleware.GetClaims(c)
 	if claims == nil {
@@ -99,7 +100,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetProfile returns current user's profile
+// GetProfile returns current user's profile.
 func (h *AuthHandler) GetProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -120,7 +121,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	response.Success(c, profile)
 }
 
-// UpdateProfile updates current user's profile
+// UpdateProfile updates current user's profile.
 func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -142,7 +143,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// ChangePassword changes current user's password
+// ChangePassword changes current user's password.
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

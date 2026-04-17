@@ -10,7 +10,7 @@ import (
 // OpenAI → Anthropic 请求转换
 // ══════════════════════════════════
 
-// TestOpenAIToAnthropicBasic 测试基本请求转换
+// TestOpenAIToAnthropicBasic 测试基本请求转换.
 func TestOpenAIToAnthropicBasic(t *testing.T) {
 	temp := 0.7
 	maxTokens := 2048
@@ -41,7 +41,7 @@ func TestOpenAIToAnthropicBasic(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicSystemMessage 测试 system 消息提取
+// TestOpenAIToAnthropicSystemMessage 测试 system 消息提取.
 func TestOpenAIToAnthropicSystemMessage(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
@@ -66,7 +66,7 @@ func TestOpenAIToAnthropicSystemMessage(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicMaxTokensDefault 测试 max_tokens 默认值
+// TestOpenAIToAnthropicMaxTokensDefault 测试 max_tokens 默认值.
 func TestOpenAIToAnthropicMaxTokensDefault(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model:    "gpt-4",
@@ -79,7 +79,7 @@ func TestOpenAIToAnthropicMaxTokensDefault(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicMaxCompletionTokensPriority 测试 max_completion_tokens 优先级
+// TestOpenAIToAnthropicMaxCompletionTokensPriority 测试 max_completion_tokens 优先级.
 func TestOpenAIToAnthropicMaxCompletionTokensPriority(t *testing.T) {
 	maxTokens := 1024
 	maxCompletionTokens := 2048
@@ -96,7 +96,7 @@ func TestOpenAIToAnthropicMaxCompletionTokensPriority(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicToolConversion 测试工具定义转换
+// TestOpenAIToAnthropicToolConversion 测试工具定义转换.
 func TestOpenAIToAnthropicToolConversion(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model:    "gpt-4",
@@ -122,7 +122,7 @@ func TestOpenAIToAnthropicToolConversion(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicToolChoice 测试 tool_choice 转换
+// TestOpenAIToAnthropicToolChoice 测试 tool_choice 转换.
 func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -157,7 +157,7 @@ func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicToolCallConversion 测试 tool_calls → tool_use 转换
+// TestOpenAIToAnthropicToolCallConversion 测试 tool_calls → tool_use 转换.
 func TestOpenAIToAnthropicToolCallConversion(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
@@ -194,7 +194,7 @@ func TestOpenAIToAnthropicToolCallConversion(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicStopSequence 测试 stop 序列转换
+// TestOpenAIToAnthropicStopSequence 测试 stop 序列转换.
 func TestOpenAIToAnthropicStopSequence(t *testing.T) {
 	// string 类型
 	req := &ChatCompletionRequest{
@@ -208,7 +208,7 @@ func TestOpenAIToAnthropicStopSequence(t *testing.T) {
 	}
 }
 
-// TestOpenAIToAnthropicFirstMessageMustBeUser 测试第一条消息必须是 user 角色
+// TestOpenAIToAnthropicFirstMessageMustBeUser 测试第一条消息必须是 user 角色.
 func TestOpenAIToAnthropicFirstMessageMustBeUser(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
@@ -227,7 +227,7 @@ func TestOpenAIToAnthropicFirstMessageMustBeUser(t *testing.T) {
 // Anthropic → OpenAI 请求转换
 // ══════════════════════════════════
 
-// TestAnthropicToOpenAIBasic 测试基本请求转换
+// TestAnthropicToOpenAIBasic 测试基本请求转换.
 func TestAnthropicToOpenAIBasic(t *testing.T) {
 	temp := 0.5
 	req := &AnthropicMessagesRequest{
@@ -263,12 +263,12 @@ func TestAnthropicToOpenAIBasic(t *testing.T) {
 	}
 }
 
-// TestAnthropicToOpenAIToolChoice 测试 tool_choice 转换
+// TestAnthropicToOpenAIToolChoice 测试 tool_choice 转换.
 func TestAnthropicToOpenAIToolChoice(t *testing.T) {
 	tests := []struct {
-		name     string
 		choice   interface{}
 		expected interface{}
+		name     string
 	}{
 		{
 			"auto → auto",
@@ -300,7 +300,7 @@ func TestAnthropicToOpenAIToolChoice(t *testing.T) {
 	}
 }
 
-// TestAnthropicToOpenAIToolResultConversion 测试 tool_result → tool 消息转换
+// TestAnthropicToOpenAIToolResultConversion 测试 tool_result → tool 消息转换.
 func TestAnthropicToOpenAIToolResultConversion(t *testing.T) {
 	reqJSON := `{
 		"model": "claude-sonnet-4-20250514",
@@ -360,7 +360,7 @@ func TestAnthropicToOpenAIToolResultConversion(t *testing.T) {
 // 响应转换
 // ══════════════════════════════════
 
-// TestOpenAIResponseToAnthropic 测试 OpenAI 响应→ Anthropic 格式
+// TestOpenAIResponseToAnthropic 测试 OpenAI 响应→ Anthropic 格式.
 func TestOpenAIResponseToAnthropic(t *testing.T) {
 	finishReason := "tool_calls"
 	resp := &ChatCompletionResponse{
@@ -416,7 +416,7 @@ func TestOpenAIResponseToAnthropic(t *testing.T) {
 	}
 }
 
-// TestAnthropicResponseToOpenAI 测试 Anthropic 响应 → OpenAI 格式
+// TestAnthropicResponseToOpenAI 测试 Anthropic 响应 → OpenAI 格式.
 func TestAnthropicResponseToOpenAI(t *testing.T) {
 	stopReason := "end_turn"
 	resp := &AnthropicMessagesResponse{
@@ -470,7 +470,7 @@ func TestAnthropicResponseToOpenAI(t *testing.T) {
 // 停止原因映射
 // ══════════════════════════════════
 
-// TestStopReasonMapping 测试双向停止原因映射
+// TestStopReasonMapping 测试双向停止原因映射.
 func TestStopReasonMapping(t *testing.T) {
 	// OpenAI → Anthropic
 	o2aTests := []struct{ input, expected string }{
@@ -507,7 +507,7 @@ func TestStopReasonMapping(t *testing.T) {
 // tool_choice 映射
 // ══════════════════════════════════
 
-// TestToolChoiceMapping 测试双向 tool_choice 映射
+// TestToolChoiceMapping 测试双向 tool_choice 映射.
 func TestToolChoiceMapping(t *testing.T) {
 	// OpenAI → Anthropic
 	t.Run("OpenAI auto → Anthropic auto", func(t *testing.T) {
@@ -580,7 +580,7 @@ func TestToolChoiceMapping(t *testing.T) {
 // 流式格式转换：Anthropic → OpenAI
 // ══════════════════════════════════
 
-// TestAnthropicEventToOpenAIChunkText 测试文本增量转换
+// TestAnthropicEventToOpenAIChunkText 测试文本增量转换.
 func TestAnthropicEventToOpenAIChunkText(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 
@@ -612,7 +612,7 @@ func TestAnthropicEventToOpenAIChunkText(t *testing.T) {
 	}
 }
 
-// TestAnthropicEventToOpenAIChunkToolUse 测试工具调用流式转换
+// TestAnthropicEventToOpenAIChunkToolUse 测试工具调用流式转换.
 func TestAnthropicEventToOpenAIChunkToolUse(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 
@@ -650,7 +650,7 @@ func TestAnthropicEventToOpenAIChunkToolUse(t *testing.T) {
 	}
 }
 
-// TestAnthropicEventToOpenAIChunkThinkingIgnored 测试 thinking 事件被忽略
+// TestAnthropicEventToOpenAIChunkThinkingIgnored 测试 thinking 事件被忽略.
 func TestAnthropicEventToOpenAIChunkThinkingIgnored(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 
@@ -685,7 +685,7 @@ func TestAnthropicEventToOpenAIChunkThinkingIgnored(t *testing.T) {
 	}
 }
 
-// TestAnthropicEventToOpenAIChunkMessageDelta 测试 message_delta（含 usage）转换
+// TestAnthropicEventToOpenAIChunkMessageDelta 测试 message_delta（含 usage）转换.
 func TestAnthropicEventToOpenAIChunkMessageDelta(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 	stopReason := "end_turn"
@@ -721,7 +721,7 @@ func TestAnthropicEventToOpenAIChunkMessageDelta(t *testing.T) {
 // 流式格式转换：OpenAI → Anthropic
 // ══════════════════════════════════
 
-// TestOpenAIChunkToAnthropicEventsFirstChunk 测试首个 chunk 生成 message_start
+// TestOpenAIChunkToAnthropicEventsFirstChunk 测试首个 chunk 生成 message_start.
 func TestOpenAIChunkToAnthropicEventsFirstChunk(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	chunk := &ChatCompletionChunk{
@@ -746,7 +746,7 @@ func TestOpenAIChunkToAnthropicEventsFirstChunk(t *testing.T) {
 	}
 }
 
-// TestOpenAIChunkToAnthropicEventsFinish 测试结束事件
+// TestOpenAIChunkToAnthropicEventsFinish 测试结束事件.
 func TestOpenAIChunkToAnthropicEventsFinish(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	finishReason := "stop"
@@ -777,7 +777,7 @@ func TestOpenAIChunkToAnthropicEventsFinish(t *testing.T) {
 	}
 }
 
-// TestOpenAIChunkToAnthropicEventsToolCall 测试工具调用 chunk 转换
+// TestOpenAIChunkToAnthropicEventsToolCall 测试工具调用 chunk 转换.
 func TestOpenAIChunkToAnthropicEventsToolCall(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	idx := 0

@@ -1,3 +1,4 @@
+// Package handler provides HTTP request handlers for the API.
 package handler
 
 import (
@@ -8,17 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// APIKeyHandler handles API key management endpoints
+// APIKeyHandler handles API key management endpoints.
 type APIKeyHandler struct {
 	keyService APIKeyService
 }
 
-// NewAPIKeyHandler creates an API key handler
+// NewAPIKeyHandler creates an API key handler.
 func NewAPIKeyHandler(keyService APIKeyService) *APIKeyHandler {
 	return &APIKeyHandler{keyService: keyService}
 }
 
-// List returns current user's API keys
+// List returns current user's API keys.
 func (h *APIKeyHandler) List(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -31,7 +32,7 @@ func (h *APIKeyHandler) List(c *gin.Context) {
 	response.Success(c, keys)
 }
 
-// Create creates a new API key
+// Create creates a new API key.
 func (h *APIKeyHandler) Create(c *gin.Context) {
 	var req dto.CreateAPIKeyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,7 +51,7 @@ func (h *APIKeyHandler) Create(c *gin.Context) {
 	response.Success(c, key)
 }
 
-// UpdateStatus toggles API key status
+// UpdateStatus toggles API key status.
 func (h *APIKeyHandler) UpdateStatus(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -76,7 +77,7 @@ func (h *APIKeyHandler) UpdateStatus(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// Copy returns the full API key for copying
+// Copy returns the full API key for copying.
 func (h *APIKeyHandler) Copy(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -96,7 +97,7 @@ func (h *APIKeyHandler) Copy(c *gin.Context) {
 	response.Success(c, resp)
 }
 
-// Delete deletes an API key
+// Delete deletes an API key.
 func (h *APIKeyHandler) Delete(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {

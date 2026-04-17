@@ -15,7 +15,7 @@ const (
 	apiKeyPrefix = "cm-"
 )
 
-// HashPassword hashes a password using bcrypt
+// HashPassword hashes a password using bcrypt.
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 	if err != nil {
@@ -24,13 +24,12 @@ func HashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
-// CheckPassword verifies a password against its hash
+// CheckPassword verifies a password against its hash.
 func CheckPassword(password, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-// GenerateAPIKey generates a new API key
-// Returns: (full key, display prefix, SHA-256 hash)
+// Returns: (full key, display prefix, SHA-256 hash).
 func GenerateAPIKey() (fullKey, prefix, hash string, err error) {
 	randomBytes := make([]byte, apiKeyLength)
 	if _, err = rand.Read(randomBytes); err != nil {
@@ -45,13 +44,13 @@ func GenerateAPIKey() (fullKey, prefix, hash string, err error) {
 	return fullKey, prefix, hash, nil
 }
 
-// HashAPIKey computes SHA-256 hash of an API key
+// HashAPIKey computes SHA-256 hash of an API key.
 func HashAPIKey(key string) string {
 	h := sha256.Sum256([]byte(key))
 	return hex.EncodeToString(h[:])
 }
 
-// GenerateRandomString generates a random hex string of specified length
+// GenerateRandomString generates a random hex string of specified length.
 func GenerateRandomString(length int) (string, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {

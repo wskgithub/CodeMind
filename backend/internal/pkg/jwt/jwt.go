@@ -12,23 +12,23 @@ import (
 
 const minSecretLength = 32
 
-// Claims holds custom JWT claims
+// Claims holds custom JWT claims.
 type Claims struct {
-	UserID       int64  `json:"user_id"`
-	Username     string `json:"username"`
-	Role         string `json:"role"`
 	DepartmentID *int64 `json:"department_id,omitempty"`
 	jwt.RegisteredClaims
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	UserID   int64  `json:"user_id"`
 }
 
-// Manager handles JWT operations
+// Manager handles JWT operations.
 type Manager struct {
+	rdb         *redis.Client
 	secret      []byte
 	expireHours int
-	rdb         *redis.Client
 }
 
-// NewManager creates a JWT manager, returns error if secret is too short
+// NewManager creates a JWT manager, returns error if secret is too short.
 func NewManager(secret string, expireHours int, rdb *redis.Client) (*Manager, error) {
 	if len(secret) < minSecretLength {
 		return nil, fmt.Errorf("JWT secret too short: need at least %d chars, got %d", minSecretLength, len(secret))
@@ -40,7 +40,7 @@ func NewManager(secret string, expireHours int, rdb *redis.Client) (*Manager, er
 	}, nil
 }
 
-// GenerateToken creates a new JWT token
+// GenerateToken creates a new JWT token.
 func (m *Manager) GenerateToken(userID int64, username, role string, deptID *int64) (string, time.Time, error) {
 	now := time.Now()
 	expiresAt := now.Add(time.Duration(m.expireHours) * time.Hour)
@@ -68,7 +68,7 @@ func (m *Manager) GenerateToken(userID int64, username, role string, deptID *int
 	return tokenString, expiresAt, nil
 }
 
-// ParseToken validates and parses a JWT token
+// ParseToken validates and parses a JWT token.
 func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		// Strictly enforce HS256
@@ -77,7 +77,6 @@ func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
 		}
 		return m.secret, nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse token: %w", err)
 	}
@@ -94,7 +93,7 @@ func (m *Manager) ParseToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// Blacklist adds a token to the blacklist
+// Blacklist adds a token to the blacklist.
 func (m *Manager) Blacklist(ctx context.Context, jti string, expiration time.Time) error {
 	ttl := time.Until(expiration)
 	if ttl <= 0 {
@@ -105,8 +104,7 @@ func (m *Manager) Blacklist(ctx context.Context, jti string, expiration time.Tim
 	return m.rdb.Set(ctx, key, "1", ttl).Err()
 }
 
-// IsBlacklisted checks if a token is blacklisted
-// Fail-closed: returns true on Redis errors to prevent revoked tokens from being used
+// Fail-closed: returns true on Redis errors to prevent revoked tokens from being used.
 func (m *Manager) IsBlacklisted(ctx context.Context, jti string) bool {
 	key := fmt.Sprintf("codemind:jwt:blacklist:%s", jti)
 	result, err := m.rdb.Exists(ctx, key).Result()

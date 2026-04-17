@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TestStreamReader 测试 SSE 流式读取器
+// TestStreamReader 测试 SSE 流式读取器.
 func TestStreamReader(t *testing.T) {
 	// 模拟 SSE 数据流
 	sseData := `data: {"id":"1","object":"chat.completion.chunk","model":"gpt-4","choices":[{"index":0,"delta":{"role":"assistant","content":"Hello"}}]}
@@ -56,7 +56,7 @@ data: [DONE]
 	}
 }
 
-// TestStreamReaderEmpty 测试空流
+// TestStreamReaderEmpty 测试空流.
 func TestStreamReaderEmpty(t *testing.T) {
 	body := io.NopCloser(strings.NewReader(""))
 	reader := NewStreamReader(body)
@@ -68,7 +68,7 @@ func TestStreamReaderEmpty(t *testing.T) {
 	}
 }
 
-// TestStreamReaderInvalidJSON 测试无法解析的 JSON
+// TestStreamReaderInvalidJSON 测试无法解析的 JSON.
 func TestStreamReaderInvalidJSON(t *testing.T) {
 	sseData := "data: {invalid json}\n\n"
 	body := io.NopCloser(strings.NewReader(sseData))
@@ -88,7 +88,7 @@ func TestStreamReaderInvalidJSON(t *testing.T) {
 	}
 }
 
-// TestStreamReaderSkipsComments 测试跳过非 data 行
+// TestStreamReaderSkipsComments 测试跳过非 data 行.
 func TestStreamReaderSkipsComments(t *testing.T) {
 	sseData := `: this is a comment
 event: message

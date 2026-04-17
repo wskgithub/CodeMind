@@ -19,7 +19,7 @@ type ResponsesStreamReader struct {
 // NewResponsesStreamReader creates a Responses API stream reader.
 func NewResponsesStreamReader(body io.ReadCloser) *ResponsesStreamReader {
 	return &ResponsesStreamReader{
-		reader: bufio.NewReaderSize(body, 16384),
+		reader: bufio.NewReaderSize(body, 16384), //nolint:mnd // intentional constant.
 		body:   body,
 	}
 }
@@ -85,11 +85,11 @@ type responsesUsageWrapper struct {
 
 // ResponsesUsage represents Responses API token usage format.
 type ResponsesUsage struct {
-	InputTokens        int                         `json:"input_tokens"`
-	InputTokensDetails *ResponsesInputTokenDetails `json:"input_tokens_details,omitempty"`
-	OutputTokens       int                         `json:"output_tokens"`
+	InputTokensDetails  *ResponsesInputTokenDetails  `json:"input_tokens_details,omitempty"`
 	OutputTokensDetails *ResponsesOutputTokenDetails `json:"output_tokens_details,omitempty"`
-	TotalTokens        int                         `json:"total_tokens"`
+	InputTokens         int                          `json:"input_tokens"`
+	OutputTokens        int                          `json:"output_tokens"`
+	TotalTokens         int                          `json:"total_tokens"`
 }
 
 // ResponsesInputTokenDetails represents Responses API input token details.

@@ -1,6 +1,10 @@
 package handler
 
 import (
+	"codemind/internal/middleware"
+	"codemind/internal/pkg/errcode"
+	"codemind/internal/service"
+	"codemind/pkg/llm"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,11 +12,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"codemind/internal/middleware"
-	"codemind/internal/pkg/errcode"
-	"codemind/internal/service"
-	"codemind/pkg/llm"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -32,8 +31,7 @@ func NewLLMProxyHandler(proxyService *service.LLMProxyService, logger *zap.Logge
 	}
 }
 
-// ChatCompletions proxies chat completion requests (OpenAI format).
-// POST /api/openai/v1/chat/completions
+// POST /api/openai/v1/chat/completions.
 func (h *LLMProxyHandler) ChatCompletions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -116,8 +114,8 @@ func (h *LLMProxyHandler) handleNonStreamChatRaw(
 	}
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)        //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -151,12 +149,11 @@ func (h *LLMProxyHandler) handleStreamChatRaw(
 
 	durationMs := int(time.Since(startTime).Milliseconds())
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "chat_completion", streamResult.Usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)                                                   //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "chat_completion", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// Completions proxies text completion requests (OpenAI format).
-// POST /api/openai/v1/completions
+// POST /api/openai/v1/completions.
 func (h *LLMProxyHandler) Completions(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -224,8 +221,8 @@ func (h *LLMProxyHandler) handleNonStreamCompletionRaw(
 	}
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)        //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -242,7 +239,7 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 		h.handleLLMError(c, err, userID, apiKeyID, modelName, "completion", durationMs)
 		return
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -253,13 +250,13 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 	result := &llm.StreamResult{}
 	var contentBuilder strings.Builder
 	reader := llm.NewStreamReader(body)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	for {
 		rawLine, chunk, err := reader.ReadChunk()
 		if err != nil {
 			if err == io.EOF {
-				fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
+				_, _ = fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
 				c.Writer.Flush()
 				break
 			}
@@ -267,7 +264,7 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 			break
 		}
 
-		fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
+		_, _ = fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
 		c.Writer.Flush()
 
 		if chunk != nil {
@@ -287,12 +284,11 @@ func (h *LLMProxyHandler) handleStreamCompletionRaw(
 
 	durationMs := int(time.Since(startTime).Milliseconds())
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "completion", result.Usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, true, rawBody, llm.AssembleCompletionResponse(result), result.Usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "completion", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)                                             //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "completion", modelName, true, rawBody, llm.AssembleCompletionResponse(result), result.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// ListModels returns available models.
-// GET /api/openai/v1/models
+// GET /api/openai/v1/models.
 func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	provider, err := h.proxyService.GetProviderManager().GetDefault()
 	if err != nil {
@@ -307,8 +303,7 @@ func (h *LLMProxyHandler) ListModels(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// RetrieveModel returns a single model's info.
-// GET /api/openai/v1/models/:model
+// GET /api/openai/v1/models/:model.
 func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	modelID := c.Param("model")
 	if modelID == "" {
@@ -335,8 +330,7 @@ func (h *LLMProxyHandler) RetrieveModel(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// Embeddings proxies embedding requests.
-// POST /api/openai/v1/embeddings
+// POST /api/openai/v1/embeddings.
 func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -396,8 +390,8 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 	if usage != nil {
 		go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "embedding", usage, durationMs)
 	}
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "embedding", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "embedding", modelName, false, rawBody, nil, usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "embedding", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)    //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "embedding", modelName, false, rawBody, nil, usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -406,8 +400,7 @@ func (h *LLMProxyHandler) Embeddings(c *gin.Context) {
 // OpenAI Responses API
 // ──────────────────────────────────
 
-// Responses proxies OpenAI Responses API requests.
-// POST /api/openai/v1/responses
+// POST /api/openai/v1/responses.
 func (h *LLMProxyHandler) Responses(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -487,8 +480,8 @@ func (h *LLMProxyHandler) handleNonStreamResponses(
 	}
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)        //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -516,12 +509,11 @@ func (h *LLMProxyHandler) handleStreamResponses(
 
 	durationMs := int(time.Since(startTime).Milliseconds())
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "responses", streamResult.Usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, true, rawBody, nil, streamResult.Usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "responses", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)                //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "responses", modelName, true, rawBody, nil, streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
-// AnthropicMessages proxies Anthropic native messages API.
-// POST /api/anthropic/v1/messages
+// POST /api/anthropic/v1/messages.
 func (h *LLMProxyHandler) AnthropicMessages(c *gin.Context) {
 	startTime := time.Now()
 	userID := middleware.GetUserID(c)
@@ -609,8 +601,8 @@ func (h *LLMProxyHandler) handleAnthropicNonStream(
 	}
 
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "anthropic_messages", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)        //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "anthropic_messages", modelName, false, rawBody, rawResp, usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 
 	c.Data(http.StatusOK, "application/json", rawResp)
 }
@@ -644,14 +636,14 @@ func (h *LLMProxyHandler) handleAnthropicStream(
 
 	durationMs := int(time.Since(startTime).Milliseconds())
 	go h.proxyService.RecordUsage(userID, apiKeyID, deptID, modelName, "anthropic_messages", streamResult.Usage, durationMs)
-	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)
-	go h.proxyService.RecordTrainingData(userID, apiKeyID, "anthropic_messages", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP())
+	go h.proxyService.RecordRequestLog(userID, apiKeyID, "anthropic_messages", modelName, 200, "", c.ClientIP(), c.Request.UserAgent(), durationMs)                                                   //nolint:mnd // intentional constant.
+	go h.proxyService.RecordTrainingData(userID, apiKeyID, "anthropic_messages", modelName, true, rawBody, llm.AssembleChatResponse(streamResult), streamResult.Usage, 200, durationMs, c.ClientIP()) //nolint:mnd // intentional constant.
 }
 
 // pipeOpenAIStream forwards OpenAI format stream while collecting full response content.
 func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *llm.StreamResult {
 	reader := llm.NewStreamReader(body)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	result := &llm.StreamResult{}
 	var contentBuilder strings.Builder
@@ -660,7 +652,7 @@ func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *
 		rawLine, chunk, err := reader.ReadChunk()
 		if err != nil {
 			if err == io.EOF {
-				fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
+				_, _ = fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
 				c.Writer.Flush()
 				break
 			}
@@ -668,7 +660,7 @@ func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *
 			break
 		}
 
-		fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
+		_, _ = fmt.Fprintf(c.Writer, "%s\n\n", rawLine)
 		c.Writer.Flush()
 
 		if chunk != nil {
@@ -698,7 +690,7 @@ func (h *LLMProxyHandler) pipeOpenAIStream(c *gin.Context, body io.ReadCloser) *
 // pipeAnthropicStream forwards Anthropic format stream while collecting full response content.
 func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser) *llm.StreamResult {
 	reader := llm.NewAnthropicStreamReader(body)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	result := &llm.StreamResult{}
 	var contentBuilder strings.Builder
@@ -713,9 +705,9 @@ func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser
 			break
 		}
 
-		fmt.Fprint(c.Writer, rawLines)
+		_, _ = fmt.Fprint(c.Writer, rawLines)
 		if !endsWith(rawLines, "\n\n") {
-			fmt.Fprint(c.Writer, "\n")
+			_, _ = fmt.Fprint(c.Writer, "\n")
 		}
 		c.Writer.Flush()
 
@@ -748,7 +740,7 @@ func (h *LLMProxyHandler) pipeAnthropicStream(c *gin.Context, body io.ReadCloser
 // pipeAnthropicStreamToOpenAI converts Anthropic stream to OpenAI format output.
 func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.ReadCloser, model string) *llm.StreamResult {
 	reader := llm.NewAnthropicStreamReader(body)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	result := &llm.StreamResult{}
 	var contentBuilder strings.Builder
@@ -758,7 +750,7 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 		eventType, _, event, err := reader.ReadEvent()
 		if err != nil {
 			if err == io.EOF {
-				fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
+				_, _ = fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
 				c.Writer.Flush()
 				break
 			}
@@ -768,7 +760,7 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 
 		openaiData := llm.AnthropicEventToOpenAIChunk(eventType, event, model, state)
 		if openaiData != "" {
-			fmt.Fprint(c.Writer, openaiData)
+			_, _ = fmt.Fprint(c.Writer, openaiData)
 			c.Writer.Flush()
 		}
 
@@ -801,7 +793,7 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 // pipeOpenAIStreamToAnthropic converts OpenAI stream to Anthropic format output.
 func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.ReadCloser, model string) *llm.StreamResult {
 	reader := llm.NewStreamReader(body)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	result := &llm.StreamResult{}
 	var contentBuilder strings.Builder
@@ -821,7 +813,7 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 		if chunk != nil {
 			anthropicData := llm.OpenAIChunkToAnthropicEvents(chunk, isFirst, state)
 			if anthropicData != "" {
-				fmt.Fprint(c.Writer, anthropicData)
+				_, _ = fmt.Fprint(c.Writer, anthropicData)
 				c.Writer.Flush()
 			}
 			isFirst = false
@@ -852,7 +844,7 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 // pipeResponsesStream forwards Responses API SSE named event stream.
 func (h *LLMProxyHandler) pipeResponsesStream(c *gin.Context, body io.ReadCloser) *llm.StreamResult {
 	reader := llm.NewResponsesStreamReader(body)
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	result := &llm.StreamResult{}
 	var contentBuilder strings.Builder
@@ -867,9 +859,9 @@ func (h *LLMProxyHandler) pipeResponsesStream(c *gin.Context, body io.ReadCloser
 			break
 		}
 
-		fmt.Fprint(c.Writer, rawLines)
+		_, _ = fmt.Fprint(c.Writer, rawLines)
 		if !endsWith(rawLines, "\n\n") {
-			fmt.Fprint(c.Writer, "\n")
+			_, _ = fmt.Fprint(c.Writer, "\n")
 		}
 		c.Writer.Flush()
 

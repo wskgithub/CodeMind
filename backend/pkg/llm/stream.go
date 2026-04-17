@@ -8,22 +8,22 @@ import (
 	"strings"
 )
 
-// StreamReader parses SSE stream responses from LLM services
+// StreamReader parses SSE stream responses from LLM services.
 type StreamReader struct {
 	reader *bufio.Reader
 	body   io.ReadCloser
 	done   bool
 }
 
-// NewStreamReader creates an SSE stream reader
+// NewStreamReader creates an SSE stream reader.
 func NewStreamReader(body io.ReadCloser) *StreamReader {
 	return &StreamReader{
-		reader: bufio.NewReaderSize(body, 8192),
+		reader: bufio.NewReaderSize(body, 8192), //nolint:mnd // intentional constant.
 		body:   body,
 	}
 }
 
-// ReadChunk reads the next SSE data chunk, returns io.EOF when stream ends
+// ReadChunk reads the next SSE data chunk, returns io.EOF when stream ends.
 func (s *StreamReader) ReadChunk() (rawLine string, chunk *ChatCompletionChunk, err error) {
 	if s.done {
 		return "", nil, io.EOF
@@ -64,13 +64,13 @@ func (s *StreamReader) ReadChunk() (rawLine string, chunk *ChatCompletionChunk, 
 	}
 }
 
-// Close closes the underlying connection
+// Close closes the underlying connection.
 func (s *StreamReader) Close() error {
 	s.done = true
 	return s.body.Close()
 }
 
-// IsDone returns whether the stream has ended
+// IsDone returns whether the stream has ended.
 func (s *StreamReader) IsDone() bool {
 	return s.done
 }
