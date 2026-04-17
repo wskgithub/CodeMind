@@ -1,0 +1,138 @@
+# ========================
+# OS generated files
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# ========================
+# IDE / Editor
+# ========================
+.idea/
+.vscode/
+.cursor/
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+
+# ========================
+# AI Assistant Configs (not for open source)
+# ========================
+.claude/
+.agents/
+.playwright-mcp/
+
+# ========================
+# Release archives (not for source repo)
+# ========================
+dist/
+*.tar.gz
+*.tar.gz.sha256
+
+# ========================
+# Environment & Secrets
+# ========================
+.env
+.env.*
+!.env.example
+!.env.*.example
+deploy/config/app.yaml
+deploy/production/.env.production
+
+# ========================
+# Keys & Certificates
+# ========================
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# ========================
+# Frontend
+# ========================
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+frontend/coverage/
+frontend/*.tsbuildinfo
+frontend/.vite/
+frontend/.eslintcache
+
+# ========================
+# Backend
+# ========================
+backend/tmp/
+backend/vendor/
+backend/codemind
+backend/codemind.exe
+backend/*.log
+backend/coverage/
+backend/.coverage/
+backend/main
+backend/server
+backend/*.test
+backend/data/
+
+# ========================
+# Docker
+# ========================
+docker-compose.override.yml
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# Test & Coverage
+# ========================
+coverage/
+*.cover
+*.out
+test-results/
+
+# ========================
+# Build artifacts
+# ========================
+dist/
+build/
+bin/
+*.so
+*.dylib
+*.dll
+*.exe
+*.test
+*.o
+a.out
+
+# ========================
+# Database files
+# ========================
+*.db
+*.sqlite
+*.sqlite3
+
+# ========================
+# Temporary files
+# ========================
+*.tmp
+*.temp
+*~.nib
+
+# ========================
+# Debug files
+# ========================
+debug
+*.debug
+
+# Uploads
+uploads/
+

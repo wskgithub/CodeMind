@@ -1,0 +1,77 @@
+package model
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// User represents a platform user
+type User struct {
+	ID               int64          `gorm:"primaryKey;autoIncrement" json:"id"`
+	Username         string         `gorm:"size:50;not null;uniqueIndex" json:"username"`
+	PasswordHash     string         `gorm:"size:255;not null" json:"-"`
+	DisplayName      string         `gorm:"size:100;not null" json:"display_name"`
+	Email            *string        `gorm:"size:255;uniqueIndex" json:"email"`
+	Phone            *string        `gorm:"size:20" json:"phone"`
+	AvatarURL        *string        `gorm:"size:500" json:"avatar_url"`
+	Role             string         `gorm:"size:20;not null;default:user;index" json:"role"`
+	DepartmentID     *int64         `gorm:"index" json:"department_id"`
+	Status           int16          `gorm:"not null;default:1;index" json:"status"`
+	LastLoginAt      *time.Time     `json:"last_login_at"`
+	LastLoginIP      *string        `gorm:"size:45" json:"last_login_ip"`
+	LoginFailCount   int            `gorm:"not null;default:0" json:"login_fail_count"`
+	LockedUntil      *time.Time     `json:"locked_until"`
+	LastLoginFailAt  *time.Time     `json:"last_login_fail_at"`
+	CreatedAt        time.Time      `gorm:"not null;autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time      `gorm:"not null;autoUpdateTime" json:"updated_at"`
+	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
+
+	Department *Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
+}
+
+func (User) TableName() string {
+	return "users"
+}
+
+func (u *User) IsSuperAdmin() bool {
+	return u.Role == RoleSuperAdmin
+}
+
+func (u *User) IsDeptManager() bool {
+	return u.Role == RoleDeptManager
+}
+
+func (u *User) IsActive() bool {
+	return u.Status == StatusEnabled
+}
+
+func (u *User) IsLocked() bool {
+	if u.LockedUntil == nil {
+		return false
+	}
+	return u.LockedUntil.After(time.Now())
+}
+
+// GetRemainingLockTime returns remaining lock time in seconds
+func (u *User) GetRemainingLockTime() int64 {
+	if u.LockedUntil == nil {
+		return 0
+	}
+	remaining := u.LockedUntil.Unix() - time.Now().Unix()
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}
+
+const (
+	RoleSuperAdmin = "super_admin"
+	RoleDeptManager = "dept_manager"
+	RoleUser       = "user"
+)
+
+const (
+	StatusDisabled int16 = 0
+	StatusEnabled  int16 = 1
+)

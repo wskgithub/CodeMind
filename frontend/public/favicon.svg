@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#0d2137"/>
+      <stop offset="100%" style="stop-color:#020508"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6BC5E8"/>
+      <stop offset="100%" style="stop-color:#4BA3D4"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="8" y="8" width="112" height="112" rx="28" ry="28" fill="url(#bg)"/>
+
+  <!-- 外环装饰 -->
+  <circle cx="64" cy="64" r="46" fill="none" stroke="url(#accent)" stroke-width="3" opacity="0.25"/>
+  <circle cx="64" cy="64" r="38" fill="none" stroke="url(#accent)" stroke-width="2" opacity="0.5"/>
+
+  <!-- 中心代码符号 </> -->
+  <g transform="translate(64, 64)" filter="url(#glow)">
+    <!-- 左尖括号 -->
+    <path d="M-14,-10 L-22,0 L-14,10" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 右尖括号 -->
+    <path d="M14,-10 L22,0 L14,10" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 斜杠 -->
+    <line x1="-6" y1="-12" x2="6" y2="12" stroke="url(#accent)" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

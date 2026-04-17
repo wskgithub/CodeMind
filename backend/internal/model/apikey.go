@@ -1,0 +1,34 @@
+package model
+
+import "time"
+
+// APIKey represents an API key for LLM proxy access
+type APIKey struct {
+	ID           int64      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID       int64      `gorm:"not null;index" json:"user_id"`
+	Name         string     `gorm:"size:100;not null" json:"name"`
+	KeyPrefix    string     `gorm:"size:20;not null;index" json:"key_prefix"`
+	KeyHash      string     `gorm:"size:255;not null;uniqueIndex" json:"-"`
+	KeyEncrypted string     `gorm:"size:255" json:"-"`
+	Status       int16      `gorm:"not null;default:1" json:"status"`
+	LastUsedAt   *time.Time `json:"last_used_at"`
+	ExpiresAt    *time.Time `json:"expires_at"`
+	CreatedAt    time.Time  `gorm:"not null;autoCreateTime" json:"created_at"`
+
+	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+func (APIKey) TableName() string {
+	return "api_keys"
+}
+
+func (k *APIKey) IsActive() bool {
+	return k.Status == StatusEnabled
+}
+
+func (k *APIKey) IsExpired() bool {
+	if k.ExpiresAt == nil {
+		return false
+	}
+	return time.Now().After(*k.ExpiresAt)
+}

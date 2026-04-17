@@ -1,0 +1,555 @@
+.docs-wrapper {
+  margin: -24px;
+  min-height: calc(100vh - 112px);
+}
+
+.docs-page {
+  min-height: calc(100vh - 112px);
+  background: #0f0f13;
+}
+
+[data-theme='light'] .docs-page {
+  background: #f0f5fa;
+}
+
+.docs-page-loading,
+.docs-page-error,
+.docs-page-empty {
+  padding: 48px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Sider Styles */
+.docs-sider {
+  background: rgba(24, 24, 30, 0.95);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+[data-theme='light'] .docs-sider {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.docs-sider-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: rgba(30, 30, 36, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='light'] .docs-sider-header {
+  background: rgba(250, 250, 252, 0.9);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.docs-sider-icon {
+  font-size: 20px;
+  color: #1890ff;
+  margin-right: 12px;
+}
+
+.docs-sider-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .docs-sider-title {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.docs-menu {
+  border-right: none;
+  padding: 8px 0;
+  background: transparent;
+}
+
+.docs-menu .ant-menu-item {
+  height: auto;
+  line-height: 1.5;
+  padding: 12px 24px !important;
+  margin: 4px 8px !important;
+  border-radius: 6px;
+}
+
+.docs-menu .ant-menu-item:hover {
+  background: rgba(43, 124, 179, 0.15);
+}
+
+[data-theme='light'] .docs-menu .ant-menu-item:hover {
+  background: rgba(43, 124, 179, 0.08);
+}
+
+.docs-menu .ant-menu-item-selected {
+  background: rgba(43, 124, 179, 0.2) !important;
+  color: #4BA3D4;
+}
+
+[data-theme='light'] .docs-menu .ant-menu-item-selected {
+  background: rgba(43, 124, 179, 0.12) !important;
+}
+
+.docs-menu-icon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.docs-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docs-menu-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .docs-menu-title {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.docs-menu-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: normal;
+  line-height: 1.4;
+}
+
+[data-theme='light'] .docs-menu-subtitle {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Content Styles */
+.docs-content-layout {
+  background: #0f0f13;
+}
+
+[data-theme='light'] .docs-content-layout {
+  background: #f0f5fa;
+}
+
+.docs-content {
+  padding: 24px;
+  overflow: auto;
+}
+
+.docs-content-header {
+  display: flex;
+  justifyContent: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.docs-content-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+}
+
+.docs-collapse-btn {
+  margin-top: 4px;
+}
+
+.docs-title-wrapper {
+  flex: 1;
+}
+
+.docs-title {
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme='light'] .docs-title {
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.docs-title-icon {
+  font-size: 32px;
+}
+
+.docs-subtitle {
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme='light'] .docs-subtitle {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.docs-content-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.docs-content-card {
+  background: rgba(30, 30, 36, 0.7);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+[data-theme='light'] .docs-content-card {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.docs-markdown {
+  padding: 32px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='light'] .docs-markdown {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.docs-markdown h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme='light'] .docs-markdown h2 {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.docs-markdown h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .docs-markdown h3 {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.docs-markdown p {
+  margin: 12px 0;
+}
+
+.docs-markdown ul,
+.docs-markdown ol {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.docs-markdown li {
+  margin: 8px 0;
+}
+
+.docs-markdown code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 14px;
+  color: #ff6b9d;
+}
+
+[data-theme='light'] .docs-markdown code {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.docs-markdown pre {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: auto;
+  background: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='light'] .docs-markdown pre {
+  background: #fafafa !important;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 代码块容器样式 */
+.docs-markdown pre > div {
+  border-radius: 8px !important;
+  margin: 0 !important;
+}
+
+.docs-markdown pre code {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.docs-markdown blockquote {
+  margin: 16px 0;
+  padding: 12px 16px;
+  background: rgba(82, 196, 26, 0.1);
+  border-left: 4px solid #52c41a;
+  border-radius: 4px;
+}
+
+.docs-markdown blockquote p {
+  margin: 0;
+}
+
+.docs-markdown table {
+  width: 100%;
+  margin: 16px 0;
+  border-collapse: collapse;
+}
+
+.docs-markdown th,
+.docs-markdown td {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+[data-theme='light'] .docs-markdown th,
+[data-theme='light'] .docs-markdown td {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.docs-markdown th {
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .docs-markdown th {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.docs-markdown tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme='light'] .docs-markdown tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.docs-markdown tr:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='light'] .docs-markdown tr:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* 图片响应式样式 */
+.docs-markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 16px 0;
+  display: block;
+}
+
+/* 图片点击放大效果 */
+.docs-markdown img:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.docs-heading {
+  scroll-margin-top: 80px;
+}
+
+.docs-footer {
+  padding: 16px 24px 0;
+}
+
+.docs-update-time {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: right;
+}
+
+[data-theme='light'] .docs-update-time {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* 上/下篇导航 */
+.docs-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  margin-top: 8px;
+}
+
+.docs-nav-btn {
+  flex: 1;
+  height: auto !important;
+  padding: 16px !important;
+  border-radius: 8px !important;
+  text-align: left !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.2s !important;
+}
+
+.docs-nav-btn:hover {
+  border-color: #1890ff !important;
+  background: rgba(24, 144, 255, 0.06) !important;
+}
+
+[data-theme='light'] .docs-nav-btn {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.docs-nav-next {
+  text-align: right !important;
+}
+
+.docs-nav-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+
+[data-theme='light'] .docs-nav-label {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.docs-nav-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='light'] .docs-nav-title {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .docs-content {
+    padding: 16px;
+  }
+
+  .docs-content-header {
+    flex-direction: column;
+  }
+
+  .docs-title {
+    font-size: 20px !important;
+  }
+
+  .docs-title-icon {
+    font-size: 24px;
+  }
+
+  .docs-markdown {
+    font-size: 14px;
+  }
+
+  .docs-markdown h2 {
+    font-size: 20px;
+  }
+
+  .docs-markdown h3 {
+    font-size: 18px;
+  }
+}
+
+/* Admin Page Styles */
+.docs-admin-page {
+  padding: 24px;
+}
+
+.docs-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.docs-admin-title {
+  margin: 0 !important;
+}
+
+.docs-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.docs-editor-pane {
+  background: rgba(30, 30, 36, 0.7);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.docs-editor-pane-title {
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docs-editor-textarea {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  min-height: 500px !important;
+}
+
+.docs-preview {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 16px;
+  min-height: 500px;
+  max-height: 600px;
+  overflow: auto;
+  background: rgba(20, 20, 26, 0.5);
+}
+
+/* 编辑器预览中的代码块样式 */
+.docs-preview pre {
+  border-radius: 6px;
+  overflow: auto;
+  background: #1e1e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='light'] .docs-preview pre {
+  background: #fafafa !important;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.docs-preview pre > div {
+  border-radius: 6px !important;
+}
+
+/* 编辑器预览中的图片样式 */
+.docs-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 12px 0;
+}
+
+@media (max-width: 992px) {
+  .docs-editor {
+    grid-template-columns: 1fr;
+  }
+}

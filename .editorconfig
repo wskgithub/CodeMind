@@ -1,0 +1,67 @@
+# EditorConfig 配置
+# https://editorconfig.org
+
+root = true
+
+# 默认配置
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Go 文件
+[*.go]
+indent_style = tab
+indent_size = 4
+max_line_length = 120
+
+# Shell 脚本
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+
+# YAML 文件
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# JSON 文件
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Markdown 文件
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# TypeScript / JavaScript
+[*.{ts,tsx,js,jsx}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# CSS / SCSS
+[*.{css,scss}]
+indent_style = space
+indent_size = 2
+
+# HTML
+[*.{html,htm}]
+indent_style = space
+indent_size = 2
+
+# SQL
+[*.{sql}]
+indent_style = space
+indent_size = 2
+
+# Makefile
+[Makefile]
+indent_style = tab
+
+# Dockerfile
+[Dockerfile*]
+indent_style = space
+indent_size = 2

@@ -1,0 +1,31 @@
+# ============================================================
+# CodeMind 后端 — 生产运行时镜像
+# ============================================================
+# 基于预编译的 linux/amd64 二进制文件，无需在容器内执行 go build
+# 应用配置通过 docker-compose 的 volume 挂载注入
+# ============================================================
+
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates tzdata wget
+
+ENV TZ=Asia/Shanghai
+
+RUN adduser -D -g '' appuser
+
+WORKDIR /app
+
+COPY codemind .
+
+RUN chmod +x codemind && \
+    mkdir -p /app/config /app/logs && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -qO- http://localhost:8080/health || exit 1
+
+CMD ["./codemind"]

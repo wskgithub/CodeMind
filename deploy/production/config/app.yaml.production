@@ -1,0 +1,52 @@
+# ============================================================
+# CodeMind 生产环境应用配置
+# ============================================================
+# 敏感信息（密码、密钥等）通过环境变量覆盖，无需在此处填写
+# 环境变量由 docker-compose.yml 从 .env 文件注入
+# ============================================================
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "release"
+
+database:
+  host: "postgres"
+  port: 5432
+  name: "codemind"
+  user: "codemind"
+  password: ""
+  max_open_conns: 50
+  max_idle_conns: 10
+  conn_max_lifetime_minutes: 60
+
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 20
+
+jwt:
+  secret: ""
+  expire_hours: 24
+
+llm:
+  base_url: ""
+  api_key: ""
+  timeout_seconds: 300
+  stream_timeout_seconds: 600
+  max_retries: 0
+
+system:
+  max_keys_per_user: 10
+  default_concurrency: 5
+  default_daily_tokens: 1000000
+  default_monthly_tokens: 20000000
+  force_change_password: true
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  file_path: "./logs/app.log"
