@@ -58,6 +58,23 @@ CodeMind is an enterprise-grade AI coding service management platform that acts 
 - **Provider Templates** — Pre-configured templates for common LLM providers
 - **System Monitoring** — Real-time CPU, memory, and service health metrics
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/landing-page-en.png" alt="Landing Page" width="100%">
+  <br><em>Landing Page</em>
+</p>
+
+<p align="center">
+  <img src="docs/assets/usage-statistics-en.png" alt="Usage Statistics" width="100%">
+  <br><em>Usage Statistics Dashboard</em>
+</p>
+
+<p align="center">
+  <img src="docs/assets/llm-node-management-en.png" alt="LLM Node Management" width="100%">
+  <br><em>LLM Node Management</em>
+</p>
+
 ## Architecture
 
 ```
