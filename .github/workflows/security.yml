@@ -28,7 +28,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           cache-dependency-path: backend/go.sum
 
       - name: Run govulncheck
@@ -38,6 +38,7 @@ jobs:
 
       - name: Run gosec
         uses: securego/gosec@master
+        if: always()
         with:
           args: -fmt=sarif -out=gosec-results.sarif ./...
           working-directory: backend
