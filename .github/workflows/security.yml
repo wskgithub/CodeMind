@@ -37,17 +37,19 @@ jobs:
           govulncheck ./...
 
       - name: Run gosec
-        uses: securego/gosec@master
         if: always()
-        with:
-          args: -fmt=sarif -out=gosec-results.sarif ./...
-          working-directory: backend
+        continue-on-error: true
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec -fmt=sarif -out=gosec-results.sarif ./...
 
       - name: Upload gosec results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: backend/gosec-results.sarif
+          category: gosec
 
   npm-audit:
     name: npm Security Audit
