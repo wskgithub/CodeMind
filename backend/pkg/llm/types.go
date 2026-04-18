@@ -8,46 +8,45 @@ import (
 
 // ChatCompletionRequest represents an OpenAI Chat Completions request body.
 type ChatCompletionRequest struct {
-	Model               string          `json:"model"`
-	Messages            []ChatMessage   `json:"messages"`
-	Stream              bool            `json:"stream,omitempty"`
-	StreamOptions       *StreamOptions  `json:"stream_options,omitempty"`
-	Temperature         *float64        `json:"temperature,omitempty"`
-	TopP                *float64        `json:"top_p,omitempty"`
-	MaxTokens           *int            `json:"max_tokens,omitempty"`
-	MaxCompletionTokens *int            `json:"max_completion_tokens,omitempty"`
-	Stop                interface{}     `json:"stop,omitempty"`
-	N                   *int            `json:"n,omitempty"`
-	User                string          `json:"user,omitempty"`
-	Tools               []Tool          `json:"tools,omitempty"`
-	ToolChoice          interface{}     `json:"tool_choice,omitempty"`
-	ResponseFormat      *ResponseFormat `json:"response_format,omitempty"`
-	Seed                *int64          `json:"seed,omitempty"`
-	FrequencyPenalty    *float64        `json:"frequency_penalty,omitempty"`
-	PresencePenalty     *float64        `json:"presence_penalty,omitempty"`
-	LogProbs            *bool           `json:"logprobs,omitempty"`
-	TopLogProbs         *int            `json:"top_logprobs,omitempty"`
-	ParallelToolCalls   *bool           `json:"parallel_tool_calls,omitempty"`
-	ReasoningEffort     string          `json:"reasoning_effort,omitempty"`
-	ServiceTier         string          `json:"service_tier,omitempty"`
-	Store               *bool           `json:"store,omitempty"`
+	Stop                interface{}       `json:"stop,omitempty"`
+	FunctionCall        interface{}       `json:"function_call,omitempty"`
+	Prediction          interface{}       `json:"prediction,omitempty"`
+	ToolChoice          interface{}       `json:"tool_choice,omitempty"`
+	MaxTokens           *int              `json:"max_tokens,omitempty"`
+	Store               *bool             `json:"store,omitempty"`
 	Metadata            map[string]string `json:"metadata,omitempty"`
-	Prediction          interface{}     `json:"prediction,omitempty"`
-
-	Functions    []Function  `json:"functions,omitempty"`
-	FunctionCall interface{} `json:"function_call,omitempty"`
+	MaxCompletionTokens *int              `json:"max_completion_tokens,omitempty"`
+	Temperature         *float64          `json:"temperature,omitempty"`
+	N                   *int              `json:"n,omitempty"`
+	TopP                *float64          `json:"top_p,omitempty"`
+	ParallelToolCalls   *bool             `json:"parallel_tool_calls,omitempty"`
+	StreamOptions       *StreamOptions    `json:"stream_options,omitempty"`
+	ResponseFormat      *ResponseFormat   `json:"response_format,omitempty"`
+	Seed                *int64            `json:"seed,omitempty"`
+	FrequencyPenalty    *float64          `json:"frequency_penalty,omitempty"`
+	PresencePenalty     *float64          `json:"presence_penalty,omitempty"`
+	LogProbs            *bool             `json:"logprobs,omitempty"`
+	TopLogProbs         *int              `json:"top_logprobs,omitempty"`
+	User                string            `json:"user,omitempty"`
+	ReasoningEffort     string            `json:"reasoning_effort,omitempty"`
+	ServiceTier         string            `json:"service_tier,omitempty"`
+	Model               string            `json:"model"`
+	Tools               []Tool            `json:"tools,omitempty"`
+	Functions           []Function        `json:"functions,omitempty"`
+	Messages            []ChatMessage     `json:"messages"`
+	Stream              bool              `json:"stream,omitempty"`
 }
 
 // ChatMessage represents a chat message.
 type ChatMessage struct {
-	Role             string        `json:"role"`
 	Content          interface{}   `json:"content,omitempty"`
-	Name             string        `json:"name,omitempty"`
-	ToolCalls        []ToolCall    `json:"tool_calls,omitempty"`
-	ToolCallID       string        `json:"tool_call_id,omitempty"`
 	FunctionCall     *FunctionCall `json:"function_call,omitempty"`
-	ReasoningContent string        `json:"reasoning_content,omitempty"`
 	Refusal          *string       `json:"refusal,omitempty"`
+	Role             string        `json:"role"`
+	Name             string        `json:"name,omitempty"`
+	ToolCallID       string        `json:"tool_call_id,omitempty"`
+	ReasoningContent string        `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall    `json:"tool_calls,omitempty"`
 }
 
 // ContentString returns the plain text content of the message.
@@ -62,7 +61,7 @@ func (m *ChatMessage) ContentString() string {
 		var parts []string
 		for _, part := range v {
 			if partMap, ok := part.(map[string]interface{}); ok {
-				if partMap["type"] == "text" {
+				if partMap["type"] == ContentTypeText {
 					if text, ok := partMap["text"].(string); ok {
 						parts = append(parts, text)
 					}
@@ -77,10 +76,10 @@ func (m *ChatMessage) ContentString() string {
 
 // ContentPart represents a part of multimodal message content.
 type ContentPart struct {
-	Type       string      `json:"type"`
-	Text       string      `json:"text,omitempty"`
 	ImageURL   *ImageURL   `json:"image_url,omitempty"`
 	InputAudio *InputAudio `json:"input_audio,omitempty"`
+	Type       string      `json:"type"`
+	Text       string      `json:"text,omitempty"`
 }
 
 // ImageURL represents an image URL.
@@ -97,24 +96,24 @@ type InputAudio struct {
 
 // Tool represents a tool definition.
 type Tool struct {
-	Type     string       `json:"type"`
 	Function ToolFunction `json:"function"`
+	Type     string       `json:"type"`
 }
 
 // ToolFunction represents a tool function definition.
 type ToolFunction struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description,omitempty"`
 	Parameters  interface{} `json:"parameters,omitempty"`
 	Strict      *bool       `json:"strict,omitempty"`
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
 }
 
 // ToolCall represents a tool call in assistant messages.
 type ToolCall struct {
+	Index    *int             `json:"index,omitempty"`
+	Function ToolCallFunction `json:"function"`
 	ID       string           `json:"id"`
 	Type     string           `json:"type"`
-	Function ToolCallFunction `json:"function"`
-	Index    *int             `json:"index,omitempty"`
 }
 
 // ToolCallFunction represents the function part of a tool call.
@@ -131,15 +130,15 @@ type FunctionCall struct {
 
 // Function represents a function definition (deprecated).
 type Function struct {
+	Parameters  interface{} `json:"parameters,omitempty"`
 	Name        string      `json:"name"`
 	Description string      `json:"description,omitempty"`
-	Parameters  interface{} `json:"parameters,omitempty"`
 }
 
 // ResponseFormat specifies the model output format.
 type ResponseFormat struct {
-	Type       string      `json:"type"`
 	JSONSchema interface{} `json:"json_schema,omitempty"`
+	Type       string      `json:"type"`
 }
 
 // StreamOptions represents streaming options.
@@ -149,85 +148,85 @@ type StreamOptions struct {
 
 // ChatCompletionResponse represents a Chat Completions response.
 type ChatCompletionResponse struct {
+	Usage             *Usage       `json:"usage,omitempty"`
 	ID                string       `json:"id"`
 	Object            string       `json:"object"`
-	Created           int64        `json:"created"`
 	Model             string       `json:"model"`
-	Choices           []ChatChoice `json:"choices"`
-	Usage             *Usage       `json:"usage,omitempty"`
 	SystemFingerprint string       `json:"system_fingerprint,omitempty"`
 	ServiceTier       string       `json:"service_tier,omitempty"`
+	Choices           []ChatChoice `json:"choices"`
+	Created           int64        `json:"created"`
 }
 
 // ChatChoice represents a chat completion choice.
 type ChatChoice struct {
-	Index        int          `json:"index"`
+	Logprobs     interface{}  `json:"logprobs,omitempty"`
 	Message      *ChatMessage `json:"message,omitempty"`
 	Delta        *ChatMessage `json:"delta,omitempty"`
 	FinishReason *string      `json:"finish_reason,omitempty"`
-	Logprobs     interface{}  `json:"logprobs,omitempty"`
+	Index        int          `json:"index"`
 }
 
 // ChatCompletionChunk represents a streaming chat response chunk.
 type ChatCompletionChunk struct {
+	Usage             *Usage       `json:"usage,omitempty"`
 	ID                string       `json:"id"`
 	Object            string       `json:"object"`
-	Created           int64        `json:"created"`
 	Model             string       `json:"model"`
-	Choices           []ChatChoice `json:"choices"`
-	Usage             *Usage       `json:"usage,omitempty"`
 	SystemFingerprint string       `json:"system_fingerprint,omitempty"`
 	ServiceTier       string       `json:"service_tier,omitempty"`
+	Choices           []ChatChoice `json:"choices"`
+	Created           int64        `json:"created"`
 }
 
 // CompletionRequest represents a Completions request body.
 type CompletionRequest struct {
-	Model            string      `json:"model"`
-	Prompt           interface{} `json:"prompt"`
-	Stream           bool        `json:"stream,omitempty"`
+	Stop             interface{}    `json:"stop,omitempty"`
+	Prompt           interface{}    `json:"prompt"`
+	LogitBias        interface{}    `json:"logit_bias,omitempty"`
+	N                *int           `json:"n,omitempty"`
+	LogProbs         *int           `json:"logprobs,omitempty"`
+	Temperature      *float64       `json:"temperature,omitempty"`
+	TopP             *float64       `json:"top_p,omitempty"`
 	StreamOptions    *StreamOptions `json:"stream_options,omitempty"`
-	MaxTokens        *int        `json:"max_tokens,omitempty"`
-	Temperature      *float64    `json:"temperature,omitempty"`
-	TopP             *float64    `json:"top_p,omitempty"`
-	Stop             interface{} `json:"stop,omitempty"`
-	N                *int        `json:"n,omitempty"`
-	Suffix           string      `json:"suffix,omitempty"`
-	LogProbs         *int        `json:"logprobs,omitempty"`
-	Echo             *bool       `json:"echo,omitempty"`
-	BestOf           *int        `json:"best_of,omitempty"`
-	LogitBias        interface{} `json:"logit_bias,omitempty"`
-	FrequencyPenalty *float64    `json:"frequency_penalty,omitempty"`
-	PresencePenalty  *float64    `json:"presence_penalty,omitempty"`
-	Seed             *int64      `json:"seed,omitempty"`
-	User             string      `json:"user,omitempty"`
+	Seed             *int64         `json:"seed,omitempty"`
+	PresencePenalty  *float64       `json:"presence_penalty,omitempty"`
+	MaxTokens        *int           `json:"max_tokens,omitempty"`
+	Echo             *bool          `json:"echo,omitempty"`
+	BestOf           *int           `json:"best_of,omitempty"`
+	FrequencyPenalty *float64       `json:"frequency_penalty,omitempty"`
+	Suffix           string         `json:"suffix,omitempty"`
+	Model            string         `json:"model"`
+	User             string         `json:"user,omitempty"`
+	Stream           bool           `json:"stream,omitempty"`
 }
 
 // CompletionResponse represents a Completions response.
 type CompletionResponse struct {
+	Usage             *Usage             `json:"usage,omitempty"`
 	ID                string             `json:"id"`
 	Object            string             `json:"object"`
-	Created           int64              `json:"created"`
 	Model             string             `json:"model"`
-	Choices           []CompletionChoice `json:"choices"`
-	Usage             *Usage             `json:"usage,omitempty"`
 	SystemFingerprint string             `json:"system_fingerprint,omitempty"`
+	Choices           []CompletionChoice `json:"choices"`
+	Created           int64              `json:"created"`
 }
 
 // CompletionChoice represents a completion choice.
 type CompletionChoice struct {
-	Index        int         `json:"index"`
-	Text         string      `json:"text"`
-	FinishReason *string     `json:"finish_reason,omitempty"`
 	Logprobs     interface{} `json:"logprobs,omitempty"`
+	FinishReason *string     `json:"finish_reason,omitempty"`
+	Text         string      `json:"text"`
+	Index        int         `json:"index"`
 }
 
 // Usage represents token usage information.
 type Usage struct {
+	CompletionTokensDetails *CompletionTokensDetails `json:"completion_tokens_details,omitempty"`
+	PromptTokensDetails     *PromptTokensDetails     `json:"prompt_tokens_details,omitempty"`
 	PromptTokens            int                      `json:"prompt_tokens"`
 	CompletionTokens        int                      `json:"completion_tokens"`
 	TotalTokens             int                      `json:"total_tokens"`
-	CompletionTokensDetails *CompletionTokensDetails `json:"completion_tokens_details,omitempty"`
-	PromptTokensDetails     *PromptTokensDetails     `json:"prompt_tokens_details,omitempty"`
 }
 
 // CompletionTokensDetails contains detailed completion token breakdown.
@@ -256,8 +255,8 @@ type ModelListResponse struct {
 type ModelInfo struct {
 	ID      string `json:"id"`
 	Object  string `json:"object"`
-	Created int64  `json:"created"`
 	OwnedBy string `json:"owned_by"`
+	Created int64  `json:"created"`
 }
 
 // EmbeddingRequest represents an embedding request.
@@ -271,16 +270,16 @@ type EmbeddingRequest struct {
 
 // EmbeddingResponse represents an embedding response.
 type EmbeddingResponse struct {
-	Object string          `json:"object"`
-	Data   []EmbeddingData `json:"data"`
-	Model  string          `json:"model"`
 	Usage  *EmbeddingUsage `json:"usage,omitempty"`
+	Object string          `json:"object"`
+	Model  string          `json:"model"`
+	Data   []EmbeddingData `json:"data"`
 }
 
 // EmbeddingData represents a single embedding data item.
 type EmbeddingData struct {
-	Object    string      `json:"object"`
 	Embedding interface{} `json:"embedding"`
+	Object    string      `json:"object"`
 	Index     int         `json:"index"`
 }
 

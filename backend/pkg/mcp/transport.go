@@ -16,12 +16,12 @@ import (
 
 // SSESession represents a single SSE connection session.
 type SSESession struct {
-	ID         string
+	CreatedAt  time.Time
 	Writer     http.ResponseWriter
 	Flusher    http.Flusher
 	Done       chan struct{}
+	ID         string
 	MessageURL string
-	CreatedAt  time.Time
 }
 
 // NewSSESession creates a new SSE session.
@@ -78,8 +78,8 @@ func (s *SSESession) Close() {
 
 // SessionManager manages SSE sessions.
 type SessionManager struct {
-	mu       sync.RWMutex
 	sessions map[string]*SSESession
+	mu       sync.RWMutex
 }
 
 // NewSessionManager creates a new session manager.
@@ -176,11 +176,11 @@ func (c *SSEClient) Connect() (messageURL string, events <-chan SSEEvent, err er
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return "", nil, fmt.Errorf("upstream MCP service returned non-200 status: %d", resp.StatusCode)
 	}
 
-	eventCh := make(chan SSEEvent, 64)
+	eventCh := make(chan SSEEvent, 64) //nolint:mnd // intentional constant.
 
 	go c.readEvents(resp.Body, eventCh)
 
@@ -191,8 +191,8 @@ func (c *SSEClient) Connect() (messageURL string, events <-chan SSEEvent, err er
 		} else {
 			return "", nil, fmt.Errorf("first SSE event is not endpoint: %s", evt.Event)
 		}
-	case <-time.After(10 * time.Second):
-		resp.Body.Close()
+	case <-time.After(10 * time.Second): //nolint:mnd // intentional constant.
+		_ = resp.Body.Close()
 		return "", nil, fmt.Errorf("timeout waiting for upstream endpoint event")
 	}
 
@@ -218,7 +218,7 @@ func (c *SSEClient) SendMessage(messageURL string, msg interface{}) (*json.RawMe
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusOK {
 		var result json.RawMessage
@@ -227,6 +227,7 @@ func (c *SSEClient) SendMessage(messageURL string, msg interface{}) (*json.RawMe
 		}
 	}
 
+	//nolint:mnd // magic number for configuration/defaults.
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("upstream MCP service error (HTTP %d): %s", resp.StatusCode, string(body))
@@ -251,7 +252,7 @@ func (c *SSEClient) applyAuth(req *http.Request) {
 
 func (c *SSEClient) readEvents(body io.ReadCloser, ch chan<- SSEEvent) {
 	defer close(ch)
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	scanner := bufio.NewScanner(body)
 	var currentEvent, currentData string

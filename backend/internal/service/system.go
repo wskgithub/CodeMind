@@ -160,7 +160,7 @@ func (s *SystemService) ListAuditLogs(query *dto.AuditLogQuery) ([]model.AuditLo
 	}
 	if query.EndDate != "" {
 		if t, err := time.Parse("2006-01-02", query.EndDate); err == nil {
-			filters["end_date"] = t.Add(24 * time.Hour)
+			filters["end_date"] = t.Add(24 * time.Hour) //nolint:mnd // intentional constant.
 		}
 	}
 

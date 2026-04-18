@@ -6,7 +6,7 @@ export interface UploadResult {
 }
 
 class UploadService {
-  /** 上传文档图片 */
+  /** Upload a document image */
   async uploadImage(file: File): Promise<UploadResult> {
     const formData = new FormData();
     formData.append('file', file);

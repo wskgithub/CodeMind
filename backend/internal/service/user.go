@@ -14,15 +14,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// UserService handles user management operations
+// UserService handles user management operations.
 type UserService struct {
-	userRepo *repository.UserRepository
-	deptRepo *repository.DepartmentRepository
+	userRepo  *repository.UserRepository
+	deptRepo  *repository.DepartmentRepository
 	auditRepo *repository.AuditRepository
-	logger   *zap.Logger
+	logger    *zap.Logger
 }
 
-// NewUserService creates a new UserService
+// NewUserService creates a new UserService.
 func NewUserService(
 	userRepo *repository.UserRepository,
 	deptRepo *repository.DepartmentRepository,
@@ -37,8 +37,8 @@ func NewUserService(
 	}
 }
 
-// Create creates a new user
-func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) (*dto.UserDetail, error) {
+// Create creates a new user.
+func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) (*dto.UserDetail, error) { //nolint:gocyclo // complex business logic.
 	if ok, msg := validator.ValidateUsername(req.Username); !ok {
 		return nil, errcode.ErrInvalidParams.WithMessage(msg)
 	}
@@ -61,14 +61,16 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 		return nil, errcode.ErrDatabase
 	}
 	if existsIncludingDeleted {
-		if err := s.userRepo.HardDeleteSoftDeletedUser(req.Username); err != nil {
+		err = s.userRepo.HardDeleteSoftDeletedUser(req.Username)
+		if err != nil {
 			s.logger.Error("failed to hard delete soft-deleted user", zap.Error(err), zap.String("username", req.Username))
 			return nil, errcode.ErrDatabase
 		}
 	}
 
 	if req.Email != "" {
-		emailExists, err := s.userRepo.ExistsEmail(req.Email)
+		var emailExists bool
+		emailExists, err = s.userRepo.ExistsEmail(req.Email)
 		if err != nil {
 			return nil, errcode.ErrDatabase
 		}
@@ -76,12 +78,14 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 			return nil, errcode.ErrEmailExists
 		}
 
-		emailExistsIncludingDeleted, err := s.userRepo.ExistsEmailIncludingDeleted(req.Email)
+		var emailExistsIncludingDeleted bool
+		emailExistsIncludingDeleted, err = s.userRepo.ExistsEmailIncludingDeleted(req.Email)
 		if err != nil {
 			return nil, errcode.ErrDatabase
 		}
 		if emailExistsIncludingDeleted {
-			if err := s.userRepo.HardDeleteSoftDeletedUserByEmail(req.Email); err != nil {
+			err = s.userRepo.HardDeleteSoftDeletedUserByEmail(req.Email)
+			if err != nil {
 				s.logger.Error("failed to hard delete soft-deleted user", zap.Error(err), zap.String("email", req.Email))
 				return nil, errcode.ErrDatabase
 			}
@@ -99,7 +103,7 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 	}
 
 	if req.DepartmentID != nil {
-		_, err := s.deptRepo.FindByID(*req.DepartmentID)
+		_, err = s.deptRepo.FindByID(*req.DepartmentID)
 		if err != nil {
 			return nil, errcode.ErrDeptNotFound
 		}
@@ -131,13 +135,13 @@ func (s *UserService) Create(req *dto.CreateUserRequest, operatorID int64, opera
 		return nil, errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionCreateUser, model.AuditTargetUser, &user.ID,
+	s.recordAudit(operatorID, model.AuditActionCreateUser, &user.ID,
 		map[string]interface{}{"username": req.Username, "role": req.Role}, clientIP)
 
 	return s.GetDetail(user.ID)
 }
 
-// GetDetail retrieves user details by ID
+// GetDetail retrieves user details by ID.
 func (s *UserService) GetDetail(id int64) (*dto.UserDetail, error) {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -168,8 +172,8 @@ func (s *UserService) GetDetail(id int64) (*dto.UserDetail, error) {
 	return detail, nil
 }
 
-// Update updates user information
-func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
+// Update updates user information.
+func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error { //nolint:gocyclo // complex business logic.
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
 		return errcode.ErrUserNotFound
@@ -219,12 +223,12 @@ func (s *UserService) Update(id int64, req *dto.UpdateUserRequest, operatorID in
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionUpdateUser, model.AuditTargetUser, &id, fields, clientIP)
+	s.recordAudit(operatorID, model.AuditActionUpdateUser, &id, fields, clientIP)
 
 	return nil
 }
 
-// Delete soft-deletes a user (super admin only)
+// Delete soft-deletes a user (super admin only).
 func (s *UserService) Delete(id int64, operatorID int64, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -239,13 +243,13 @@ func (s *UserService) Delete(id int64, operatorID int64, clientIP string) error 
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionDeleteUser, model.AuditTargetUser, &id,
+	s.recordAudit(operatorID, model.AuditActionDeleteUser, &id,
 		map[string]string{"username": user.Username}, clientIP)
 
 	return nil
 }
 
-// UpdateStatus toggles user status
+// UpdateStatus toggles user status.
 func (s *UserService) UpdateStatus(id int64, status int16, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -267,12 +271,12 @@ func (s *UserService) UpdateStatus(id int64, status int16, operatorID int64, ope
 	if status == model.StatusDisabled {
 		action = model.AuditActionDisableUser
 	}
-	s.recordAudit(operatorID, action, model.AuditTargetUser, &id, nil, clientIP)
+	s.recordAudit(operatorID, action, &id, nil, clientIP)
 
 	return nil
 }
 
-// ResetPassword resets a user's password
+// ResetPassword resets a user's password.
 func (s *UserService) ResetPassword(id int64, newPassword string, operatorID int64, operatorRole string, operatorDeptID *int64, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -299,13 +303,13 @@ func (s *UserService) ResetPassword(id int64, newPassword string, operatorID int
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionResetPassword, model.AuditTargetUser, &id,
+	s.recordAudit(operatorID, model.AuditActionResetPassword, &id,
 		map[string]string{"username": user.Username}, clientIP)
 
 	return nil
 }
 
-// UnlockUser unlocks a locked user account
+// UnlockUser unlocks a locked user account.
 func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string, operatorDeptID *int64, reason string, clientIP string) error {
 	user, err := s.userRepo.FindByID(id)
 	if err != nil {
@@ -328,7 +332,7 @@ func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string
 		return errcode.ErrDatabase
 	}
 
-	s.recordAudit(operatorID, model.AuditActionUnlockUser, model.AuditTargetUser, &id,
+	s.recordAudit(operatorID, model.AuditActionUnlockUser, &id,
 		map[string]interface{}{
 			"username": user.Username,
 			"reason":   reason,
@@ -337,7 +341,7 @@ func (s *UserService) UnlockUser(id int64, operatorID int64, operatorRole string
 	return nil
 }
 
-// List returns a paginated list of users
+// List returns a paginated list of users.
 func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operatorDeptID *int64) ([]dto.UserDetail, int64, error) {
 	filters := map[string]interface{}{
 		"keyword":       query.Keyword,
@@ -356,22 +360,22 @@ func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operat
 		return nil, 0, errcode.ErrDatabase
 	}
 
-	var details []dto.UserDetail
+	details := make([]dto.UserDetail, 0, len(users))
 	for _, u := range users {
 		d := dto.UserDetail{
-			ID:              u.ID,
-			Username:        u.Username,
-			DisplayName:     u.DisplayName,
-			Email:           u.Email,
-			Phone:           u.Phone,
-			AvatarURL:       u.AvatarURL,
-			Role:            u.Role,
-			DepartmentID:    u.DepartmentID,
-			Status:          u.Status,
-			LastLoginAt:     u.LastLoginAt,
-			LoginFailCount:  u.LoginFailCount,
-			LockedUntil:     u.LockedUntil,
-			CreatedAt:       u.CreatedAt,
+			ID:             u.ID,
+			Username:       u.Username,
+			DisplayName:    u.DisplayName,
+			Email:          u.Email,
+			Phone:          u.Phone,
+			AvatarURL:      u.AvatarURL,
+			Role:           u.Role,
+			DepartmentID:   u.DepartmentID,
+			Status:         u.Status,
+			LastLoginAt:    u.LastLoginAt,
+			LoginFailCount: u.LoginFailCount,
+			LockedUntil:    u.LockedUntil,
+			CreatedAt:      u.CreatedAt,
 		}
 		if u.Department != nil {
 			d.Department = &dto.DeptBrief{
@@ -385,7 +389,7 @@ func (s *UserService) List(query *dto.UserListQuery, operatorRole string, operat
 	return details, total, nil
 }
 
-func (s *UserService) recordAudit(operatorID int64, action, targetType string, targetID *int64, detail interface{}, clientIP string) {
+func (s *UserService) recordAudit(operatorID int64, action string, targetID *int64, detail interface{}, clientIP string) {
 	var detailJSON json.RawMessage
 	if detail != nil {
 		data, _ := json.Marshal(detail)
@@ -395,7 +399,7 @@ func (s *UserService) recordAudit(operatorID int64, action, targetType string, t
 	log := &model.AuditLog{
 		OperatorID: operatorID,
 		Action:     action,
-		TargetType: targetType,
+		TargetType: model.AuditTargetUser,
 		TargetID:   targetID,
 		Detail:     detailJSON,
 		ClientIP:   &clientIP,
@@ -410,7 +414,7 @@ func (s *UserService) recordAudit(operatorID int64, action, targetType string, t
 	}
 }
 
-// ImportUsers imports users from CSV
+// ImportUsers imports users from CSV.
 func (s *UserService) ImportUsers(users []dto.CreateUserRequest, operatorID int64, clientIP string) (int, []string, error) {
 	var successCount int
 	var errors []string
@@ -418,13 +422,13 @@ func (s *UserService) ImportUsers(users []dto.CreateUserRequest, operatorID int6
 	for i, req := range users {
 		_, err := s.Create(&req, operatorID, model.RoleSuperAdmin, nil, clientIP)
 		if err != nil {
-			errors = append(errors, fmt.Sprintf("row %d: %s", i+2, err.Error()))
+			errors = append(errors, fmt.Sprintf("row %d: %s", i+2, err.Error())) //nolint:mnd // intentional constant.
 			continue
 		}
 		successCount++
 	}
 
-	s.recordAudit(operatorID, model.AuditActionImportUsers, model.AuditTargetUser, nil,
+	s.recordAudit(operatorID, model.AuditActionImportUsers, nil,
 		map[string]interface{}{"total": len(users), "success": successCount, "failed": len(errors)}, clientIP)
 
 	return successCount, errors, nil

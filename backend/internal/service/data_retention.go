@@ -19,10 +19,9 @@ const (
 type DataRetentionCleaner struct {
 	usageRepo     *repository.UsageRepository
 	logger        *zap.Logger
+	stopCh        chan struct{}
+	wg            sync.WaitGroup
 	retentionDays int
-
-	stopCh chan struct{}
-	wg     sync.WaitGroup
 }
 
 // NewDataRetentionCleaner creates a data retention cleaner and starts background cleanup.
@@ -64,7 +63,7 @@ func (c *DataRetentionCleaner) watchLoop() {
 	defer c.wg.Done()
 
 	select {
-	case <-time.After(5 * time.Minute):
+	case <-time.After(5 * time.Minute): //nolint:mnd // intentional constant.
 		c.cleanup()
 	case <-c.stopCh:
 		return

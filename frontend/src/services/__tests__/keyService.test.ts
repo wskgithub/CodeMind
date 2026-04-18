@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import keyService from '../keyService';
+import request from '../request';
+
 import type { ApiResponse, APIKey, APIKeyCreateResult } from '@/types';
 
 // Mock request module
@@ -12,7 +15,6 @@ vi.mock('../request', () => ({
   },
 }));
 
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;
@@ -30,14 +32,14 @@ describe('keyService', () => {
     const apiKeys: APIKey[] = [
       {
         id: 1,
-        name: '测试 Key 1',
+        name: 'Test Key 1',
         key_prefix: 'sk_test1',
         status: 1,
         created_at: '2024-01-01T00:00:00Z',
       },
       {
         id: 2,
-        name: '测试 Key 2',
+        name: 'Test Key 2',
         key_prefix: 'sk_test2',
         status: 0,
         last_used_at: '2024-01-15T10:30:00Z',
@@ -76,13 +78,13 @@ describe('keyService', () => {
 
   describe('create', () => {
     const createData = {
-      name: '新 API Key',
+      name: 'New API Key',
       expires_at: '2024-12-31T23:59:59Z',
     };
 
     const createResult: APIKeyCreateResult = {
       id: 3,
-      name: '新 API Key',
+      name: 'New API Key',
       key: 'sk_full_key_xxxxxxxx',
       key_prefix: 'sk_full_ke',
       expires_at: '2024-12-31T23:59:59Z',
@@ -104,11 +106,11 @@ describe('keyService', () => {
     });
 
     it('should create API key without expiration', async () => {
-      const dataWithoutExpire = { name: '永久 Key' };
+      const dataWithoutExpire = { name: 'Permanent Key' };
       const mockResponse: ApiResponse<APIKeyCreateResult> = {
         code: 0,
         message: 'success',
-        data: { ...createResult, name: '永久 Key', expires_at: undefined },
+        data: { ...createResult, name: 'Permanent Key', expires_at: undefined },
       };
       mockRequest.post.mockResolvedValue({ data: mockResponse });
 

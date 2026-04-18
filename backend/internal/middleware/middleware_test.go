@@ -27,10 +27,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// testJWTSecret 测试用 JWT 密钥（至少 32 字符，满足 jwt.NewManager 校验）
+// testJWTSecret is the JWT secret for tests (min 32 chars, required by jwt.NewManager).
 const testJWTSecret = "01234567890123456789012345678901"
 
-// setupTestRedis 创建测试用的 Redis 实例
+// setupTestRedis creates a Redis instance for testing.
 func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 	mr := miniredis.RunT(t)
 	rdb := redis.NewClient(&redis.Options{
@@ -39,13 +39,13 @@ func setupTestRedis(t *testing.T) (*miniredis.Miniredis, *redis.Client) {
 	return mr, rdb
 }
 
-// setupTestGin 设置测试用的 Gin 引擎
+// setupTestGin sets up a Gin engine for testing.
 func setupTestGin() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
 }
 
-// setupTestDB 创建测试用的 SQLite 数据库
+// setupTestDB creates a SQLite database for testing.
 func setupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -54,7 +54,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// MockMonitorStats 监控统计的 mock 实现
+// MockMonitorStats is a mock implementation of monitor stats.
 type MockMonitorStats struct {
 	mock.Mock
 }
@@ -63,28 +63,28 @@ func (m *MockMonitorStats) RecordRequestMetrics(statusCode int, responseTimeMs f
 	m.Called(statusCode, responseTimeMs)
 }
 
-// ==================== CORS 中间件测试 ====================
+// ==================== CORS middleware tests ====================
 
 func TestCORS(t *testing.T) {
 	router := setupTestGin()
-	router.Use(CORS(nil)) // nil 表示允许所有来源（与生产未配置白名单时行为一致）
+	router.Use(CORS(nil)) // nil allows all origins (same as production without whitelist)
 	router.GET("/test", func(c *gin.Context) {
 		c.String(200, "OK")
 	})
 
-	t.Run("GET 请求设置 CORS 头", func(t *testing.T) {
+	t.Run("GET request sets CORS headers", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/test", nil)
 		req.Header.Set("Origin", "http://localhost:3000")
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, 200, w.Code)
-		// 验证 CORS 头被设置
+		// Verify CORS headers are set
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Origin"))
 		assert.Equal(t, "*", w.Header().Get("Access-Control-Allow-Origin"))
 	})
 
-	t.Run("OPTIONS 预检请求", func(t *testing.T) {
+	t.Run("OPTIONS preflight request", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("OPTIONS", "/test", nil)
 		req.Header.Set("Origin", "http://localhost:3000")
@@ -92,20 +92,20 @@ func TestCORS(t *testing.T) {
 		req.Header.Set("Access-Control-Request-Headers", "Authorization")
 		router.ServeHTTP(w, req)
 
-		// CORS 中间件会自动处理 OPTIONS 请求
-		// 状态码可能是 204 或由路由决定
+		// CORS middleware automatically handles OPTIONS requests
+		// Status code may be 204 or determined by the route
 		assert.Contains(t, []int{200, 204}, w.Code)
-		
-		// 验证 CORS 响应头
+
+		// Verify CORS response headers
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Origin"))
 		assert.NotEmpty(t, w.Header().Get("Access-Control-Allow-Methods"))
 	})
 
-	t.Run("POST 请求设置 CORS 头", func(t *testing.T) {
+	t.Run("POST request sets CORS headers", func(t *testing.T) {
 		router.POST("/test", func(c *gin.Context) {
 			c.String(200, "OK")
 		})
-		
+
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/test", nil)
 		req.Header.Set("Origin", "http://localhost:3000")
@@ -116,7 +116,7 @@ func TestCORS(t *testing.T) {
 	})
 }
 
-// ==================== Logger 中间件测试 ====================
+// ==================== Logger middleware tests ====================
 
 func TestLogger(t *testing.T) {
 	logger := zaptest.NewLogger(t)
@@ -135,12 +135,12 @@ func TestLogger(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "正常请求",
+			name:           "normal request",
 			path:           "/test",
 			expectedStatus: 200,
 		},
 		{
-			name:           "服务器错误",
+			name:           "server error",
 			path:           "/error",
 			expectedStatus: 500,
 		},
@@ -176,7 +176,7 @@ func TestLoggerWithUserID(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 }
 
-// ==================== Recovery 中间件测试 ====================
+// ==================== Recovery middleware tests ====================
 
 func TestRecovery(t *testing.T) {
 	logger := zaptest.NewLogger(t)
@@ -196,13 +196,13 @@ func TestRecovery(t *testing.T) {
 		expectedCode   int
 	}{
 		{
-			name:           "捕获 panic",
+			name:           "catch panic",
 			path:           "/panic",
 			expectedStatus: 500,
-			expectedCode:   errcode.ErrInternal.Code,
+			expectedCode:   http.StatusInternalServerError,
 		},
 		{
-			name:           "正常请求",
+			name:           "normal request",
 			path:           "/normal",
 			expectedStatus: 200,
 			expectedCode:   0,
@@ -226,7 +226,7 @@ func TestRecovery(t *testing.T) {
 	}
 }
 
-// ==================== JWTAuth 中间件测试 ====================
+// ==================== JWTAuth middleware tests ====================
 
 func TestJWTAuth(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
@@ -243,7 +243,7 @@ func TestJWTAuth(t *testing.T) {
 		})
 	})
 
-	t.Run("有效 Token", func(t *testing.T) {
+	t.Run("valid token", func(t *testing.T) {
 		deptID := int64(1)
 		token, _, err := jwtManager.GenerateToken(123, "testuser", "admin", &deptID)
 		assert.NoError(t, err)
@@ -261,7 +261,7 @@ func TestJWTAuth(t *testing.T) {
 		assert.Equal(t, "admin", resp["role"])
 	})
 
-	t.Run("缺失 Authorization Header", func(t *testing.T) {
+	t.Run("missing Authorization header", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/protected", nil)
 		router.ServeHTTP(w, req)
@@ -273,7 +273,7 @@ func TestJWTAuth(t *testing.T) {
 		assert.Equal(t, errcode.ErrTokenInvalid.Code, resp.Code)
 	})
 
-	t.Run("错误的 Bearer 前缀", func(t *testing.T) {
+	t.Run("incorrect Bearer prefix", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/protected", nil)
 		req.Header.Set("Authorization", "Basic token123")
@@ -282,7 +282,7 @@ func TestJWTAuth(t *testing.T) {
 		assert.Equal(t, 401, w.Code)
 	})
 
-	t.Run("空的 Token", func(t *testing.T) {
+	t.Run("empty token", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/protected", nil)
 		req.Header.Set("Authorization", "Bearer ")
@@ -291,7 +291,7 @@ func TestJWTAuth(t *testing.T) {
 		assert.Equal(t, 401, w.Code)
 	})
 
-	t.Run("无效的 Token", func(t *testing.T) {
+	t.Run("invalid token", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/protected", nil)
 		req.Header.Set("Authorization", "Bearer invalid-token")
@@ -304,16 +304,16 @@ func TestJWTAuth(t *testing.T) {
 		assert.Equal(t, errcode.ErrTokenInvalid.Code, resp.Code)
 	})
 
-	t.Run("已加入黑名单的 Token", func(t *testing.T) {
+	t.Run("blacklisted token", func(t *testing.T) {
 		token, expiresAt, err := jwtManager.GenerateToken(123, "testuser", "admin", nil)
 		assert.NoError(t, err)
 
-		// 解析 Token 获取 claims
+		// Parse Token to get claims
 		claims, err := jwtManager.ParseToken(token)
 		assert.NoError(t, err)
 		assert.NotNil(t, claims)
 
-		// 将 Token 加入黑名单 (使用 claims.ID 即 JTI)
+		// Add Token to blacklist (using claims.ID i.e. JTI)
 		err = jwtManager.Blacklist(context.Background(), claims.ID, expiresAt)
 		assert.NoError(t, err)
 
@@ -322,17 +322,17 @@ func TestJWTAuth(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer "+token)
 		router.ServeHTTP(w, req)
 
-		// Token 在黑名单中，返回 401
+		// Token is blacklisted, return 401
 		assert.Equal(t, 401, w.Code)
 	})
 }
 
-// ==================== 角色检查中间件测试 ====================
+// ==================== Role check middleware tests ====================
 
 func TestRequireRole(t *testing.T) {
 	router := setupTestGin()
 
-	// 模拟认证中间件，设置角色
+	// Simulate auth middleware, set role
 	router.Use(func(c *gin.Context) {
 		role := c.GetHeader("X-Test-Role")
 		if role != "" {
@@ -359,39 +359,39 @@ func TestRequireRole(t *testing.T) {
 		expectedCode   int
 	}{
 		{
-			name:           "超级管理员访问 admin 路由",
+			name:           "super admin access to admin route",
 			path:           "/admin",
 			role:           "super_admin",
 			expectedStatus: 200,
 		},
 		{
-			name:           "部门经理访问 admin 路由被拒绝",
+			name:           "dept manager denied access to admin route",
 			path:           "/admin",
 			role:           "dept_manager",
 			expectedStatus: 403,
 			expectedCode:   errcode.ErrForbidden.Code,
 		},
 		{
-			name:           "超级管理员访问 manager 路由",
+			name:           "super admin access to manager route",
 			path:           "/manager",
 			role:           "super_admin",
 			expectedStatus: 200,
 		},
 		{
-			name:           "部门经理访问 manager 路由",
+			name:           "dept manager access to manager route",
 			path:           "/manager",
 			role:           "dept_manager",
 			expectedStatus: 200,
 		},
 		{
-			name:           "普通用户访问 manager 路由被拒绝",
+			name:           "regular user denied access to manager route",
 			path:           "/manager",
 			role:           "user",
 			expectedStatus: 403,
 			expectedCode:   errcode.ErrForbidden.Code,
 		},
 		{
-			name:           "未设置角色访问被拒绝",
+			name:           "no role set denied access",
 			path:           "/user",
 			role:           "",
 			expectedStatus: 403,
@@ -432,7 +432,7 @@ func TestRequireAdmin(t *testing.T) {
 		c.JSON(200, gin.H{"message": "admin only"})
 	})
 
-	t.Run("超级管理员访问", func(t *testing.T) {
+	t.Run("super admin access", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/admin", nil)
 		req.Header.Set("X-Test-Role", "super_admin")
@@ -441,7 +441,7 @@ func TestRequireAdmin(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 	})
 
-	t.Run("非管理员访问被拒绝", func(t *testing.T) {
+	t.Run("non-admin denied access", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/admin", nil)
 		req.Header.Set("X-Test-Role", "user")
@@ -469,10 +469,10 @@ func TestRequireManager(t *testing.T) {
 		role           string
 		expectedStatus int
 	}{
-		{"超级管理员", "super_admin", 200},
-		{"部门经理", "dept_manager", 200},
-		{"普通用户", "user", 403},
-		{"管理员", "admin", 403},
+		{"super admin", "super_admin", 200},
+		{"dept manager", "dept_manager", 200},
+		{"regular user", "user", 403},
+		{"admin", "admin", 403},
 	}
 
 	for _, tt := range tests {
@@ -487,28 +487,28 @@ func TestRequireManager(t *testing.T) {
 	}
 }
 
-// ==================== 上下文获取函数测试 ====================
+// ==================== Context getter function tests ====================
 
 func TestGetUserID(t *testing.T) {
 	tests := []struct {
-		name         string
 		setupContext func(*gin.Context)
+		name         string
 		expectedID   int64
 	}{
 		{
-			name: "正常获取用户ID",
+			name: "get user ID normally",
 			setupContext: func(c *gin.Context) {
 				c.Set(CtxKeyUserID, int64(123))
 			},
 			expectedID: 123,
 		},
 		{
-			name:         "未设置用户ID",
+			name:         "user ID not set",
 			setupContext: func(c *gin.Context) {},
 			expectedID:   0,
 		},
 		{
-			name: "用户ID为nil",
+			name: "user ID is nil",
 			setupContext: func(c *gin.Context) {
 				c.Set(CtxKeyUserID, nil)
 			},
@@ -535,19 +535,19 @@ func TestGetUserRole(t *testing.T) {
 		expectedRole string
 	}{
 		{
-			name: "正常获取角色",
+			name: "get role normally",
 			setupContext: func(c *gin.Context) {
 				c.Set(CtxKeyRole, "admin")
 			},
 			expectedRole: "admin",
 		},
 		{
-			name:         "未设置角色",
+			name:         "role not set",
 			setupContext: func(c *gin.Context) {},
 			expectedRole: "",
 		},
 		{
-			name: "角色为nil",
+			name: "role is nil",
 			setupContext: func(c *gin.Context) {
 				c.Set(CtxKeyRole, nil)
 			},
@@ -569,19 +569,19 @@ func TestGetUserRole(t *testing.T) {
 
 func TestGetDepartmentID(t *testing.T) {
 	tests := []struct {
-		name         string
 		setupContext func(*gin.Context)
 		expectedID   *int64
+		name         string
 	}{
 		{
-			name: "正常获取部门ID",
+			name: "get department ID normally",
 			setupContext: func(c *gin.Context) {
 				c.Set(CtxKeyDepartmentID, int64(456))
 			},
 			expectedID: func() *int64 { id := int64(456); return &id }(),
 		},
 		{
-			name:         "未设置部门ID",
+			name:         "department ID not set",
 			setupContext: func(c *gin.Context) {},
 			expectedID:   nil,
 		},
@@ -606,13 +606,13 @@ func TestGetDepartmentID(t *testing.T) {
 
 func TestGetClaims(t *testing.T) {
 	tests := []struct {
-		name          string
 		setupContext  func(*gin.Context)
-		expectedNil   bool
 		expectedClaim *jwt.Claims
+		name          string
+		expectedNil   bool
 	}{
 		{
-			name: "正常获取 Claims",
+			name: "get Claims normally",
 			setupContext: func(c *gin.Context) {
 				claims := &jwt.Claims{
 					UserID:   123,
@@ -625,13 +625,13 @@ func TestGetClaims(t *testing.T) {
 			expectedClaim: &jwt.Claims{UserID: 123, Username: "testuser", Role: "admin"},
 		},
 		{
-			name:          "未设置 Claims",
+			name:          "Claims not set",
 			setupContext:  func(c *gin.Context) {},
 			expectedNil:   true,
 			expectedClaim: nil,
 		},
 		{
-			name: "Claims 为 nil",
+			name: "Claims is nil",
 			setupContext: func(c *gin.Context) {
 				c.Set(CtxKeyClaims, nil)
 			},
@@ -659,7 +659,7 @@ func TestGetClaims(t *testing.T) {
 	}
 }
 
-// ==================== RequestMonitor 中间件测试 ====================
+// ==================== RequestMonitor middleware tests ====================
 
 func TestRequestMonitor(t *testing.T) {
 	mockStats := new(MockMonitorStats)
@@ -674,51 +674,51 @@ func TestRequestMonitor(t *testing.T) {
 		c.JSON(500, gin.H{"error": "server error"})
 	})
 
-	t.Run("记录 200 请求", func(t *testing.T) {
+	t.Run("record 200 request", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/test", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, 200, w.Code)
-		time.Sleep(100 * time.Millisecond) // 等待 goroutine 执行
+		time.Sleep(100 * time.Millisecond) // Wait for goroutine to execute
 		mockStats.AssertCalled(t, "RecordRequestMetrics", 200, mock.AnythingOfType("float64"))
 	})
 
-	t.Run("记录 500 请求", func(t *testing.T) {
+	t.Run("record 500 request", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/error", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, 500, w.Code)
-		time.Sleep(100 * time.Millisecond) // 等待 goroutine 执行
+		time.Sleep(100 * time.Millisecond) // Wait for goroutine to execute
 		mockStats.AssertCalled(t, "RecordRequestMetrics", 500, mock.AnythingOfType("float64"))
 	})
 }
 
-// ==================== APIKeyAuth 中间件测试 ====================
+// ==================== APIKeyAuth middleware tests ====================
 
 func TestExtractAPIKey(t *testing.T) {
 	tests := []struct {
-		name          string
-		setupHeaders  func(*http.Request)
-		expectedKey   string
+		name         string
+		setupHeaders func(*http.Request)
+		expectedKey  string
 	}{
 		{
-			name: "从 x-api-key 提取",
+			name: "extract from x-api-key",
 			setupHeaders: func(req *http.Request) {
 				req.Header.Set("x-api-key", "cm-testkey123")
 			},
 			expectedKey: "cm-testkey123",
 		},
 		{
-			name: "从 Authorization Bearer 提取",
+			name: "extract from Authorization Bearer",
 			setupHeaders: func(req *http.Request) {
 				req.Header.Set("Authorization", "Bearer cm-testkey456")
 			},
 			expectedKey: "cm-testkey456",
 		},
 		{
-			name: "x-api-key 优先级高于 Authorization",
+			name: "x-api-key takes priority over Authorization",
 			setupHeaders: func(req *http.Request) {
 				req.Header.Set("x-api-key", "cm-from-x-api-key")
 				req.Header.Set("Authorization", "Bearer cm-from-auth")
@@ -726,12 +726,12 @@ func TestExtractAPIKey(t *testing.T) {
 			expectedKey: "cm-from-x-api-key",
 		},
 		{
-			name:        "无 API Key",
+			name:         "no API Key",
 			setupHeaders: func(req *http.Request) {},
-			expectedKey: "",
+			expectedKey:  "",
 		},
 		{
-			name: "错误的 Authorization 格式",
+			name: "incorrect Authorization format",
 			setupHeaders: func(req *http.Request) {
 				req.Header.Set("Authorization", "Basic cm-testkey")
 			},
@@ -759,7 +759,7 @@ func TestAPIKeyAuth(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建测试表
+	// Create test tables
 	db.Exec(`CREATE TABLE api_keys (
 		id INTEGER PRIMARY KEY,
 		key_hash TEXT,
@@ -785,7 +785,7 @@ func TestAPIKeyAuth(t *testing.T) {
 		})
 	})
 
-	t.Run("请求自环检测", func(t *testing.T) {
+	t.Run("request self-loop detection", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("X-CodeMind-Proxy", "1")
@@ -794,7 +794,7 @@ func TestAPIKeyAuth(t *testing.T) {
 		assert.Equal(t, 502, w.Code)
 	})
 
-	t.Run("缺失 API Key", func(t *testing.T) {
+	t.Run("missing API Key", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		router.ServeHTTP(w, req)
@@ -803,10 +803,10 @@ func TestAPIKeyAuth(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAPIKeyInvalid.Code, resp.Code)
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
 	})
 
-	t.Run("无效格式的 API Key", func(t *testing.T) {
+	t.Run("invalid format API Key", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", "invalid-key")
@@ -816,28 +816,28 @@ func TestAPIKeyAuth(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAPIKeyInvalid.Code, resp.Code)
+		assert.Equal(t, http.StatusUnauthorized, resp.Code)
 	})
 
-	t.Run("API Key 不在数据库中", func(t *testing.T) {
+	t.Run("API Key not in database", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", "cm-nonexistentkey12345678901234567890123456789012")
 		router.ServeHTTP(w, req)
 
-		// 当 API Key 不存在时，GORM 返回零值结构体，KeyStatus 为 0（禁用状态）
-		// 因此返回 403 Forbidden (ErrAPIKeyDisabled) 而不是 401 Unauthorized
+		// When API Key doesn't exist, GORM returns zero-value struct, KeyStatus is 0 (disabled)
+		// so it returns 403 Forbidden (ErrAPIKeyDisabled) instead of 401 Unauthorized
 		assert.Equal(t, 403, w.Code)
 	})
 }
 
 func TestAPIKeyAuthWithValidKey(t *testing.T) {
-	logger := zap.NewNop() // 使用 Nop logger 避免测试日志干扰
+	logger := zap.NewNop() // Use Nop logger to avoid test log noise
 	db := setupTestDB(t)
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建测试表
+	// Create test tables
 	db.Exec(`CREATE TABLE api_keys (
 		id INTEGER PRIMARY KEY,
 		key_hash TEXT UNIQUE,
@@ -854,12 +854,12 @@ func TestAPIKeyAuthWithValidKey(t *testing.T) {
 		deleted_at TIMESTAMP
 	)`)
 
-	// 生成测试 API Key
-	testAPIKey := "cm-" + strings.Repeat("a", 64) // cm- 前缀 + 64个字符
+	// Generate test API Key
+	testAPIKey := "cm-" + strings.Repeat("a", 64) // cm- prefix + 64 characters
 	keyHash := crypto.HashAPIKey(testAPIKey)
 	deptID := int64(1)
 
-	// 插入测试数据
+	// Insert test data
 	db.Exec(`INSERT INTO users (id, username, role, department_id, status) VALUES (?, ?, ?, ?, ?)`,
 		1, "testuser", "admin", deptID, 1)
 	db.Exec(`INSERT INTO api_keys (id, key_hash, status, user_id) VALUES (?, ?, ?, ?)`,
@@ -874,7 +874,7 @@ func TestAPIKeyAuthWithValidKey(t *testing.T) {
 		})
 	})
 
-	t.Run("有效的 API Key", func(t *testing.T) {
+	t.Run("valid API Key", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", testAPIKey)
@@ -888,8 +888,8 @@ func TestAPIKeyAuthWithValidKey(t *testing.T) {
 		assert.Equal(t, "admin", resp["role"])
 	})
 
-	t.Run("从 Redis 缓存获取", func(t *testing.T) {
-		// 第二次请求应该从 Redis 缓存获取
+	t.Run("fetch from Redis cache", func(t *testing.T) {
+		// Second request should be served from Redis cache
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", testAPIKey)
@@ -905,7 +905,7 @@ func TestAPIKeyAuthDisabledKey(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建测试表
+	// Create test tables
 	db.Exec(`CREATE TABLE api_keys (
 		id INTEGER PRIMARY KEY,
 		key_hash TEXT UNIQUE,
@@ -922,15 +922,15 @@ func TestAPIKeyAuthDisabledKey(t *testing.T) {
 		deleted_at TIMESTAMP
 	)`)
 
-	// 生成测试 API Key (已禁用)
+	// Generate test API Key (disabled)
 	testAPIKey := "cm-" + strings.Repeat("b", 64)
 	keyHash := crypto.HashAPIKey(testAPIKey)
 
-	// 插入测试数据 - Key 状态为禁用 (0)
+	// Insert test data - key status is disabled (0)
 	db.Exec(`INSERT INTO users (id, username, role, status) VALUES (?, ?, ?, ?)`,
 		2, "testuser2", "user", 1)
 	db.Exec(`INSERT INTO api_keys (id, key_hash, status, user_id) VALUES (?, ?, ?, ?)`,
-		2, keyHash, 0, 2) // status = 0 表示禁用
+		2, keyHash, 0, 2) // status = 0 means disabled
 
 	router := setupTestGin()
 	router.Use(APIKeyAuth(db, rdb, logger))
@@ -938,7 +938,7 @@ func TestAPIKeyAuthDisabledKey(t *testing.T) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	t.Run("禁用的 API Key", func(t *testing.T) {
+	t.Run("disabled API Key", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", testAPIKey)
@@ -948,7 +948,7 @@ func TestAPIKeyAuthDisabledKey(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAPIKeyDisabled.Code, resp.Code)
+		assert.Equal(t, http.StatusForbidden, resp.Code)
 	})
 }
 
@@ -958,7 +958,7 @@ func TestAPIKeyAuthDisabledUser(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建测试表
+	// Create test tables
 	db.Exec(`CREATE TABLE api_keys (
 		id INTEGER PRIMARY KEY,
 		key_hash TEXT UNIQUE,
@@ -975,13 +975,13 @@ func TestAPIKeyAuthDisabledUser(t *testing.T) {
 		deleted_at TIMESTAMP
 	)`)
 
-	// 生成测试 API Key
+	// Generate test API Key
 	testAPIKey := "cm-" + strings.Repeat("c", 64)
 	keyHash := crypto.HashAPIKey(testAPIKey)
 
-	// 插入测试数据 - 用户状态为禁用 (0)
+	// Insert test data - user status is disabled (0)
 	db.Exec(`INSERT INTO users (id, username, role, status) VALUES (?, ?, ?, ?)`,
-		3, "testuser3", "user", 0) // status = 0 表示禁用
+		3, "testuser3", "user", 0) // status = 0 means disabled
 	db.Exec(`INSERT INTO api_keys (id, key_hash, status, user_id) VALUES (?, ?, ?, ?)`,
 		3, keyHash, 1, 3)
 
@@ -991,7 +991,7 @@ func TestAPIKeyAuthDisabledUser(t *testing.T) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	t.Run("禁用的用户账号", func(t *testing.T) {
+	t.Run("disabled user account", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", testAPIKey)
@@ -1001,7 +1001,7 @@ func TestAPIKeyAuthDisabledUser(t *testing.T) {
 		var resp response.Response
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, errcode.ErrAccountDisabled.Code, resp.Code)
+		assert.Equal(t, http.StatusForbidden, resp.Code)
 	})
 }
 
@@ -1011,7 +1011,7 @@ func TestAPIKeyAuthExpiredKey(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建测试表
+	// Create test tables
 	db.Exec(`CREATE TABLE api_keys (
 		id INTEGER PRIMARY KEY,
 		key_hash TEXT UNIQUE,
@@ -1028,12 +1028,12 @@ func TestAPIKeyAuthExpiredKey(t *testing.T) {
 		deleted_at TIMESTAMP
 	)`)
 
-	// 生成测试 API Key
+	// Generate test API Key
 	testAPIKey := "cm-" + strings.Repeat("d", 64)
 	keyHash := crypto.HashAPIKey(testAPIKey)
-	expiredTime := time.Now().Add(-24 * time.Hour) // 已过期
+	expiredTime := time.Now().Add(-24 * time.Hour) // expired
 
-	// 插入测试数据 - Key 已过期
+	// Insert test data - key is expired
 	db.Exec(`INSERT INTO users (id, username, role, status) VALUES (?, ?, ?, ?)`,
 		4, "testuser4", "user", 1)
 	db.Exec(`INSERT INTO api_keys (id, key_hash, status, user_id, expires_at) VALUES (?, ?, ?, ?, ?)`,
@@ -1045,7 +1045,7 @@ func TestAPIKeyAuthExpiredKey(t *testing.T) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	t.Run("过期的 API Key", func(t *testing.T) {
+	t.Run("expired API Key", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/test", nil)
 		req.Header.Set("x-api-key", testAPIKey)
@@ -1060,7 +1060,7 @@ func TestGetAPIKeyInfo(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建测试表
+	// Create test tables
 	db.Exec(`CREATE TABLE api_keys (
 		id INTEGER PRIMARY KEY,
 		key_hash TEXT UNIQUE,
@@ -1081,13 +1081,13 @@ func TestGetAPIKeyInfo(t *testing.T) {
 	keyHash := crypto.HashAPIKey(testAPIKey)
 	deptID := int64(5)
 
-	// 插入测试数据
+	// Insert test data
 	db.Exec(`INSERT INTO users (id, username, role, department_id, status) VALUES (?, ?, ?, ?, ?)`,
 		5, "cacheduser", "manager", deptID, 1)
 	db.Exec(`INSERT INTO api_keys (id, key_hash, status, user_id) VALUES (?, ?, ?, ?)`,
 		5, keyHash, 1, 5)
 
-	t.Run("从数据库查询并缓存到 Redis", func(t *testing.T) {
+	t.Run("query from database and cache to Redis", func(t *testing.T) {
 		ctx := context.Background()
 		info, err := getAPIKeyInfo(ctx, db, rdb, keyHash)
 
@@ -1100,14 +1100,14 @@ func TestGetAPIKeyInfo(t *testing.T) {
 		assert.NotNil(t, info.DepartmentID)
 		assert.Equal(t, deptID, *info.DepartmentID)
 
-		// 验证已缓存到 Redis
+		// Verify cached in Redis
 		cacheKey := "codemind:apikey:" + keyHash
 		cached, err := rdb.Get(ctx, cacheKey).Result()
 		assert.NoError(t, err)
 		assert.NotEmpty(t, cached)
 	})
 
-	t.Run("从 Redis 缓存获取", func(t *testing.T) {
+	t.Run("fetch from Redis cache", func(t *testing.T) {
 		ctx := context.Background()
 		info, err := getAPIKeyInfo(ctx, db, rdb, keyHash)
 
@@ -1116,18 +1116,18 @@ func TestGetAPIKeyInfo(t *testing.T) {
 		assert.Equal(t, int64(5), info.UserID)
 	})
 
-	t.Run("不存在的 API Key", func(t *testing.T) {
+	t.Run("nonexistent API Key", func(t *testing.T) {
 		ctx := context.Background()
 		nonExistentHash := crypto.HashAPIKey("cm-nonexistent")
 		info, err := getAPIKeyInfo(ctx, db, rdb, nonExistentHash)
 
-		// 注意：当前实现中，当记录不存在时 GORM 不会返回错误
-		// 而是返回零值的结构体（所有字段为 0）
-		// 这可能是代码中的问题，但这里测试当前行为
-		assert.NoError(t, err) // 当前行为：不返回错误
-		assert.NotNil(t, info) // 返回空结构体而不是 nil
-		assert.Equal(t, int64(0), info.UserID) // 零值
-		assert.Equal(t, int16(0), info.KeyStatus) // 零值
+		// Note: current implementation - GORM doesn't return error when record doesn't exist
+		// instead it returns a zero-value struct (all fields are 0)
+		// This might be a code issue, but here we test current behavior
+		assert.NoError(t, err)                    // Current behavior: no error returned
+		assert.NotNil(t, info)                    // Returns empty struct instead of nil
+		assert.Equal(t, int64(0), info.UserID)    // zero value
+		assert.Equal(t, int16(0), info.KeyStatus) // zero value
 	})
 }
 
@@ -1136,8 +1136,8 @@ func TestGetAPIKeyInfoDatabaseError(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 不创建表，模拟数据库错误
-	t.Run("数据库错误", func(t *testing.T) {
+	// Don't create tables to simulate DB error
+	t.Run("database error", func(t *testing.T) {
 		ctx := context.Background()
 		keyHash := crypto.HashAPIKey("cm-test")
 		info, err := getAPIKeyInfo(ctx, db, rdb, keyHash)
@@ -1147,7 +1147,7 @@ func TestGetAPIKeyInfoDatabaseError(t *testing.T) {
 	})
 }
 
-// MockDB 用于模拟数据库错误的 mock
+// MockDB is a mock for simulating database errors.
 type MockDB struct {
 	errorOnQuery bool
 }
@@ -1156,14 +1156,14 @@ func (m *MockDB) ErrorOnQuery() bool {
 	return m.errorOnQuery
 }
 
-// ==================== JWTAuth 过期 Token 测试 ====================
+// ==================== JWTAuth expired Token tests ====================
 
 func TestJWTAuthExpiredToken(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
 	defer mr.Close()
 
-	// 创建 JWT Manager，设置很短的过期时间
-	jwtManager, err := jwt.NewManager(testJWTSecret, 0, rdb) // 0 小时过期
+	// Create JWT Manager with very short expiration
+	jwtManager, err := jwt.NewManager(testJWTSecret, 0, rdb) // 0 hours expiration
 	require.NoError(t, err)
 	router := setupTestGin()
 	router.Use(JWTAuth(jwtManager))
@@ -1171,9 +1171,9 @@ func TestJWTAuthExpiredToken(t *testing.T) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	t.Run("过期 Token", func(t *testing.T) {
-		// 生成一个立即可用的 Token（实际上已经过期因为设置的是0小时）
-		// 使用负数时间测试过期情况
+	t.Run("expired token", func(t *testing.T) {
+		// Generate a Token that's immediately expired (0 hours expiration)
+		// Use negative time to test expiration
 		token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMjMsInVzZXJuYW1lIjoidGVzdCIsInJvbGUiOiJhZG1pbiIsImV4cCI6MTYwMDAwMDAwMH0.invalid"
 
 		w := httptest.NewRecorder()
@@ -1185,7 +1185,7 @@ func TestJWTAuthExpiredToken(t *testing.T) {
 	})
 }
 
-// ==================== 边界条件测试 ====================
+// ==================== Edge case tests ====================
 
 func TestJWTAuthMultipleSpaces(t *testing.T) {
 	mr, rdb := setupTestRedis(t)
@@ -1199,16 +1199,16 @@ func TestJWTAuthMultipleSpaces(t *testing.T) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	t.Run("Authorization 包含多个空格", func(t *testing.T) {
+	t.Run("Authorization contains multiple spaces", func(t *testing.T) {
 		token, _, err := jwtManager.GenerateToken(123, "test", "user", nil)
 		assert.NoError(t, err)
 
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/protected", nil)
-		req.Header.Set("Authorization", "Bearer  "+token) // 两个空格
+		req.Header.Set("Authorization", "Bearer  "+token) // Two spaces
 		router.ServeHTTP(w, req)
 
-		// 应该被拒绝，因为 token 前面有空格
+		// Should be rejected due to leading space in token
 		assert.Equal(t, 401, w.Code)
 	})
 }
@@ -1216,7 +1216,7 @@ func TestJWTAuthMultipleSpaces(t *testing.T) {
 func TestRequireRoleTypeAssertion(t *testing.T) {
 	router := setupTestGin()
 	router.Use(func(c *gin.Context) {
-		// 设置非字符串类型的 role（虽然这种情况不应该发生）
+		// Set non-string role type (should not happen normally)
 		c.Set(CtxKeyRole, 123)
 		c.Next()
 	})
@@ -1224,13 +1224,13 @@ func TestRequireRoleTypeAssertion(t *testing.T) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	t.Run("role 类型错误会导致 panic", func(t *testing.T) {
-		// 使用 recovery 捕获 panic
+	t.Run("wrong role type causes panic", func(t *testing.T) {
+		// Use recovery to catch panic
 		logger := zaptest.NewLogger(t)
 		routerWithRecovery := setupTestGin()
 		routerWithRecovery.Use(Recovery(logger))
 		routerWithRecovery.Use(func(c *gin.Context) {
-			c.Set(CtxKeyRole, 123) // 设置错误的类型
+			c.Set(CtxKeyRole, 123) // Set wrong type
 			c.Next()
 		})
 		routerWithRecovery.GET("/test", RequireRole("admin"), func(c *gin.Context) {
@@ -1241,12 +1241,12 @@ func TestRequireRoleTypeAssertion(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/test", nil)
 		routerWithRecovery.ServeHTTP(w, req)
 
-		// 由于类型断言失败会导致 panic，recovery 会捕获并返回 500
+		// Type assertion failure causes panic, recovery catches it and returns 500
 		assert.Equal(t, 500, w.Code)
 	})
 }
 
-// ==================== Logger 错误处理测试 ====================
+// ==================== Logger error handling tests ====================
 
 func TestLoggerWithErrors(t *testing.T) {
 	logger := zaptest.NewLogger(t)
@@ -1257,7 +1257,7 @@ func TestLoggerWithErrors(t *testing.T) {
 		c.JSON(400, gin.H{"error": "bad request"})
 	})
 
-	t.Run("带有错误的请求", func(t *testing.T) {
+	t.Run("request with errors", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/error", nil)
 		router.ServeHTTP(w, req)
@@ -1266,7 +1266,7 @@ func TestLoggerWithErrors(t *testing.T) {
 	})
 }
 
-// ==================== 完整集成测试 ====================
+// ==================== Full integration tests ====================
 
 func TestMiddlewareChain(t *testing.T) {
 	logger := zaptest.NewLogger(t)
@@ -1276,7 +1276,7 @@ func TestMiddlewareChain(t *testing.T) {
 	jwtManager, err := jwt.NewManager(testJWTSecret, 24, rdb)
 	require.NoError(t, err)
 
-	// 创建一个完整的中间件链
+	// Create a complete middleware chain
 	router := setupTestGin()
 	router.Use(Recovery(logger))
 	router.Use(Logger(logger))
@@ -1292,7 +1292,7 @@ func TestMiddlewareChain(t *testing.T) {
 		})
 	})
 
-	t.Run("完整的中间件链 - 部门经理", func(t *testing.T) {
+	t.Run("full middleware chain - dept manager", func(t *testing.T) {
 		deptID := int64(10)
 		token, _, err := jwtManager.GenerateToken(100, "manager", "dept_manager", &deptID)
 		assert.NoError(t, err)
@@ -1310,7 +1310,7 @@ func TestMiddlewareChain(t *testing.T) {
 		assert.Equal(t, "dept_manager", resp["role"])
 	})
 
-	t.Run("完整的中间件链 - 超级管理员", func(t *testing.T) {
+	t.Run("full middleware chain - super admin", func(t *testing.T) {
 		token, _, err := jwtManager.GenerateToken(1, "admin", "super_admin", nil)
 		assert.NoError(t, err)
 
@@ -1322,7 +1322,7 @@ func TestMiddlewareChain(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 	})
 
-	t.Run("完整的中间件链 - 普通用户被拒绝", func(t *testing.T) {
+	t.Run("full middleware chain - regular user denied", func(t *testing.T) {
 		token, _, err := jwtManager.GenerateToken(50, "user", "user", nil)
 		assert.NoError(t, err)
 

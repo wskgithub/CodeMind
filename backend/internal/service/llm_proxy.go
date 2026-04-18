@@ -16,36 +16,38 @@ import (
 	"go.uber.org/zap"
 )
 
+// configValueTrue is the string constant representing boolean true in system configuration.
+const configValueTrue = "true"
+
 var acquireConcurrencyScript = redis.NewScript(`
 	local current = redis.call('INCR', KEYS[1])
 	redis.call('EXPIRE', KEYS[1], ARGV[1])
 	return current
 `)
 
-// LLMProxyService handles LLM proxy operations with load balancing and quota management
+// LLMProxyService handles LLM proxy operations with load balancing and quota management.
 type LLMProxyService struct {
-	providerManager       *llm.ProviderManager
-	loadBalancer          *llm.LoadBalancer
-	usageRepo             *repository.UsageRepository
+	trainingEnabledAt     time.Time
+	thirdPartyService     *ThirdPartyProviderService
+	logger                *zap.Logger
 	limitRepo             *repository.RateLimitRepository
 	keyRepo               *repository.APIKeyRepository
 	trainingDataBuffer    *TrainingDataBuffer
 	sysConfigRepo         *repository.SystemRepository
 	limitService          *LimitService
-	thirdPartyService     *ThirdPartyProviderService
-	rdb                   *redis.Client
-	logger                *zap.Logger
+	providerManager       *llm.ProviderManager
+	usageRepo             *repository.UsageRepository
 	sanitizer             *TrainingDataSanitizer
+	rdb                   *redis.Client
 	conversationExtractor *ConversationExtractor
 	deduplicator          *TrainingDataDeduplicator
 	qualityScorer         *TrainingDataQualityScorer
-	trainingEnabled       bool
-	trainingEnabledAt     time.Time
-	trainingEnabledOnce   sync.Once
+	loadBalancer          *llm.LoadBalancer
 	trainingEnabledMu     sync.RWMutex
+	trainingEnabled       bool
 }
 
-// NewLLMProxyService creates an LLM proxy service
+// NewLLMProxyService creates an LLM proxy service.
 func NewLLMProxyService(
 	providerManager *llm.ProviderManager,
 	loadBalancer *llm.LoadBalancer,
@@ -81,22 +83,22 @@ func NewLLMProxyService(
 	}
 }
 
-// SetThirdPartyService injects third-party service (delayed to avoid circular dependency)
+// SetThirdPartyService injects third-party service (delayed to avoid circular dependency).
 func (s *LLMProxyService) SetThirdPartyService(tps *ThirdPartyProviderService) {
 	s.thirdPartyService = tps
 }
 
-// GetThirdPartyService returns the third-party service instance
+// GetThirdPartyService returns the third-party service instance.
 func (s *LLMProxyService) GetThirdPartyService() *ThirdPartyProviderService {
 	return s.thirdPartyService
 }
 
-// GetProviderManager returns the provider manager
+// GetProviderManager returns the provider manager.
 func (s *LLMProxyService) GetProviderManager() *llm.ProviderManager {
 	return s.providerManager
 }
 
-// GetProviderForModel selects a provider for the model (load balancer first, then static routing)
+// GetProviderForModel selects a provider for the model (load balancer first, then static routing).
 func (s *LLMProxyService) GetProviderForModel(ctx context.Context, userID int64, modelName string) (llm.Provider, error) {
 	if s.loadBalancer != nil && s.loadBalancer.NodeCount() > 0 {
 		provider, err := s.loadBalancer.SelectProvider(ctx, userID, modelName)
@@ -109,7 +111,7 @@ func (s *LLMProxyService) GetProviderForModel(ctx context.Context, userID int64,
 	return s.providerManager.RouteByModel(modelName)
 }
 
-// AcquireConcurrency acquires a concurrency slot
+// AcquireConcurrency acquires a concurrency slot.
 func (s *LLMProxyService) AcquireConcurrency(ctx context.Context, userID int64, deptID *int64) (bool, error) {
 	maxConcurrency := 5
 
@@ -127,7 +129,7 @@ func (s *LLMProxyService) AcquireConcurrency(ctx context.Context, userID int64, 
 	}
 
 	key := fmt.Sprintf("codemind:concurrency:%d", userID)
-	current, err := acquireConcurrencyScript.Run(ctx, s.rdb, []string{key}, int(5*time.Minute.Seconds())).Int64()
+	current, err := acquireConcurrencyScript.Run(ctx, s.rdb, []string{key}, int(5*time.Minute.Seconds())).Int64() //nolint:mnd // intentional constant.
 	if err != nil {
 		s.logger.Error("failed to acquire concurrency slot", zap.Error(err))
 		return false, fmt.Errorf("concurrency control service unavailable")
@@ -141,7 +143,7 @@ func (s *LLMProxyService) AcquireConcurrency(ctx context.Context, userID int64, 
 	return true, nil
 }
 
-// ReleaseConcurrency releases a concurrency slot
+// ReleaseConcurrency releases a concurrency slot.
 func (s *LLMProxyService) ReleaseConcurrency(ctx context.Context, userID int64) {
 	key := fmt.Sprintf("codemind:concurrency:%d", userID)
 	result, err := s.rdb.Decr(ctx, key).Result()
@@ -150,16 +152,16 @@ func (s *LLMProxyService) ReleaseConcurrency(ctx context.Context, userID int64) 
 		return
 	}
 	if result < 0 {
-		s.rdb.Set(ctx, key, 0, 5*time.Minute)
+		s.rdb.Set(ctx, key, 0, 5*time.Minute) //nolint:mnd // intentional constant.
 	}
 }
 
-// CheckTokenQuota checks token usage quota
+// CheckTokenQuota checks token usage quota.
 func (s *LLMProxyService) CheckTokenQuota(ctx context.Context, userID int64, deptID *int64) (bool, error) {
 	return s.limitService.CheckAllQuotas(ctx, userID, deptID)
 }
 
-// RecordUsage records request usage (async, parallel writes)
+// RecordUsage records request usage (async, parallel writes).
 func (s *LLMProxyService) RecordUsage(
 	userID, keyID int64,
 	deptID *int64,
@@ -181,7 +183,7 @@ func (s *LLMProxyService) RecordUsage(
 	today := timezone.Today()
 
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(5) //nolint:mnd // intentional constant.
 
 	go func() {
 		defer wg.Done()
@@ -229,7 +231,7 @@ func (s *LLMProxyService) RecordUsage(
 	wg.Wait()
 }
 
-// RecordRequestLog records request log
+// RecordRequestLog records request log.
 func (s *LLMProxyService) RecordRequestLog(
 	userID, keyID int64,
 	requestType string,
@@ -265,7 +267,7 @@ func (s *LLMProxyService) RecordRequestLog(
 	}
 }
 
-// RecordTrainingData records LLM request/response for model training (async)
+// RecordTrainingData records LLM request/response for model training (async).
 func (s *LLMProxyService) RecordTrainingData(
 	userID, keyID int64,
 	requestType, modelName string,
@@ -337,18 +339,18 @@ func (s *LLMProxyService) RecordTrainingData(
 		CompletionTokens: completionTokens,
 		TotalTokens:      totalTokens,
 		DurationMs:       &durationMs,
-		StatusCode:     statusCode,
-		ClientIP:       &clientIP,
-		IsSanitized:    s.sanitizer != nil && s.sanitizer.IsEnabled(),
-		ConversationID: conversationID,
-		ContentHash:    contentHash,
-		QualityScore:   qualityScore,
+		StatusCode:       statusCode,
+		ClientIP:         &clientIP,
+		IsSanitized:      s.sanitizer != nil && s.sanitizer.IsEnabled(),
+		ConversationID:   conversationID,
+		ContentHash:      contentHash,
+		QualityScore:     qualityScore,
 	}
 
 	s.trainingDataBuffer.Add(record)
 }
 
-// RecordTrainingDataWithSource records training data with source tracking
+// RecordTrainingDataWithSource records training data with source tracking.
 func (s *LLMProxyService) RecordTrainingDataWithSource(
 	userID, keyID int64,
 	requestType, modelName string,
@@ -427,9 +429,9 @@ func (s *LLMProxyService) RecordTrainingDataWithSource(
 		Source:               source,
 		ThirdPartyProviderID: thirdPartyProviderID,
 		IsSanitized:          s.sanitizer != nil && s.sanitizer.IsEnabled(),
-		ConversationID: conversationID,
-		ContentHash:    contentHash,
-		QualityScore:   qualityScore,
+		ConversationID:       conversationID,
+		ContentHash:          contentHash,
+		QualityScore:         qualityScore,
 	}
 
 	s.trainingDataBuffer.Add(record)
@@ -457,7 +459,7 @@ func (s *LLMProxyService) isTrainingDataEnabled() bool {
 	if s.sysConfigRepo != nil {
 		cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingDataCollection)
 		if err == nil {
-			enabled = cfg.ConfigValue == "true"
+			enabled = cfg.ConfigValue == configValueTrue
 		}
 	}
 	s.trainingEnabled = enabled

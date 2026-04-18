@@ -26,10 +26,9 @@ func NewMonitorHandler(monitorService *service.MonitorService, logger *zap.Logge
 	}
 }
 
-// DashboardSummary returns dashboard summary data.
-// GET /api/v1/monitor/dashboard
+// DashboardSummary handles GET /api/v1/monitor/dashboard requests.
 func (h *MonitorHandler) DashboardSummary(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	summary, err := h.monitorService.GetDashboardSummary(ctx)
@@ -42,10 +41,9 @@ func (h *MonitorHandler) DashboardSummary(c *gin.Context) {
 	response.Success(c, summary)
 }
 
-// SystemMetrics returns system resource metrics.
-// GET /api/v1/monitor/system
+// SystemMetrics handles GET /api/v1/monitor/system requests.
 func (h *MonitorHandler) SystemMetrics(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	summary, err := h.monitorService.GetSystemMetricsSummary(ctx)
@@ -58,10 +56,9 @@ func (h *MonitorHandler) SystemMetrics(c *gin.Context) {
 	response.Success(c, summary)
 }
 
-// RequestMetrics returns request performance metrics.
-// GET /api/v1/monitor/requests
+// RequestMetrics handles GET /api/v1/monitor/requests requests.
 func (h *MonitorHandler) RequestMetrics(c *gin.Context) {
-	duration := 5 * time.Minute
+	duration := 5 * time.Minute //nolint:mnd // intentional constant.
 	if d := c.Query("duration"); d != "" {
 		if parsed, err := time.ParseDuration(d); err == nil {
 			duration = parsed
@@ -78,10 +75,9 @@ func (h *MonitorHandler) RequestMetrics(c *gin.Context) {
 	response.Success(c, metrics)
 }
 
-// LLMNodeMetrics returns LLM node metrics.
-// GET /api/v1/monitor/llm-nodes
+// LLMNodeMetrics returns LLM node metrics (GET /api/v1/monitor/llm-nodes).
 func (h *MonitorHandler) LLMNodeMetrics(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	nodes, err := h.monitorService.GetLLMNodeSummaries(ctx)
@@ -94,8 +90,7 @@ func (h *MonitorHandler) LLMNodeMetrics(c *gin.Context) {
 	response.Success(c, nodes)
 }
 
-// HealthCheck returns health status (for external monitoring).
-// GET /api/v1/monitor/health
+// HealthCheck performs a health check (GET /api/v1/monitor/health).
 func (h *MonitorHandler) HealthCheck(c *gin.Context) {
 	response.Success(c, gin.H{
 		"status":    "healthy",
@@ -104,8 +99,7 @@ func (h *MonitorHandler) HealthCheck(c *gin.Context) {
 	})
 }
 
-// LLMNodeReport reports LLM node metrics.
-// POST /api/v1/monitor/nodes/report
+// LLMNodeReport reports LLM node status (POST /api/v1/monitor/nodes/report).
 func (h *MonitorHandler) LLMNodeReport(c *gin.Context) {
 	var req monitor.NodeReportRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -122,7 +116,7 @@ func (h *MonitorHandler) LLMNodeReport(c *gin.Context) {
 		req.Timestamp = time.Now().Unix()
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	if err := h.monitorService.ReportLLMNodeMetrics(ctx, &req); err != nil {

@@ -74,7 +74,7 @@ func TestSuccessWithPage(t *testing.T) {
 	pageData, ok := resp.Data.(map[string]interface{})
 	assert.True(t, ok)
 
-	// 验证分页信息
+	// Verify pagination info
 	pagination, ok := pageData["pagination"].(map[string]interface{})
 	assert.True(t, ok)
 	assert.Equal(t, float64(page), pagination["page"])
@@ -82,7 +82,7 @@ func TestSuccessWithPage(t *testing.T) {
 	assert.Equal(t, float64(total), pagination["total"])
 	assert.Equal(t, float64(3), pagination["total_pages"]) // 25/10 = 2.5 -> 3 pages
 
-	// 验证列表数据
+	// Verify list data
 	listData, ok := pageData["list"].([]interface{})
 	assert.True(t, ok)
 	assert.Len(t, listData, 3)
@@ -90,10 +90,10 @@ func TestSuccessWithPage(t *testing.T) {
 
 func TestSuccessWithPage_TotalPagesCalculation(t *testing.T) {
 	tests := []struct {
-		name       string
-		total      int64
-		pageSize   int
-		wantPages  int
+		name      string
+		total     int64
+		pageSize  int
+		wantPages int
 	}{
 		{"exact division", 20, 10, 2},
 		{"with remainder", 21, 10, 3},
@@ -124,7 +124,7 @@ func TestError(t *testing.T) {
 
 	testErr := &errcode.ErrCode{
 		Code:    40001,
-		Message: "用户名或密码错误",
+		Message: "invalid username or password",
 		HTTP:    http.StatusUnauthorized,
 	}
 
@@ -136,38 +136,38 @@ func TestError(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	assert.NoError(t, err)
 	assert.Equal(t, 40001, resp.Code)
-	assert.Equal(t, "用户名或密码错误", resp.Message)
+	assert.Equal(t, "invalid username or password", resp.Message)
 	assert.Nil(t, resp.Data)
 }
 
 func TestErrorWithDifferentErrorCodes(t *testing.T) {
 	tests := []struct {
-		name       string
-		errCode    *errcode.ErrCode
-		wantHTTP   int
-		wantCode   int
-		wantMsg    string
+		errCode  *errcode.ErrCode
+		name     string
+		wantMsg  string
+		wantHTTP int
+		wantCode int
 	}{
 		{
 			name:     "internal error",
 			errCode:  errcode.ErrInternal,
 			wantHTTP: http.StatusInternalServerError,
 			wantCode: 50001,
-			wantMsg:  "系统内部错误",
+			wantMsg:  "internal server error",
 		},
 		{
 			name:     "invalid params",
 			errCode:  errcode.ErrInvalidParams,
 			wantHTTP: http.StatusBadRequest,
 			wantCode: 40201,
-			wantMsg:  "请求参数错误",
+			wantMsg:  "invalid parameters",
 		},
 		{
 			name:     "forbidden",
 			errCode:  errcode.ErrForbidden,
 			wantHTTP: http.StatusForbidden,
 			wantCode: 40101,
-			wantMsg:  "无权访问该资源",
+			wantMsg:  "access denied",
 		},
 	}
 
@@ -193,10 +193,10 @@ func TestErrorWithMsg(t *testing.T) {
 
 	testErr := &errcode.ErrCode{
 		Code:    40001,
-		Message: "用户名或密码错误",
+		Message: "invalid username or password",
 		HTTP:    http.StatusUnauthorized,
 	}
-	customMsg := "自定义错误消息"
+	customMsg := "custom error message"
 
 	ErrorWithMsg(c, testErr, customMsg)
 
@@ -213,7 +213,7 @@ func TestErrorWithMsg(t *testing.T) {
 func TestBadRequest(t *testing.T) {
 	c, w := setupTestContext()
 
-	msg := "缺少必填参数 user_id"
+	msg := "missing required parameter user_id"
 	BadRequest(c, msg)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -229,7 +229,7 @@ func TestBadRequest(t *testing.T) {
 func TestUnauthorized(t *testing.T) {
 	c, w := setupTestContext()
 
-	msg := "请先登录"
+	msg := "please login first"
 	Unauthorized(c, msg)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
@@ -245,7 +245,7 @@ func TestUnauthorized(t *testing.T) {
 func TestForbidden(t *testing.T) {
 	c, w := setupTestContext()
 
-	msg := "您没有权限执行此操作"
+	msg := "you do not have permission to perform this action"
 	Forbidden(c, msg)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -314,8 +314,8 @@ func TestResponseStructures(t *testing.T) {
 
 func TestSuccessWithComplexData(t *testing.T) {
 	tests := []struct {
-		name string
 		data interface{}
+		name string
 	}{
 		{
 			name: "string slice",
@@ -336,8 +336,8 @@ func TestSuccessWithComplexData(t *testing.T) {
 		{
 			name: "struct",
 			data: struct {
-				ID   int    `json:"id"`
 				Name string `json:"name"`
+				ID   int    `json:"id"`
 			}{ID: 1, Name: "test"},
 		},
 	}

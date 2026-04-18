@@ -1,6 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from 'antd';
 import {
   ApiOutlined,
   RobotOutlined,
@@ -16,12 +13,16 @@ import {
   SunOutlined,
   MoonOutlined,
 } from '@ant-design/icons';
+import { Button } from 'antd';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
-import { type SupportedLanguage } from '@/i18n';
+import { useNavigate } from 'react-router-dom';
 
-// features/stats 数据移到组件内使用 t() 函数
+import { type SupportedLanguage } from '@/i18n';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
+
+// features/stats data moved inside component to use t() function
 const FEATURE_KEYS = [
   { key: 'openai', icon: <ApiOutlined />, color: '#00D9FF' },
   { key: 'anthropic', icon: <RobotOutlined />, color: '#FF6B6B' },
@@ -72,7 +73,7 @@ const StarfieldCanvas: React.FC = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    // 粒子数量根据屏幕面积动态计算，上限 80（原 150）
+    // Particle count scales with screen area, capped at 80 (down from 150)
     const count = Math.min(Math.floor((window.innerWidth * window.innerHeight) / 15000), 80);
 
     interface Particle {
@@ -80,7 +81,7 @@ const StarfieldCanvas: React.FC = () => {
       r: number; color: string; glowColor: string;
     }
 
-    // 预计算颜色字符串，避免每帧重复拼接
+    // Pre-compute color strings to avoid per-frame concatenation
     const particles: Particle[] = [];
     for (let i = 0; i < count; i++) {
       const a = Math.random() * 0.5 + 0.3;
@@ -102,7 +103,7 @@ const StarfieldCanvas: React.FC = () => {
 
     const draw = (timestamp: number) => {
       animId = requestAnimationFrame(draw);
-      // 帧率限制 30fps + 页面不可见时暂停渲染
+      // Throttle to 30fps + pause rendering when page is hidden
       if (timestamp - lastTime < FRAME_INTERVAL || document.hidden) return;
       lastTime = timestamp;
 
@@ -117,7 +118,7 @@ const StarfieldCanvas: React.FC = () => {
         if (p.y < 0 || p.y > h) p.vy *= -1;
       }
 
-      // 空间网格索引，减少两两遍历开销
+      // Spatial grid index to reduce pairwise traversal cost
       const grid = new Map<string, Particle[]>();
       for (const p of particles) {
         const key = `${Math.floor(p.x / MAX_DIST)},${Math.floor(p.y / MAX_DIST)}`;
@@ -153,7 +154,7 @@ const StarfieldCanvas: React.FC = () => {
         }
       }
 
-      // 鼠标附近连线，限制最多 8 条避免过度绘制
+      // Lines near mouse cursor, limited to 8 to avoid overdraw
       const { x: mx, y: my } = mouseRef.current;
       if (mx > 0 && my > 0) {
         let lines = 0;
@@ -174,7 +175,7 @@ const StarfieldCanvas: React.FC = () => {
         }
       }
 
-      // 粒子绘制：简化为单色填充，不使用渐变以大幅提升性能
+      // Particle draw: solid fill without gradients for better performance
       for (const p of particles) {
         ctx.fillStyle = p.glowColor;
         ctx.beginPath();
@@ -266,7 +267,7 @@ const HomePage: React.FC = () => {
   const isDark = themeMode === 'dark';
   const featuresRef = useRef<HTMLDivElement>(null);
 
-  // 使用 i18n 生成 features 数据
+  // Generate features data using i18n
   const features = FEATURE_KEYS.map((f) => ({
     icon: f.icon,
     title: t(`home.features.${f.key}.title`),
@@ -274,7 +275,7 @@ const HomePage: React.FC = () => {
     color: f.color,
   }));
 
-  // 使用 i18n 生成 stats 数据
+  // Generate stats data using i18n
   const stats = STAT_KEYS.map((s) => ({
     value: s.value,
     suffix: s.suffixKey ? t(`home.stats.${s.suffixKey}`) : s.suffix,
@@ -444,7 +445,7 @@ const HomePage: React.FC = () => {
           <div style={{ paddingLeft: 12 }}>{`.generate({ prompt })`}</div>
         </div>
 
-        {/* 右上角工具栏 */}
+        {/* Top-right toolbar */}
         <div style={{ position: 'fixed', top: 24, right: 24, display: 'flex', gap: 12, zIndex: 100, alignItems: 'center' }}>
           <div
             style={{

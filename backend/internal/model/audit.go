@@ -5,24 +5,25 @@ import (
 	"time"
 )
 
-// AuditLog records user operations for compliance
+// AuditLog records user operations for compliance.
 type AuditLog struct {
-	ID         int64           `gorm:"primaryKey;autoIncrement" json:"id"`
-	OperatorID int64           `gorm:"not null;index" json:"operator_id"`
+	CreatedAt  time.Time       `gorm:"not null;autoCreateTime;index" json:"created_at"`
+	TargetID   *int64          `json:"target_id"`
+	ClientIP   *string         `gorm:"size:45" json:"client_ip"`
+	Operator   *User           `gorm:"foreignKey:OperatorID" json:"operator,omitempty"`
 	Action     string          `gorm:"size:50;not null;index" json:"action"`
 	TargetType string          `gorm:"size:50;not null" json:"target_type"`
-	TargetID   *int64          `json:"target_id"`
 	Detail     json.RawMessage `gorm:"type:jsonb" json:"detail"`
-	ClientIP   *string         `gorm:"size:45" json:"client_ip"`
-	CreatedAt  time.Time       `gorm:"not null;autoCreateTime;index" json:"created_at"`
-
-	Operator *User `gorm:"foreignKey:OperatorID" json:"operator,omitempty"`
+	ID         int64           `gorm:"primaryKey;autoIncrement" json:"id"`
+	OperatorID int64           `gorm:"not null;index" json:"operator_id"`
 }
 
+// TableName returns the database table name.
 func (AuditLog) TableName() string {
 	return "audit_logs"
 }
 
+// Audit log action type constants.
 const (
 	AuditActionCreateUser     = "create_user"
 	AuditActionUpdateUser     = "update_user"
@@ -48,6 +49,7 @@ const (
 	AuditActionDeleteAnnounce = "delete_announcement"
 )
 
+// Audit log target type constants.
 const (
 	AuditTargetUser         = "user"
 	AuditTargetDepartment   = "department"

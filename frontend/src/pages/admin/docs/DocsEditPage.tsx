@@ -1,6 +1,12 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import {
+  SaveOutlined,
+  ArrowLeftOutlined,
+  SendOutlined,
+  CloudOutlined,
+  LoadingOutlined,
+  PictureOutlined,
+} from '@ant-design/icons';
+import MDEditor from '@uiw/react-md-editor';
 import {
   Form,
   Input,
@@ -15,23 +21,18 @@ import {
   Tag,
   Tooltip,
 } from 'antd';
-import {
-  SaveOutlined,
-  ArrowLeftOutlined,
-  SendOutlined,
-  CloudOutlined,
-  LoadingOutlined,
-  PictureOutlined,
-} from '@ant-design/icons';
-import MDEditor from '@uiw/react-md-editor';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
 import rehypeSanitize from 'rehype-sanitize';
+
 import { documentService, CreateDocumentRequest, UpdateDocumentRequest } from '@/services/documentService';
 import { uploadService } from '@/services/uploadService';
 import useAppStore from '@/store/appStore';
 
 const { Title } = Typography;
 
-// 自动保存间隔（毫秒）
+// Auto-save interval (ms)
 const AUTO_SAVE_INTERVAL = 30000;
 
 const DocsEditPage: React.FC = () => {
@@ -57,7 +58,7 @@ const DocsEditPage: React.FC = () => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // 保持 contentRef 同步
+  // Keep contentRef in sync
   useEffect(() => {
     contentRef.current = content;
   }, [content]);
@@ -101,7 +102,7 @@ const DocsEditPage: React.FC = () => {
     }
   };
 
-  // 保存逻辑（同时支持手动保存和自动保存）
+  // Save logic (supports both manual and auto-save)
   const doSave = useCallback(async (isAutoSave = false) => {
     if (saving) return;
 
@@ -172,16 +173,16 @@ const DocsEditPage: React.FC = () => {
     }
   }, [saving, form, isEdit, id, navigate, t]);
 
-  // 手动保存（快捷键或按钮）
+  // Manual save (shortcut or button)
   const handleSave = useCallback(() => doSave(false), [doSave]);
 
-  // 保存并发布
+  // Save and publish
   const handlePublish = useCallback(async () => {
     form.setFieldValue('is_published', true);
     await doSave(false);
   }, [doSave, form]);
 
-  // Ctrl+S 快捷键
+  // Ctrl+S keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -193,7 +194,7 @@ const DocsEditPage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  // 自动保存：编辑模式下，内容有变化时定时保存
+  // Auto-save: periodically save when content changes in edit mode
   useEffect(() => {
     if (!isEdit || !hasUnsavedChanges) return;
 
@@ -212,7 +213,7 @@ const DocsEditPage: React.FC = () => {
     };
   }, [isEdit, hasUnsavedChanges, content, doSave]);
 
-  // 离开页面前提示未保存
+  // Warn about unsaved changes before leaving
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -236,12 +237,12 @@ const DocsEditPage: React.FC = () => {
     navigate('/admin/docs');
   };
 
-  // 获取编辑器 textarea 元素
+  // Get the editor textarea element
   const getTextarea = useCallback((): HTMLTextAreaElement | null => {
     return editorRef.current?.querySelector('textarea') || null;
   }, []);
 
-  // 上传图片并在光标位置插入 Markdown 图片语法
+  // Upload image and insert Markdown image syntax at cursor position
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
       message.warning(t('docsAdmin.editPage.imageOnly'));
@@ -279,7 +280,7 @@ const DocsEditPage: React.FC = () => {
     }
   }, [t, getTextarea]);
 
-  // 粘贴处理：拦截图片粘贴并上传到服务端
+  // Paste handler: intercept image paste and upload to server
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     const items = Array.from(e.clipboardData.items);
     for (const item of items) {
@@ -292,7 +293,7 @@ const DocsEditPage: React.FC = () => {
     }
   }, [handleImageUpload]);
 
-  // 文件选择器回调
+  // File picker callback
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -300,7 +301,7 @@ const DocsEditPage: React.FC = () => {
     e.target.value = '';
   }, [handleImageUpload]);
 
-  // 拖拽事件
+  // Drag events
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -343,7 +344,7 @@ const DocsEditPage: React.FC = () => {
   return (
     <div style={{ padding: 24 }} data-color-mode={themeMode === 'dark' ? 'dark' : 'light'}>
       <Card>
-        {/* 顶部操作栏 */}
+        {/* Top action bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Space align="center">
             <Button icon={<ArrowLeftOutlined />} onClick={handleBack}>
@@ -360,7 +361,7 @@ const DocsEditPage: React.FC = () => {
           </Space>
 
           <Space>
-            {/* 保存状态指示 */}
+            {/* Save status indicator */}
             {isEdit && (
               <span style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)' }}>
                 {autoSaveStatus === 'saving' && (
@@ -397,7 +398,7 @@ const DocsEditPage: React.FC = () => {
           </Space>
         </div>
 
-        {/* 元信息表单 */}
+        {/* Metadata form */}
         <Form
           form={form}
           layout="vertical"
@@ -446,7 +447,7 @@ const DocsEditPage: React.FC = () => {
           </Form.Item>
         </Form>
 
-        {/* Markdown 编辑器 */}
+        {/* Markdown editor */}
         <div
           ref={editorRef}
           style={{ position: 'relative' }}
@@ -469,7 +470,7 @@ const DocsEditPage: React.FC = () => {
             }}
           />
 
-          {/* 拖拽上传遮罩 */}
+          {/* Drag-and-drop upload overlay */}
           {isDragging && (
             <div style={{
               position: 'absolute',
@@ -490,7 +491,7 @@ const DocsEditPage: React.FC = () => {
             </div>
           )}
 
-          {/* 上传进度遮罩 */}
+          {/* Upload progress overlay */}
           {isUploading && (
             <div style={{
               position: 'absolute',
@@ -519,7 +520,7 @@ const DocsEditPage: React.FC = () => {
           )}
         </div>
 
-        {/* 底部信息栏 */}
+        {/* Bottom info bar */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -548,7 +549,7 @@ const DocsEditPage: React.FC = () => {
           </Space>
         </div>
 
-        {/* 隐藏的图片选择器 */}
+        {/* Hidden image picker */}
         <input
           ref={imageInputRef}
           type="file"

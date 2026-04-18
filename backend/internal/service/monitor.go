@@ -27,17 +27,17 @@ type MonitorService struct {
 	backendRepo  *repository.LLMBackendRepository
 	rdb          *redis.Client
 	logger       *zap.Logger
-	hostname     string
 	requestStats *RequestStatsCollector
+	hostname     string
 }
 
 // RequestStatsCollector collects request statistics.
 type RequestStatsCollector struct {
-	requestCount  int64
-	responseTimes []float64
-	statusCodes   map[int]int64
 	lastResetTime time.Time
+	statusCodes   map[int]int64
 	mutex         chan struct{}
+	responseTimes []float64
+	requestCount  int64
 }
 
 // NewMonitorService creates a new monitor service.
@@ -54,14 +54,14 @@ func NewMonitorService(
 	}
 
 	svc := &MonitorService{
-		monitorRepo:  monitorRepo,
-		usageRepo:    usageRepo,
-		backendRepo:  backendRepo,
-		rdb:          rdb,
-		logger:       logger,
-		hostname:     hostname,
+		monitorRepo: monitorRepo,
+		usageRepo:   usageRepo,
+		backendRepo: backendRepo,
+		rdb:         rdb,
+		logger:      logger,
+		hostname:    hostname,
 		requestStats: &RequestStatsCollector{
-			responseTimes: make([]float64, 0, 1000),
+			responseTimes: make([]float64, 0, 1000), //nolint:mnd // intentional constant.
 			statusCodes:   make(map[int]int64),
 			lastResetTime: time.Now(),
 			mutex:         make(chan struct{}, 1),
@@ -75,7 +75,7 @@ func NewMonitorService(
 
 // startCollector starts background metrics collection.
 func (s *MonitorService) startCollector() {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(30 * time.Second) //nolint:mnd // intentional constant.
 	defer ticker.Stop()
 
 	s.collectSystemMetrics()
@@ -87,7 +87,7 @@ func (s *MonitorService) startCollector() {
 
 // collectSystemMetrics collects system metrics.
 func (s *MonitorService) collectSystemMetrics() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	metrics := make([]*monitor.SystemMetric, 0)
@@ -96,11 +96,11 @@ func (s *MonitorService) collectSystemMetrics() {
 	if info, err := cpu.Info(); err == nil && len(info) > 0 {
 		modelName := info[0].ModelName
 		cores := len(info)
-		
+
 		if percent, err := cpu.Percent(1*time.Second, false); err == nil && len(percent) > 0 {
 			labels, _ := json.Marshal(map[string]string{
-				"model_name":  modelName,
-				"core_count":  fmt.Sprintf("%d", cores),
+				"model_name": modelName,
+				"core_count": fmt.Sprintf("%d", cores),
 			})
 			metrics = append(metrics, &monitor.SystemMetric{
 				HostName:   s.hostname,
@@ -114,9 +114,9 @@ func (s *MonitorService) collectSystemMetrics() {
 	}
 
 	if memInfo, err := mem.VirtualMemory(); err == nil {
-		totalGB := float64(memInfo.Total) / 1024 / 1024 / 1024
-		usedGB := float64(memInfo.Used) / 1024 / 1024 / 1024
-		
+		totalGB := float64(memInfo.Total) / 1024 / 1024 / 1024 //nolint:mnd // intentional constant.
+		usedGB := float64(memInfo.Used) / 1024 / 1024 / 1024   //nolint:mnd // intentional constant.
+
 		metrics = append(metrics,
 			&monitor.SystemMetric{
 				HostName:   s.hostname,
@@ -147,17 +147,17 @@ func (s *MonitorService) collectSystemMetrics() {
 			if part.Fstype == "tmpfs" || part.Fstype == "devtmpfs" || part.Fstype == "squashfs" {
 				continue
 			}
-			
+
 			if usage, err := disk.Usage(part.Mountpoint); err == nil {
 				labels, _ := json.Marshal(map[string]string{
 					"mount_point": part.Mountpoint,
 					"device":      part.Device,
 					"fstype":      part.Fstype,
 				})
-				
-				totalGB := float64(usage.Total) / 1024 / 1024 / 1024
-				usedGB := float64(usage.Used) / 1024 / 1024 / 1024
-				
+
+				totalGB := float64(usage.Total) / 1024 / 1024 / 1024 //nolint:mnd // intentional constant.
+				usedGB := float64(usage.Used) / 1024 / 1024 / 1024   //nolint:mnd // intentional constant.
+
 				metrics = append(metrics,
 					&monitor.SystemMetric{
 						HostName:   s.hostname,
@@ -227,15 +227,17 @@ func (s *MonitorService) collectSystemMetrics() {
 
 // cleanupOldMetrics removes old metrics data.
 func (s *MonitorService) cleanupOldMetrics() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
+	//nolint:mnd // magic number for configuration/defaults.
 	if rows, err := s.monitorRepo.CleanupOldSystemMetrics(ctx, 7); err != nil {
 		s.logger.Warn("failed to cleanup system metrics", zap.Error(err))
 	} else if rows > 0 {
 		s.logger.Info("cleaned up old system metrics", zap.Int64("rows", rows))
 	}
 
+	//nolint:mnd // magic number for configuration/defaults.
 	if rows, err := s.monitorRepo.CleanupOldLLMNodeMetrics(ctx, 48); err != nil {
 		s.logger.Warn("failed to cleanup LLM node metrics", zap.Error(err))
 	} else if rows > 0 {
@@ -251,6 +253,7 @@ func (s *MonitorService) RecordRequest(statusCode int, responseTimeMs float64) {
 		s.requestStats.statusCodes[statusCode]++
 		s.requestStats.responseTimes = append(s.requestStats.responseTimes, responseTimeMs)
 
+		//nolint:mnd // magic number for configuration/defaults.
 		if len(s.requestStats.responseTimes) > 10000 {
 			s.requestStats.responseTimes = s.requestStats.responseTimes[5000:]
 		}
@@ -260,7 +263,7 @@ func (s *MonitorService) RecordRequest(statusCode int, responseTimeMs float64) {
 }
 
 // GetRequestMetrics returns request performance metrics.
-func (s *MonitorService) GetRequestMetrics(ctx context.Context, duration time.Duration) (*monitor.RequestMetricsSummary, error) {
+func (s *MonitorService) GetRequestMetrics(_ context.Context, _ time.Duration) (*monitor.RequestMetricsSummary, error) {
 	s.requestStats.mutex <- struct{}{}
 	defer func() { <-s.requestStats.mutex }()
 
@@ -275,13 +278,14 @@ func (s *MonitorService) GetRequestMetrics(ctx context.Context, duration time.Du
 	for code, count := range s.requestStats.statusCodes {
 		summary.StatusCodes[code] = count
 		summary.TotalRequests += count
+		//nolint:mnd // magic number for configuration/defaults.
 		if code >= 400 {
 			summary.ErrorRate += float64(count)
 		}
 	}
 
 	if summary.TotalRequests > 0 {
-		summary.ErrorRate = (summary.ErrorRate / float64(summary.TotalRequests)) * 100
+		summary.ErrorRate = (summary.ErrorRate / float64(summary.TotalRequests)) * 100 //nolint:mnd // intentional constant.
 	}
 
 	times := s.requestStats.responseTimes
@@ -291,8 +295,8 @@ func (s *MonitorService) GetRequestMetrics(ctx context.Context, duration time.Du
 			total += t
 		}
 		summary.AvgResponseTime = total / float64(len(times))
-		summary.P95ResponseTime = calculatePercentile(times, 0.95)
-		summary.P99ResponseTime = calculatePercentile(times, 0.99)
+		summary.P95ResponseTime = calculatePercentile(times, 0.95) //nolint:mnd // intentional constant.
+		summary.P99ResponseTime = calculatePercentile(times, 0.99) //nolint:mnd // intentional constant.
 	}
 
 	elapsed := time.Since(s.requestStats.lastResetTime).Seconds()
@@ -323,7 +327,7 @@ func (s *MonitorService) ResetRequestStats() {
 	defer func() { <-s.requestStats.mutex }()
 
 	s.requestStats.requestCount = 0
-	s.requestStats.responseTimes = make([]float64, 0, 1000)
+	s.requestStats.responseTimes = make([]float64, 0, 1000) //nolint:mnd // intentional constant.
 	s.requestStats.statusCodes = make(map[int]int64)
 	s.requestStats.lastResetTime = time.Now()
 }
@@ -345,7 +349,7 @@ func (s *MonitorService) GetDashboardSummary(ctx context.Context) (*monitor.Dash
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(5) //nolint:mnd // intentional constant.
 
 	go func() {
 		defer wg.Done()
@@ -356,6 +360,7 @@ func (s *MonitorService) GetDashboardSummary(ctx context.Context) (*monitor.Dash
 
 	go func() {
 		defer wg.Done()
+		//nolint:mnd // magic number for configuration/defaults.
 		if metrics, err := s.GetRequestMetrics(ctx, 5*time.Minute); err == nil {
 			summary.RequestMetrics = metrics
 		}

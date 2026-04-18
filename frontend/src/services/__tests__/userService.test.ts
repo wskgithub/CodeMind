@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import request from '../request';
 import userService, { type UserListParams, type CreateUserParams } from '../userService';
+
 import type { ApiResponse, PageData, UserDetail } from '@/types';
 
 // Mock request module
@@ -12,7 +15,6 @@ vi.mock('../request', () => ({
   },
 }));
 
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;
@@ -29,7 +31,7 @@ describe('userService', () => {
   const mockUser: UserDetail = {
     id: 1,
     username: 'testuser',
-    display_name: '测试用户',
+    display_name: 'Test User',
     email: 'test@example.com',
     phone: '13800138000',
     role: 'user',
@@ -121,7 +123,7 @@ describe('userService', () => {
     const createParams: CreateUserParams = {
       username: 'newuser',
       password: 'password123',
-      display_name: '新用户',
+      display_name: 'New User',
       email: 'new@example.com',
       phone: '13900139000',
       role: 'user',
@@ -146,7 +148,7 @@ describe('userService', () => {
       const minimalParams: CreateUserParams = {
         username: 'simpleuser',
         password: 'pass123',
-        display_name: '简单用户',
+        display_name: 'Simple User',
         role: 'user',
       };
       const mockResponse: ApiResponse<UserDetail> = {
@@ -164,8 +166,8 @@ describe('userService', () => {
 
   describe('update', () => {
     it.each([
-      { desc: 'full update', data: { display_name: '新名称', email: 'new@example.com' } },
-      { desc: 'partial update', data: { display_name: '仅更新名称' } },
+      { desc: 'full update', data: { display_name: 'New Name', email: 'new@example.com' } },
+      { desc: 'partial update', data: { display_name: 'Name Only Update' } },
       { desc: 'update role', data: { role: 'dept_manager' } },
       { desc: 'update department', data: { department_id: 2 } },
     ])('should update user with $desc', async ({ data }) => {
@@ -240,7 +242,7 @@ describe('userService', () => {
 
   describe('unlockUser', () => {
     it.each([
-      { desc: 'with reason', reason: '管理员解锁' },
+      { desc: 'with reason', reason: 'Admin unlock' },
       { desc: 'without reason', reason: undefined },
     ])('should unlock user $desc', async ({ reason }) => {
       const userId = 1;

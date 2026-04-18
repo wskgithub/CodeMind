@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Table, Button, Modal, Form, Input, Space, Tag, Tabs, message, Select, Empty, Tooltip } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, StopOutlined, CheckCircleOutlined,
   AppstoreOutlined, EditOutlined, CloudServerOutlined, ThunderboltOutlined,
   CopyOutlined,
 } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Space, Tag, Tabs, message, Select, Empty, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import type { PlatformModelInfo, UserThirdPartyProvider, ProviderTemplate } from '@/types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import modelService from '@/services/modelService';
 import { getPlatformSettings } from '@/services/systemService';
 import useAppStore from '@/store/appStore';
+import type { PlatformModelInfo, UserThirdPartyProvider, ProviderTemplate } from '@/types';
 import { copyToClipboard } from '@/utils/copy';
 
 const FormatTags = ({ format }: { format: string }) => {

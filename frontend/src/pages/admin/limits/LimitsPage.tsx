@@ -1,8 +1,9 @@
+import { PlusOutlined, DeleteOutlined, SafetyOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, InputNumber, Select, message, Popconfirm, Tag, Space } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Table, Button, Modal, Form, InputNumber, Select, message, Popconfirm, Tag, Space } from 'antd';
-import { PlusOutlined, DeleteOutlined, SafetyOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
+
 import { listLimits, upsertLimit, deleteLimit } from '@/services/limitService';
 import useAppStore from '@/store/appStore';
 import type { RateLimit } from '@/types';

@@ -18,22 +18,21 @@ import (
 // LoadBalancer distributes requests across multiple backend nodes using weighted round-robin
 // with user affinity to improve cache hit rates.
 type LoadBalancer struct {
-	nodes       []*LBNode
 	rdb         *redis.Client
 	logger      *zap.Logger
-	mu          sync.RWMutex
-	counter     atomic.Uint64
+	nodes       []*LBNode
 	affinityTTL time.Duration
+	mu          sync.RWMutex
 }
 
 // LBNode represents a load balancer node.
 type LBNode struct {
-	ID            int64
-	Name          string
 	Provider      Provider
+	Name          string
+	ModelPatterns []string
+	ID            int64
 	Weight        int
 	MaxConn       int
-	ModelPatterns []string
 	active        atomic.Int64
 	healthy       atomic.Bool
 }
@@ -215,7 +214,7 @@ func (lb *LoadBalancer) weightedSelect(candidates []*LBNode) *LBNode {
 		node   *LBNode
 		weight float64
 	}
-	var items []scored
+	items := make([]scored, 0, len(candidates))
 	var totalWeight float64
 
 	for _, n := range candidates {
@@ -262,7 +261,7 @@ type lbProviderWrapper struct {
 	provider Provider
 }
 
-func (w *lbProviderWrapper) Name() string          { return w.provider.Name() }
+func (w *lbProviderWrapper) Name() string           { return w.provider.Name() }
 func (w *lbProviderWrapper) Format() ProviderFormat { return w.provider.Format() }
 
 func (w *lbProviderWrapper) ChatCompletion(ctx context.Context, req *ChatCompletionRequest) (*ChatCompletionResponse, error) {

@@ -3,6 +3,7 @@ package mcp
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,17 +21,17 @@ import (
 )
 
 // ═══════════════════════════════════════════════════════════
-// Protocol Tests - JSON-RPC 消息序列化和反序列化
+// Protocol Tests - JSON-RPC message serialization and deserialization
 // ═══════════════════════════════════════════════════════════
 
 func TestJSONRPCRequest_MarshalUnmarshal(t *testing.T) {
 	tests := []struct {
 		name     string
-		request  JSONRPCRequest
 		expected string
+		request  JSONRPCRequest
 	}{
 		{
-			name: "基本请求",
+			name: "basic request",
 			request: JSONRPCRequest{
 				JSONRPC: "2.0",
 				ID:      "req-1",
@@ -40,7 +41,7 @@ func TestJSONRPCRequest_MarshalUnmarshal(t *testing.T) {
 			expected: `{"jsonrpc":"2.0","id":"req-1","method":"tools/list","params":{}}`,
 		},
 		{
-			name: "数字ID请求",
+			name: "numeric ID request",
 			request: JSONRPCRequest{
 				JSONRPC: "2.0",
 				ID:      123,
@@ -50,7 +51,7 @@ func TestJSONRPCRequest_MarshalUnmarshal(t *testing.T) {
 			expected: `{"jsonrpc":"2.0","id":123,"method":"initialize"}`,
 		},
 		{
-			name: "带参数的请求",
+			name: "request with params",
 			request: JSONRPCRequest{
 				JSONRPC: "2.0",
 				ID:      1,
@@ -85,7 +86,7 @@ func TestJSONRPCResponse_MarshalUnmarshal(t *testing.T) {
 		response JSONRPCResponse
 	}{
 		{
-			name: "成功响应",
+			name: "success response",
 			response: JSONRPCResponse{
 				JSONRPC: "2.0",
 				ID:      "req-1",
@@ -93,24 +94,24 @@ func TestJSONRPCResponse_MarshalUnmarshal(t *testing.T) {
 			},
 		},
 		{
-			name: "错误响应",
+			name: "error response",
 			response: JSONRPCResponse{
 				JSONRPC: "2.0",
-				ID:      float64(123), // JSON 数字解码为 float64
+				ID:      float64(123), // JSON numbers decode as float64
 				Error: &JSONRPCError{
 					Code:    ErrCodeMethodNotFound,
-					Message: "方法不存在",
+					Message: "method not found",
 				},
 			},
 		},
 		{
-			name: "带数据的错误响应",
+			name: "error response with data",
 			response: JSONRPCResponse{
 				JSONRPC: "2.0",
-				ID:      float64(456), // JSON 数字解码为 float64
+				ID:      float64(456), // JSON numbers decode as float64
 				Error: &JSONRPCError{
 					Code:    ErrCodeInvalidParams,
-					Message: "参数错误",
+					Message: "invalid params",
 					Data:    map[string]string{"field": "name"},
 				},
 			},
@@ -149,7 +150,7 @@ func TestJSONRPCNotification_MarshalUnmarshal(t *testing.T) {
 	// Marshal
 	data, err := json.Marshal(notification)
 	require.NoError(t, err)
-	assert.NotContains(t, string(data), "id") // 通知不应该有 id 字段
+	assert.NotContains(t, string(data), "id") // Notifications should not have an id field
 
 	// Unmarshal
 	var decoded JSONRPCNotification
@@ -172,7 +173,7 @@ func TestNewResponse(t *testing.T) {
 	assert.NotNil(t, resp.Result)
 	assert.Nil(t, resp.Error)
 
-	// 验证 Result 内容
+	// Verify Result content
 	var decodedResult ToolsListResult
 	err := json.Unmarshal(resp.Result, &decodedResult)
 	require.NoError(t, err)
@@ -181,18 +182,18 @@ func TestNewResponse(t *testing.T) {
 }
 
 func TestNewErrorResponse(t *testing.T) {
-	resp := NewErrorResponse("req-1", ErrCodeMethodNotFound, "方法不存在: test")
+	resp := NewErrorResponse("req-1", ErrCodeMethodNotFound, "method not found: test")
 	require.NotNil(t, resp)
 	assert.Equal(t, JSONRPCVersion, resp.JSONRPC)
 	assert.Equal(t, "req-1", resp.ID)
 	assert.Nil(t, resp.Result)
 	require.NotNil(t, resp.Error)
 	assert.Equal(t, ErrCodeMethodNotFound, resp.Error.Code)
-	assert.Equal(t, "方法不存在: test", resp.Error.Message)
+	assert.Equal(t, "method not found: test", resp.Error.Message)
 }
 
 func TestErrorCodes(t *testing.T) {
-	// 验证标准 JSON-RPC 错误码
+	// Verify standard JSON-RPC error codes
 	assert.Equal(t, -32700, ErrCodeParseError)
 	assert.Equal(t, -32600, ErrCodeInvalidRequest)
 	assert.Equal(t, -32601, ErrCodeMethodNotFound)
@@ -201,7 +202,7 @@ func TestErrorCodes(t *testing.T) {
 }
 
 func TestMethodConstants(t *testing.T) {
-	// 验证 MCP 标准方法名
+	// Verify MCP standard method names
 	assert.Equal(t, "initialize", MethodInitialize)
 	assert.Equal(t, "notifications/initialized", MethodInitialized)
 	assert.Equal(t, "tools/list", MethodToolsList)
@@ -214,7 +215,7 @@ func TestMethodConstants(t *testing.T) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MCP 类型序列化测试
+// MCP type serialization tests
 // ═══════════════════════════════════════════════════════════
 
 func TestInitializeParams_Marshal(t *testing.T) {
@@ -378,9 +379,9 @@ func TestResourceReadResult_Marshal(t *testing.T) {
 // ═══════════════════════════════════════════════════════════
 
 func TestNewSSESession(t *testing.T) {
-	// 使用支持 Flusher 的 ResponseWriter
+	// Use a ResponseWriter that supports Flusher
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 	assert.NotEmpty(t, session.ID)
@@ -394,14 +395,14 @@ func TestNewSSESession(t *testing.T) {
 
 func TestSSESession_SendEvent(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
 	err = session.SendEvent("message", `{"test":"data"}`)
 	require.NoError(t, err)
 
-	// 验证输出格式
+	// Verify output format
 	body := w.Body.String()
 	assert.Contains(t, body, "event: message")
 	assert.Contains(t, body, `data: {"test":"data"}`)
@@ -409,7 +410,7 @@ func TestSSESession_SendEvent(t *testing.T) {
 
 func TestSSESession_SendEndpoint(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -423,7 +424,7 @@ func TestSSESession_SendEndpoint(t *testing.T) {
 
 func TestSSESession_SendMessage(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -443,22 +444,22 @@ func TestSSESession_SendMessage(t *testing.T) {
 
 func TestSSESession_Close(t *testing.T) {
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
-	// 第一次关闭应该成功
+	// First close should succeed
 	session.Close()
-	
-	// 验证通道已关闭
+
+	// Verify channel is closed
 	select {
 	case <-session.Done:
-		// 成功
+		// success
 	case <-time.After(time.Second):
-		t.Fatal("通道未关闭")
+		t.Fatal("channel not closed")
 	}
 
-	// 第二次关闭不应该 panic
+	// Second close should not panic
 	assert.NotPanics(t, func() {
 		session.Close()
 	})
@@ -478,7 +479,7 @@ func TestNewSessionManager(t *testing.T) {
 func TestSessionManager_Add(t *testing.T) {
 	sm := NewSessionManager()
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -489,18 +490,18 @@ func TestSessionManager_Add(t *testing.T) {
 func TestSessionManager_Get(t *testing.T) {
 	sm := NewSessionManager()
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
 	sm.Add(session)
 
-	// 获取存在的会话
+	// Get existing session
 	got, ok := sm.Get(session.ID)
 	assert.True(t, ok)
 	assert.Equal(t, session.ID, got.ID)
 
-	// 获取不存在的会话
+	// Get non-existent session
 	got, ok = sm.Get("non-existent")
 	assert.False(t, ok)
 	assert.Nil(t, got)
@@ -509,7 +510,7 @@ func TestSessionManager_Get(t *testing.T) {
 func TestSessionManager_Remove(t *testing.T) {
 	sm := NewSessionManager()
 	w := httptest.NewRecorder()
-	
+
 	session, err := NewSSESession(w, "http://localhost/messages")
 	require.NoError(t, err)
 
@@ -519,15 +520,15 @@ func TestSessionManager_Remove(t *testing.T) {
 	sm.Remove(session.ID)
 	assert.Equal(t, 0, sm.Count())
 
-	// 验证会话已关闭
+	// Verify session is closed
 	select {
 	case <-session.Done:
-		// 成功
+		// success
 	case <-time.After(time.Second):
-		t.Fatal("会话未关闭")
+		t.Fatal("session not closed")
 	}
 
-	// 删除不存在的会话不应该 panic
+	// Removing a non-existent session should not panic
 	sm.Remove("non-existent")
 }
 
@@ -535,7 +536,7 @@ func TestSessionManager_Count(t *testing.T) {
 	sm := NewSessionManager()
 	assert.Equal(t, 0, sm.Count())
 
-	// 添加多个会话
+	// Add multiple sessions
 	for i := 0; i < 5; i++ {
 		w := httptest.NewRecorder()
 		session, err := NewSSESession(w, "http://localhost/messages")
@@ -548,8 +549,8 @@ func TestSessionManager_Count(t *testing.T) {
 
 func TestSessionManager_CleanExpired(t *testing.T) {
 	sm := NewSessionManager()
-	
-	// 创建会话并手动设置创建时间
+
+	// Create sessions and manually set creation time
 	sessions := make([]*SSESession, 3)
 	for i := 0; i < 3; i++ {
 		w := httptest.NewRecorder()
@@ -561,23 +562,23 @@ func TestSessionManager_CleanExpired(t *testing.T) {
 
 	assert.Equal(t, 3, sm.Count())
 
-	// 修改第一个会话的创建时间，使其过期
+	// Set the first session's creation time to make it expired
 	sessions[0].CreatedAt = time.Now().Add(-2 * time.Hour)
 
-	// 清理超过 1 小时的会话
+	// Clean sessions older than 1 hour
 	cleaned := sm.CleanExpired(time.Hour)
 	assert.Equal(t, 1, cleaned)
 	assert.Equal(t, 2, sm.Count())
 
-	// 验证过期会话已关闭
+	// Verify expired session is closed
 	select {
 	case <-sessions[0].Done:
-		// 成功
+		// success
 	case <-time.After(time.Second):
-		t.Fatal("过期会话未关闭")
+		t.Fatal("expired session not closed")
 	}
 
-	// 其他会话应该仍然存在
+	// Other sessions should still exist
 	_, ok := sm.Get(sessions[1].ID)
 	assert.True(t, ok)
 	_, ok = sm.Get(sessions[2].ID)
@@ -588,7 +589,7 @@ func TestSessionManager_ConcurrentAccess(t *testing.T) {
 	sm := NewSessionManager()
 	var wg sync.WaitGroup
 
-	// 并发添加会话
+	// Concurrently add sessions
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
@@ -619,55 +620,55 @@ func TestNewSSEClient(t *testing.T) {
 
 func TestSSEClient_applyAuth_Bearer(t *testing.T) {
 	client := NewSSEClient("http://localhost/sse", "bearer", "my-token", "")
-	
+
 	req, err := http.NewRequest("GET", "http://localhost", nil)
 	require.NoError(t, err)
 
 	client.applyAuth(req)
-	
+
 	authHeader := req.Header.Get("Authorization")
 	assert.Equal(t, "Bearer my-token", authHeader)
 }
 
 func TestSSEClient_applyAuth_Header(t *testing.T) {
 	client := NewSSEClient("http://localhost/sse", "header", "api-key-123", "X-API-Key")
-	
+
 	req, err := http.NewRequest("GET", "http://localhost", nil)
 	require.NoError(t, err)
 
 	client.applyAuth(req)
-	
+
 	assert.Equal(t, "api-key-123", req.Header.Get("X-API-Key"))
 }
 
 func TestSSEClient_applyAuth_None(t *testing.T) {
 	client := NewSSEClient("http://localhost/sse", "none", "", "")
-	
+
 	req, err := http.NewRequest("GET", "http://localhost", nil)
 	require.NoError(t, err)
 
 	client.applyAuth(req)
-	
+
 	assert.Empty(t, req.Header.Get("Authorization"))
 }
 
 func TestSSEClient_Connect(t *testing.T) {
-	// 创建 mock MCP 服务器
+	// Create mock MCP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 验证请求头
+		// Verify request headers
 		assert.Equal(t, "text/event-stream", r.Header.Get("Accept"))
 
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		
+
 		flusher, ok := w.(http.Flusher)
 		require.True(t, ok)
 
-		// 发送 endpoint 事件
+		// Send endpoint event
 		fmt.Fprintf(w, "event: endpoint\ndata: http://localhost/messages?sessionId=test-123\n\n")
 		flusher.Flush()
 
-		// 保持连接打开一段时间
+		// Keep connection open for a while
 		time.Sleep(100 * time.Millisecond)
 	}))
 	defer server.Close()
@@ -690,23 +691,23 @@ func TestSSEClient_Connect_Non200Status(t *testing.T) {
 	_, _, err := client.Connect()
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "非 200 状态")
+	assert.Contains(t, err.Error(), "non-200 status")
 }
 
 func TestSSEClient_Connect_Timeout(t *testing.T) {
-	// 使用一个立即关闭的连接来模拟超时
+	// Use an immediately closing connection to simulate timeout
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
-		// 立即关闭，不发送 endpoint 事件
+		// Close immediately without sending endpoint event
 		w.(http.Flusher).Flush()
 	}))
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	// 设置非常短的读取超时
+	// Set very short read timeout
 	client.httpClient.Timeout = 50 * time.Millisecond
-	
+
 	_, _, err := client.Connect()
 
 	assert.Error(t, err)
@@ -714,7 +715,7 @@ func TestSSEClient_Connect_Timeout(t *testing.T) {
 
 func TestSSEClient_SendMessage(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 验证请求
+		// Verify request
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
@@ -726,7 +727,7 @@ func TestSSEClient_SendMessage(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "tools/list", msg.Method)
 
-		// 返回成功响应
+		// Return success response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(JSONRPCResponse{
@@ -738,7 +739,7 @@ func TestSSEClient_SendMessage(t *testing.T) {
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	
+
 	req := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -758,7 +759,7 @@ func TestSSEClient_SendMessage_ErrorStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	
+
 	req := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -777,7 +778,7 @@ func TestSSEClient_SendMessage_NoContent(t *testing.T) {
 	defer server.Close()
 
 	client := NewSSEClient(server.URL, "none", "", "")
-	
+
 	req := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -786,7 +787,7 @@ func TestSSEClient_SendMessage_NoContent(t *testing.T) {
 
 	result, err := client.SendMessage(server.URL, req)
 	require.NoError(t, err)
-	assert.Nil(t, result) // 结果通过 SSE 返回
+	assert.Nil(t, result) // Result returned via SSE
 }
 
 func TestSSEClient_readEvents(t *testing.T) {
@@ -796,7 +797,7 @@ func TestSSEClient_readEvents(t *testing.T) {
 		{Event: "message", Data: `{"jsonrpc":"2.0","id":2,"result":{"tools":[]}}`},
 	}
 
-	// 创建 SSE 数据流
+	// Create SSE data stream
 	var buf bytes.Buffer
 	for _, evt := range eventData {
 		fmt.Fprintf(&buf, "event: %s\ndata: %s\n\n", evt.Event, evt.Data)
@@ -805,7 +806,7 @@ func TestSSEClient_readEvents(t *testing.T) {
 	client := NewSSEClient("http://localhost", "none", "", "")
 	eventCh := make(chan SSEEvent, 10)
 
-	// 使用 pipe 模拟 body
+	// Use pipe to simulate body
 	pr, pw := io.Pipe()
 	go func() {
 		buf.WriteTo(pw)
@@ -814,7 +815,7 @@ func TestSSEClient_readEvents(t *testing.T) {
 
 	go client.readEvents(pr, eventCh)
 
-	// 收集事件
+	// Collect events
 	var received []SSEEvent
 	done := make(chan struct{})
 	go func() {
@@ -831,7 +832,7 @@ func TestSSEClient_readEvents(t *testing.T) {
 		assert.Equal(t, "http://localhost/messages", received[0].Data)
 		assert.Equal(t, "message", received[1].Event)
 	case <-time.After(2 * time.Second):
-		t.Fatal("超时等待事件")
+		t.Fatal("timed out waiting for events")
 	}
 }
 
@@ -849,11 +850,11 @@ func TestNewProxy(t *testing.T) {
 
 func TestProxy_ConnectService(t *testing.T) {
 	var serverURL string
-	// 创建 mock MCP 服务器
+	// Create mock MCP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			// SSE 连接
+			// SSE connection
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.WriteHeader(http.StatusOK)
 			flusher, _ := w.(http.Flusher)
@@ -861,7 +862,7 @@ func TestProxy_ConnectService(t *testing.T) {
 			flusher.Flush()
 			time.Sleep(100 * time.Millisecond)
 		case "POST":
-			// 消息处理
+			// Message handling
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(JSONRPCResponse{
@@ -899,23 +900,23 @@ func TestProxy_ConnectService_AlreadyConnected(t *testing.T) {
 	logger := zap.NewNop()
 	proxy := NewProxy(logger)
 
-	// 第一次连接
+	// First connection
 	err := proxy.ConnectService("test-service", server.URL, "none", "", "")
 	require.NoError(t, err)
 
-	// 第二次连接应该直接返回
+	// Second connection should return immediately
 	err = proxy.ConnectService("test-service", server.URL, "none", "", "")
-	require.NoError(t, err) // 不报错，直接返回
+	require.NoError(t, err) // No error, returns immediately
 }
 
 func TestProxy_ConnectService_Failure(t *testing.T) {
 	logger := zap.NewNop()
 	proxy := NewProxy(logger)
 
-	// 连接一个不存在的地址
+	// Connect to a non-existent address
 	err := proxy.ConnectService("test-service", "http://localhost:59999", "none", "", "")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "失败")
+	assert.Contains(t, err.Error(), "failed")
 }
 
 func TestProxy_ForwardRequest(t *testing.T) {
@@ -932,7 +933,7 @@ func TestProxy_ForwardRequest(t *testing.T) {
 		case "POST":
 			var req JSONRPCRequest
 			json.NewDecoder(r.Body).Decode(&req)
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(JSONRPCResponse{
@@ -960,7 +961,7 @@ func TestProxy_ForwardRequest(t *testing.T) {
 	resp, err := proxy.ForwardRequest("test-service", req)
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Equal(t, float64(123), resp.ID) // JSON 解析后为 float64
+	assert.Equal(t, float64(123), resp.ID) // Parsed as float64 from JSON
 }
 
 func TestProxy_ForwardRequest_NotConnected(t *testing.T) {
@@ -975,7 +976,7 @@ func TestProxy_ForwardRequest_NotConnected(t *testing.T) {
 
 	_, err := proxy.ForwardRequest("non-existent", req)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "未连接")
+	assert.Contains(t, err.Error(), "not connected")
 }
 
 func TestProxy_DisconnectService(t *testing.T) {
@@ -1131,7 +1132,7 @@ func TestProxy_handleToolsList_InvalidSchema(t *testing.T) {
 	services := []ServiceInfo{
 		{
 			Name:        "service-1",
-			ToolsSchema: json.RawMessage(`invalid json`), // 无效的 JSON
+			ToolsSchema: json.RawMessage(`invalid json`), // Invalid JSON
 		},
 	}
 
@@ -1148,12 +1149,12 @@ func TestProxy_handleToolsList_InvalidSchema(t *testing.T) {
 	var result ToolsListResult
 	err = json.Unmarshal(resp.Result, &result)
 	require.NoError(t, err)
-	assert.Len(t, result.Tools, 0) // 无效的 schema 被跳过
+	assert.Len(t, result.Tools, 0) // Invalid schema is skipped
 }
 
 func TestProxy_handleToolsCall(t *testing.T) {
 	var serverURL string
-	// 创建 mock 服务
+	// Create mock service
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
@@ -1166,7 +1167,7 @@ func TestProxy_handleToolsCall(t *testing.T) {
 		case "POST":
 			var req JSONRPCRequest
 			json.NewDecoder(r.Body).Decode(&req)
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(JSONRPCResponse{
@@ -1182,7 +1183,7 @@ func TestProxy_handleToolsCall(t *testing.T) {
 	logger := zap.NewNop()
 	proxy := NewProxy(logger)
 
-	// 先连接服务
+	// Connect service first
 	err := proxy.ConnectService("test-service", server.URL, "none", "", "")
 	require.NoError(t, err)
 
@@ -1253,12 +1254,12 @@ func TestProxy_handleToolsCall_ToolNotFound(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.NotNil(t, resp.Error)
 	assert.Equal(t, ErrCodeMethodNotFound, resp.Error.Code)
-	assert.Contains(t, resp.Error.Message, "工具不存在")
+	assert.Contains(t, resp.Error.Message, "tool not found")
 }
 
 func TestProxy_handleResourcesList(t *testing.T) {
 	var serverURL string
-	// 创建 mock 服务
+	// Create mock service
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
@@ -1392,7 +1393,7 @@ func TestProxy_waitForResponse(t *testing.T) {
 		Events:      eventCh,
 	}
 
-	// 在后台发送匹配的响应
+	// Send matching response in background
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		eventCh <- SSEEvent{
@@ -1417,27 +1418,27 @@ func TestProxy_waitForResponse_NotMatching(t *testing.T) {
 		Events:      eventCh,
 	}
 
-	// 发送不匹配的响应
+	// Send non-matching response
 	go func() {
 		time.Sleep(50 * time.Millisecond)
 		eventCh <- SSEEvent{
 			Event: "message",
-			Data:  `{"jsonrpc":"2.0","id":999,"result":{}}`, // 不同的 ID
+			Data:  `{"jsonrpc":"2.0","id":999,"result":{}}`, // Different ID
 		}
-		// 关闭通道，模拟超时
+		// Close channel to simulate timeout
 		close(eventCh)
 	}()
 
 	_, err := proxy.waitForResponse(conn, 123)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "超时")
+	assert.Contains(t, err.Error(), "timeout")
 }
 
 // ═══════════════════════════════════════════════════════════
 // Mock and Integration Tests
 // ═══════════════════════════════════════════════════════════
 
-// MockSSEClient 用于测试的 SSE 客户端 mock
+// MockSSEClient is a mock SSE client for testing.
 type MockSSEClient struct {
 	ConnectFunc     func() (string, <-chan SSEEvent, error)
 	SendMessageFunc func(string, interface{}) (*json.RawMessage, error)
@@ -1471,13 +1472,13 @@ func TestProxy_ConcurrentRequests(t *testing.T) {
 		case "POST":
 			var req JSONRPCRequest
 			json.NewDecoder(r.Body).Decode(&req)
-			
+
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			
-			// 模拟处理延迟
+
+			// Simulate processing delay
 			time.Sleep(10 * time.Millisecond)
-			
+
 			json.NewEncoder(w).Encode(JSONRPCResponse{
 				JSONRPC: "2.0",
 				ID:      req.ID,
@@ -1518,31 +1519,38 @@ func TestProxy_ConcurrentRequests(t *testing.T) {
 // ═══════════════════════════════════════════════════════════
 
 func TestSSEEndpointHandler(t *testing.T) {
-	// 测试 SSE 端点处理器
+	written := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 验证支持 Flusher
 		flusher, ok := w.(http.Flusher)
 		require.True(t, ok)
 
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
 
-		// 发送 endpoint 事件
 		fmt.Fprintf(w, "event: endpoint\ndata: http://localhost/messages?sessionId=%s\n\n", uuid.New().String())
 		flusher.Flush()
 
-		// 保持连接
+		close(written)
 		<-r.Context().Done()
 	})
 
-	req := httptest.NewRequest("GET", "/sse", nil)
+	req := httptest.NewRequest("GET", "/sse", nil).WithContext(ctx)
 	req.Header.Set("Accept", "text/event-stream")
 	w := httptest.NewRecorder()
 
 	go handler(w, req)
 
-	// 读取响应
-	time.Sleep(100 * time.Millisecond)
+	select {
+	case <-written:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for SSE handler to write")
+	}
+
+	cancel()
+
 	body := w.Body.String()
 	assert.Contains(t, body, "event: endpoint")
 	assert.Contains(t, body, "http://localhost/messages")
@@ -1553,21 +1561,21 @@ func TestSSEEndpointHandler(t *testing.T) {
 // ═══════════════════════════════════════════════════════════
 
 func TestUUIDGeneration(t *testing.T) {
-	// 测试 UUID 生成
+	// Test UUID generation
 	id1 := uuid.New().String()
 	id2 := uuid.New().String()
-	
+
 	assert.NotEmpty(t, id1)
 	assert.NotEmpty(t, id2)
 	assert.NotEqual(t, id1, id2)
-	
-	// 验证 UUID 格式
+
+	// Verify UUID format
 	_, err := uuid.Parse(id1)
 	assert.NoError(t, err)
 }
 
 func TestJSONRawMessageHandling(t *testing.T) {
-	// 测试 json.RawMessage 的处理
+	// Test json.RawMessage handling
 	original := map[string]interface{}{
 		"key1": "value1",
 		"key2": 123,
@@ -1582,12 +1590,12 @@ func TestJSONRawMessageHandling(t *testing.T) {
 
 	raw := json.RawMessage(data)
 
-	// 验证可以直接序列化
+	// Verify direct serialization works
 	data2, err := json.Marshal(raw)
 	require.NoError(t, err)
 	assert.Equal(t, data, data2)
 
-	// 验证可以反序列化
+	// Verify deserialization works
 	var decoded map[string]interface{}
 	err = json.Unmarshal(raw, &decoded)
 	require.NoError(t, err)
@@ -1633,7 +1641,7 @@ func BenchmarkJSONRPCResponse_Marshal(b *testing.B) {
 
 func BenchmarkSessionManager_Concurrent(b *testing.B) {
 	sm := NewSessionManager()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		i := 0
@@ -1655,42 +1663,42 @@ func BenchmarkSessionManager_Concurrent(b *testing.B) {
 
 func TestErrorResponseFormatting(t *testing.T) {
 	tests := []struct {
-		name       string
-		code       int
-		message    string
-		wantCode   int
-		wantMsg    string
+		name     string
+		message  string
+		wantMsg  string
+		code     int
+		wantCode int
 	}{
 		{
-			name:     "解析错误",
+			name:     "parse error",
 			code:     ErrCodeParseError,
 			message:  "Invalid JSON",
 			wantCode: -32700,
 			wantMsg:  "Invalid JSON",
 		},
 		{
-			name:     "无效请求",
+			name:     "invalid request",
 			code:     ErrCodeInvalidRequest,
 			message:  "Missing jsonrpc field",
 			wantCode: -32600,
 			wantMsg:  "Missing jsonrpc field",
 		},
 		{
-			name:     "方法未找到",
+			name:     "method not found",
 			code:     ErrCodeMethodNotFound,
 			message:  "Method not found: test",
 			wantCode: -32601,
 			wantMsg:  "Method not found: test",
 		},
 		{
-			name:     "无效参数",
+			name:     "invalid params",
 			code:     ErrCodeInvalidParams,
 			message:  "Missing required param",
 			wantCode: -32602,
 			wantMsg:  "Missing required param",
 		},
 		{
-			name:     "内部错误",
+			name:     "internal error",
 			code:     ErrCodeInternalError,
 			message:  "Database connection failed",
 			wantCode: -32603,
@@ -1701,7 +1709,7 @@ func TestErrorResponseFormatting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resp := NewErrorResponse("test-id", tt.code, tt.message)
-			
+
 			assert.Equal(t, JSONRPCVersion, resp.JSONRPC)
 			assert.Equal(t, "test-id", resp.ID)
 			require.NotNil(t, resp.Error)
@@ -1709,10 +1717,10 @@ func TestErrorResponseFormatting(t *testing.T) {
 			assert.Equal(t, tt.wantMsg, resp.Error.Message)
 			assert.Nil(t, resp.Result)
 
-			// 验证 JSON 序列化
+			// Verify JSON serialization
 			data, err := json.Marshal(resp)
 			require.NoError(t, err)
-			
+
 			var decoded JSONRPCResponse
 			err = json.Unmarshal(data, &decoded)
 			require.NoError(t, err)
@@ -1727,19 +1735,19 @@ func TestErrorResponseFormatting(t *testing.T) {
 
 func TestSSEEventParsing(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		events   []SSEEvent
+		name   string
+		input  string
+		events []SSEEvent
 	}{
 		{
-			name:  "单个事件",
+			name:  "single event",
 			input: "event: message\ndata: hello\n\n",
 			events: []SSEEvent{
 				{Event: "message", Data: "hello"},
 			},
 		},
 		{
-			name:  "多个事件",
+			name:  "multiple events",
 			input: "event: endpoint\ndata: url1\n\nevent: message\ndata: data1\n\n",
 			events: []SSEEvent{
 				{Event: "endpoint", Data: "url1"},
@@ -1747,12 +1755,12 @@ func TestSSEEventParsing(t *testing.T) {
 			},
 		},
 		{
-			name:   "空事件",
+			name:   "empty event",
 			input:  "\n",
 			events: []SSEEvent{},
 		},
 		{
-			name:  "带JSON数据的事件",
+			name:  "event with JSON data",
 			input: "event: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":1}\n\n",
 			events: []SSEEvent{
 				{Event: "message", Data: `{"jsonrpc":"2.0","id":1}`},
@@ -1762,7 +1770,7 @@ func TestSSEEventParsing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 使用 bufio.Scanner 模拟 SSE 解析
+			// Use bufio.Scanner to simulate SSE parsing
 			scanner := bufio.NewScanner(strings.NewReader(tt.input))
 			var events []SSEEvent
 			var currentEvent, currentData string
@@ -1810,8 +1818,6 @@ func mustMarshalJSON(v interface{}) json.RawMessage {
 	return json.RawMessage(data)
 }
 
-
-
 // ═══════════════════════════════════════════════════════════
 // Integration Tests
 // ═══════════════════════════════════════════════════════════
@@ -1821,7 +1827,7 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
-			// SSE 连接
+			// SSE connection
 			w.Header().Set("Content-Type", "text/event-stream")
 			w.WriteHeader(http.StatusOK)
 			flusher, ok := w.(http.Flusher)
@@ -1833,14 +1839,14 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 			messageURL := fmt.Sprintf("%s/messages?sessionId=%s", serverURL, uuid.New().String())
 			fmt.Fprintf(w, "event: endpoint\ndata: %s\n\n", messageURL)
 			flusher.Flush()
-			
-			// 保持连接打开一段时间
+
+			// Keep connection open for a while
 			time.Sleep(200 * time.Millisecond)
 
 		case "POST":
-			// 处理消息
+			// Handle messages
 			body, _ := io.ReadAll(r.Body)
-			
+
 			var req JSONRPCRequest
 			if err := json.Unmarshal(body, &req); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
@@ -1849,7 +1855,7 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			
+
 			var result interface{}
 			switch req.Method {
 			case "initialize":
@@ -1877,11 +1883,11 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 	logger := zap.NewNop()
 	proxy := NewProxy(logger)
 
-	// 连接服务
+	// Connect service
 	err := proxy.ConnectService("mock-service", server.URL, "none", "", "")
 	require.NoError(t, err)
 
-	// 发送初始化请求
+	// Send initialize request
 	initReq := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      1,
@@ -1893,7 +1899,7 @@ func TestIntegration_FullRequestFlow(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Nil(t, resp.Error)
 
-	// 发送工具列表请求
+	// Send tools list request
 	toolsReq := &JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      2,

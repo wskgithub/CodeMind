@@ -4,13 +4,13 @@ import "time"
 
 // SystemMetric stores server resource metrics.
 type SystemMetric struct {
-	ID         int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	CreatedAt  time.Time `gorm:"not null;autoCreateTime;index" json:"created_at"`
 	HostName   string    `gorm:"size:100;not null;index" json:"host_name"`
 	MetricType string    `gorm:"size:50;not null;index" json:"metric_type"`
 	MetricName string    `gorm:"size:100;not null" json:"metric_name"`
-	Value      float64   `gorm:"not null" json:"value"`
 	Labels     string    `gorm:"size:500;default:''" json:"labels"`
-	CreatedAt  time.Time `gorm:"not null;autoCreateTime;index" json:"created_at"`
+	ID         int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	Value      float64   `gorm:"not null" json:"value"`
 }
 
 // TableName returns table name.
@@ -18,6 +18,7 @@ func (SystemMetric) TableName() string {
 	return "system_metrics"
 }
 
+// System metric type constants.
 const (
 	MetricTypeCPU     = "cpu"
 	MetricTypeMemory  = "memory"
@@ -28,19 +29,19 @@ const (
 
 // SystemMetricsSummary represents system metrics summary.
 type SystemMetricsSummary struct {
+	RecordedAt  time.Time       `json:"recorded_at"`
 	CPUUsage    *CPUMetrics     `json:"cpu_usage"`
 	MemoryUsage *MemoryMetrics  `json:"memory_usage"`
-	DiskUsage   []DiskMetrics   `json:"disk_usage"`
 	NetworkIO   *NetworkMetrics `json:"network_io"`
 	LoadAverage *LoadMetrics    `json:"load_average"`
-	RecordedAt  time.Time       `json:"recorded_at"`
+	DiskUsage   []DiskMetrics   `json:"disk_usage"`
 }
 
 // CPUMetrics represents CPU metrics.
 type CPUMetrics struct {
+	ModelName    string  `json:"model_name"`
 	UsagePercent float64 `json:"usage_percent"`
 	CoreCount    int     `json:"core_count"`
-	ModelName    string  `json:"model_name"`
 }
 
 // MemoryMetrics represents memory metrics.

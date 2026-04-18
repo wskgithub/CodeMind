@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert, Dropdown } from 'antd';
 import { UserOutlined, LockOutlined, LockFilled, PlayCircleOutlined, SunOutlined, MoonOutlined, TranslationOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/i18n';
+import { Form, Input, Button, message, ConfigProvider, ThemeConfig, Alert, Dropdown } from 'antd';
 import axios from 'axios';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/i18n';
+import { translateErrorCode } from '@/services/request';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
+
 
 // theme config for login page
 const getLoginTheme = (isDark: boolean): ThemeConfig => ({
@@ -40,7 +43,7 @@ const getLoginTheme = (isDark: boolean): ThemeConfig => ({
   },
 });
 
-// format remaining time - 将在组件内使用 hook 版本
+// format remaining time - hook version used inside component
 type TFunction = (key: string, options?: Record<string, unknown>) => string;
 const formatRemainingTime = (seconds: number, t: TFunction): string => {
   if (seconds < 60) return t('time.seconds', { count: seconds });
@@ -223,7 +226,7 @@ const LoginPage: React.FC = () => {
   const { themeMode, toggleTheme, setLanguage } = useAppStore();
   const isDark = themeMode === 'dark';
 
-  // 语言切换菜单
+  // Language switch menu
   const languageMenuItems = SUPPORTED_LANGUAGES.map((lang) => ({
     key: lang.code,
     label: lang.nativeName,
@@ -293,12 +296,13 @@ const LoginPage: React.FC = () => {
         } else if (status === 401) {
           if (data?.data?.fail_count > 0) {
             const remainingAttempts = (data.data.max_fail_count || 5) - data.data.fail_count;
-            message.error(t('login.remainingAttempts', { message: data.message, count: remainingAttempts }));
+            const translatedMsg = translateErrorCode(data?.code, t('error.invalidCredentials'));
+            message.error(t('login.remainingAttempts', { message: translatedMsg, count: remainingAttempts }));
           } else {
-            message.error(data?.message || t('error.invalidCredentials'));
+            message.error(translateErrorCode(data?.code, t('error.invalidCredentials')));
           }
         } else {
-          message.error(data?.message || t('login.loginFailed'));
+          message.error(translateErrorCode(data?.code, t('login.loginFailed')));
         }
       }
     } finally {
@@ -429,7 +433,7 @@ const LoginPage: React.FC = () => {
         <div style={{ paddingLeft: 10 }}>{`.connect()`}</div>
       </div>
 
-      {/* 右上角工具栏：语言切换 + 主题切换 */}
+      {/* Top-right toolbar: language switch + theme toggle */}
       <div style={{ position: 'fixed', top: 24, right: 24, display: 'flex', gap: 12, zIndex: 100 }}>
         <Dropdown menu={{ items: languageMenuItems }} placement="bottomRight">
           <Button

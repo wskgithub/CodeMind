@@ -4,92 +4,92 @@ import "time"
 
 // LoginResponse represents login response.
 type LoginResponse struct {
-	Token     string       `json:"token"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	User      UserBrief    `json:"user"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Token     string    `json:"token"`
+	User      UserBrief `json:"user"`
 }
 
 // LoginErrorResponse represents login error response with lock info.
 type LoginErrorResponse struct {
-	Code          int    `json:"code"`
 	Message       string `json:"message"`
-	Locked        bool   `json:"locked"`
+	Code          int    `json:"code"`
 	RemainingTime int64  `json:"remaining_time"`
 	FailCount     int    `json:"fail_count"`
 	MaxFailCount  int    `json:"max_fail_count"`
+	Locked        bool   `json:"locked"`
 }
 
 // UserBrief represents brief user info.
 type UserBrief struct {
-	ID          int64      `json:"id"`
+	Department  *DeptBrief `json:"department,omitempty"`
 	Username    string     `json:"username"`
 	DisplayName string     `json:"display_name"`
 	Role        string     `json:"role"`
-	Department  *DeptBrief `json:"department,omitempty"`
+	ID          int64      `json:"id"`
 }
 
 // UserDetail represents detailed user info.
 type UserDetail struct {
-	ID              int64      `json:"id"`
-	Username        string     `json:"username"`
-	DisplayName     string     `json:"display_name"`
-	Email           *string    `json:"email"`
-	Phone           *string    `json:"phone"`
-	AvatarURL       *string    `json:"avatar_url"`
-	Role            string     `json:"role"`
-	DepartmentID    *int64     `json:"department_id"`
-	Department      *DeptBrief `json:"department,omitempty"`
-	Status          int16      `json:"status"`
-	LastLoginAt     *time.Time `json:"last_login_at"`
-	LoginFailCount  int        `json:"login_fail_count"`
-	LockedUntil     *time.Time `json:"locked_until"`
-	CreatedAt       time.Time  `json:"created_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+	Department     *DeptBrief `json:"department,omitempty"`
+	LockedUntil    *time.Time `json:"locked_until"`
+	Email          *string    `json:"email"`
+	Phone          *string    `json:"phone"`
+	AvatarURL      *string    `json:"avatar_url"`
+	LastLoginAt    *time.Time `json:"last_login_at"`
+	DepartmentID   *int64     `json:"department_id"`
+	Role           string     `json:"role"`
+	DisplayName    string     `json:"display_name"`
+	Username       string     `json:"username"`
+	ID             int64      `json:"id"`
+	LoginFailCount int        `json:"login_fail_count"`
+	Status         int16      `json:"status"`
 }
 
 // LoginLockStatusResponse represents login lock status.
 type LoginLockStatusResponse struct {
-	LoginFailCount int        `json:"login_fail_count"`
-	Locked         bool       `json:"locked"`
 	LockedUntil    *time.Time `json:"locked_until"`
+	LoginFailCount int        `json:"login_fail_count"`
 	RemainingTime  int64      `json:"remaining_time"`
+	Locked         bool       `json:"locked"`
 }
 
 // DeptBrief represents brief department info.
 type DeptBrief struct {
-	ID   int64  `json:"id"`
 	Name string `json:"name"`
+	ID   int64  `json:"id"`
 }
 
 // DeptTree represents department tree structure.
 type DeptTree struct {
-	ID          int64      `json:"id"`
-	Name        string     `json:"name"`
 	Description *string    `json:"description"`
 	Manager     *UserBrief `json:"manager"`
+	Name        string     `json:"name"`
+	Children    []DeptTree `json:"children"`
+	ID          int64      `json:"id"`
 	UserCount   int        `json:"user_count"`
 	Status      int16      `json:"status"`
-	Children    []DeptTree `json:"children"`
 }
 
 // APIKeyResponse represents API key list item.
 type APIKeyResponse struct {
-	ID         int64      `json:"id"`
-	Name       string     `json:"name"`
-	KeyPrefix  string     `json:"key_prefix"`
-	Status     int16      `json:"status"`
+	CreatedAt  time.Time  `json:"created_at"`
 	LastUsedAt *time.Time `json:"last_used_at"`
 	ExpiresAt  *time.Time `json:"expires_at"`
-	CreatedAt  time.Time  `json:"created_at"`
+	Name       string     `json:"name"`
+	KeyPrefix  string     `json:"key_prefix"`
+	ID         int64      `json:"id"`
+	Status     int16      `json:"status"`
 }
 
 // APIKeyCreateResponse represents create API key response with full key.
 type APIKeyCreateResponse struct {
-	ID        int64      `json:"id"`
+	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt *time.Time `json:"expires_at"`
 	Name      string     `json:"name"`
 	Key       string     `json:"key"`
 	KeyPrefix string     `json:"key_prefix"`
-	ExpiresAt *time.Time `json:"expires_at"`
-	CreatedAt time.Time  `json:"created_at"`
+	ID        int64      `json:"id"`
 }
 
 // APIKeyCopyResponse represents copy API key response.
@@ -99,12 +99,12 @@ type APIKeyCopyResponse struct {
 
 // StatsOverview represents usage overview.
 type StatsOverview struct {
-	Today          PeriodStats `json:"today"`
-	ThisMonth      PeriodStats `json:"this_month"`
-	TotalUsers     int64       `json:"total_users"`
-	TotalDepts     int64       `json:"total_departments"`
-	TotalAPIKeys   int64       `json:"total_api_keys"`
-	SystemStatus   string      `json:"system_status"`
+	SystemStatus string      `json:"system_status"`
+	Today        PeriodStats `json:"today"`
+	ThisMonth    PeriodStats `json:"this_month"`
+	TotalUsers   int64       `json:"total_users"`
+	TotalDepts   int64       `json:"total_departments"`
+	TotalAPIKeys int64       `json:"total_api_keys"`
 }
 
 // PeriodStats represents statistics for a time period.
@@ -152,17 +152,17 @@ type UsageExportItem struct {
 
 // RankingItem represents ranking item.
 type RankingItem struct {
-	Rank        int    `json:"rank"`
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	TotalTokens int64  `json:"total_tokens"`
-	RequestCount int64 `json:"request_count"`
+	Name         string `json:"name"`
+	Rank         int    `json:"rank"`
+	ID           int64  `json:"id"`
+	TotalTokens  int64  `json:"total_tokens"`
+	RequestCount int64  `json:"request_count"`
 }
 
 // KeyUsageItem represents API key usage statistics item.
 type KeyUsageItem struct {
-	ID               int64  `json:"id"`
 	Name             string `json:"name"`
+	ID               int64  `json:"id"`
 	PromptTokens     int64  `json:"prompt_tokens"`
 	CompletionTokens int64  `json:"completion_tokens"`
 	TotalTokens      int64  `json:"total_tokens"`
@@ -198,38 +198,38 @@ type LimitProgressResponse struct {
 
 // LimitProgressItem represents progress info for a single limit rule.
 type LimitProgressItem struct {
-	RuleID          int64    `json:"rule_id"`
+	CycleStartAt    *int64   `json:"cycle_start_at"`
+	ResetAt         *int64   `json:"reset_at"`
+	ResetInHours    *float64 `json:"reset_in_hours"`
 	Period          string   `json:"period"`
+	RuleID          int64    `json:"rule_id"`
 	PeriodHours     int      `json:"period_hours"`
 	MaxTokens       int64    `json:"max_tokens"`
 	UsedTokens      int64    `json:"used_tokens"`
 	RemainingTokens int64    `json:"remaining_tokens"`
 	UsagePercent    int      `json:"usage_percent"`
-	CycleStartAt    *int64   `json:"cycle_start_at"`
-	ResetAt         *int64   `json:"reset_at"`
-	ResetInHours    *float64 `json:"reset_in_hours"`
 	Exceeded        bool     `json:"exceeded"`
 }
 
 // LLMBackendResponse represents LLM backend info.
 type LLMBackendResponse struct {
-	ID                   int64  `json:"id"`
+	HealthCheckURL       string `json:"health_check_url"`
 	Name                 string `json:"name"`
 	DisplayName          string `json:"display_name"`
 	BaseURL              string `json:"base_url"`
-	HasAPIKey            bool   `json:"has_api_key"`
+	UpdatedAt            string `json:"updated_at"`
 	Format               string `json:"format"`
-	Weight               int    `json:"weight"`
-	MaxConcurrency       int    `json:"max_concurrency"`
+	CreatedAt            string `json:"created_at"`
+	ModelPatterns        string `json:"model_patterns"`
+	TimeoutSeconds       int    `json:"timeout_seconds"`
 	ActiveConnections    int    `json:"active_connections"`
+	ID                   int64  `json:"id"`
+	StreamTimeoutSeconds int    `json:"stream_timeout_seconds"`
+	MaxConcurrency       int    `json:"max_concurrency"`
+	Weight               int    `json:"weight"`
 	Status               int16  `json:"status"`
 	Healthy              bool   `json:"healthy"`
-	HealthCheckURL       string `json:"health_check_url"`
-	TimeoutSeconds       int    `json:"timeout_seconds"`
-	StreamTimeoutSeconds int    `json:"stream_timeout_seconds"`
-	ModelPatterns        string `json:"model_patterns"`
-	CreatedAt            string `json:"created_at"`
-	UpdatedAt            string `json:"updated_at"`
+	HasAPIKey            bool   `json:"has_api_key"`
 }
 
 // PlatformModelInfo represents platform model info for users.
@@ -243,7 +243,6 @@ type PlatformModelInfo struct {
 
 // MCPServiceResponse represents MCP service info.
 type MCPServiceResponse struct {
-	ID            int64  `json:"id"`
 	Name          string `json:"name"`
 	DisplayName   string `json:"display_name"`
 	Description   string `json:"description"`
@@ -251,10 +250,11 @@ type MCPServiceResponse struct {
 	TransportType string `json:"transport_type"`
 	Status        string `json:"status"`
 	AuthType      string `json:"auth_type"`
-	ToolsCount    int    `json:"tools_count"`
-	Connected     bool   `json:"connected"`
 	CreatedAt     string `json:"created_at"`
 	UpdatedAt     string `json:"updated_at"`
+	ID            int64  `json:"id"`
+	ToolsCount    int    `json:"tools_count"`
+	Connected     bool   `json:"connected"`
 }
 
 // MCPToolInfo represents MCP tool brief info.
@@ -266,11 +266,11 @@ type MCPToolInfo struct {
 
 // MCPAccessRuleResponse represents MCP access rule response.
 type MCPAccessRuleResponse struct {
-	ID          int64  `json:"id"`
-	ServiceID   int64  `json:"service_id"`
 	ServiceName string `json:"service_name"`
 	TargetType  string `json:"target_type"`
-	TargetID    int64  `json:"target_id"`
 	TargetName  string `json:"target_name"`
+	ID          int64  `json:"id"`
+	ServiceID   int64  `json:"service_id"`
+	TargetID    int64  `json:"target_id"`
 	Allowed     bool   `json:"allowed"`
 }

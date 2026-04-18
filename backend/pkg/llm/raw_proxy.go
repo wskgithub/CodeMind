@@ -50,7 +50,7 @@ var thinkTagRegex = regexp.MustCompile(`(?s)<think>.*?</think>\s*`)
 
 // CleanThinkingFromHistory removes thinking content from assistant messages in conversation history.
 // Handles both inline <think>...</think> tags and separate reasoning_content fields.
-func CleanThinkingFromHistory(rawBody []byte) []byte {
+func CleanThinkingFromHistory(rawBody []byte) []byte { //nolint:gocyclo // complex business logic.
 	var body map[string]json.RawMessage
 	if err := json.Unmarshal(rawBody, &body); err != nil {
 		return rawBody
@@ -70,9 +70,9 @@ func CleanThinkingFromHistory(rawBody []byte) []byte {
 	for i, msg := range messages {
 		var role string
 		if roleRaw, ok := msg["role"]; ok {
-			json.Unmarshal(roleRaw, &role)
+			_ = json.Unmarshal(roleRaw, &role)
 		}
-		if role != "assistant" {
+		if role != RoleAssistant {
 			continue
 		}
 

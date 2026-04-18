@@ -1,7 +1,7 @@
-// 中文语言资源文件
-// 按功能模块分组，便于维护
+// Chinese language resource file
+// Grouped by feature module for easier maintenance
 export default {
-  // 通用词汇（按钮、状态、操作等）
+  // Common terms (buttons, statuses, actions, etc.)
   common: {
     confirm: '确认',
     cancel: '取消',
@@ -65,7 +65,7 @@ export default {
     unknown: '未知',
   },
 
-  // 错误消息（对应后端 errcode）
+  // Error messages (mapped to backend error codes)
   error: {
     invalidCredentials: '用户名或密码错误',
     tokenExpired: '登录已过期，请重新登录',
@@ -105,7 +105,7 @@ export default {
     copyFailed: '复制失败，请手动复制',
   },
 
-  // 操作成功提示
+  // Success messages
   success: {
     saved: '保存成功',
     created: '创建成功',
@@ -119,7 +119,7 @@ export default {
     disabled: '已禁用',
   },
 
-  // 登录页
+  // Login page
   login: {
     tagline: '企业级 AI 编码平台',
     subtitle: '智能编码新纪元',
@@ -139,7 +139,7 @@ export default {
     codeSnippetComment: '// AI Gateway',
   },
 
-  // 时间格式
+  // Time formats
   time: {
     seconds: '{{count}}秒',
     minutes: '{{count}}分钟',
@@ -148,7 +148,7 @@ export default {
     days: '{{count}}天',
   },
 
-  // 主题切换
+  // Theme toggle
   theme: {
     toggleLight: '切换到亮色模式',
     toggleDark: '切换到暗色模式',
@@ -156,7 +156,7 @@ export default {
     dark: '暗色',
   },
 
-  // 语言切换
+  // Language switch
   language: {
     label: '语言',
     switchTo: '切换到 {{name}}',
@@ -164,7 +164,7 @@ export default {
     english: 'English',
   },
 
-  // 导航菜单
+  // Navigation menu
   menu: {
     overview: '总览',
     apiKey: 'API Key',
@@ -184,7 +184,7 @@ export default {
     training: '训练数据',
   },
 
-  // 用户菜单（右上角下拉）
+  // User menu (top-right dropdown)
   userMenu: {
     profile: '个人中心',
     usage: '用量统计',
@@ -192,7 +192,7 @@ export default {
     logoutConfirm: '确认退出登录？',
   },
 
-  // 首页（未登录/着陆页）
+  // Home page (landing page)
   home: {
     badge: '企业级 AI 编码平台 v{{version}}',
     subtitle: '智能编码新纪元',
@@ -264,7 +264,7 @@ export default {
     },
   },
 
-  // 仪表盘
+  // Dashboard
   dashboard: {
     title: '总览',
     welcome: '欢迎使用 CodeMind',
@@ -300,7 +300,7 @@ export default {
     },
   },
 
-  // API Key 管理
+  // API Key management
   keys: {
     title: 'API Key 管理',
     description: '管理您的 API 密钥，用于接入 CodeMind AI 编码服务',
@@ -341,7 +341,7 @@ export default {
     confirmEnable: '确认启用此 API Key？',
   },
 
-  // 用量统计
+  // Usage statistics
   usage: {
     title: '用量统计',
     description: '查看 Token 消耗、请求次数等详细用量数据',
@@ -407,7 +407,7 @@ export default {
     },
   },
 
-  // 模型服务
+  // Model services
   models: {
     title: '模型服务',
     description: '查看可用的 LLM 模型列表',
@@ -497,7 +497,7 @@ export default {
     copy: '复制',
   },
 
-  // 个人中心
+  // Profile
   profile: {
     title: '个人中心',
     description: '查看和修改个人信息',
@@ -536,7 +536,7 @@ export default {
     passwordChanged: '密码修改成功',
   },
 
-  // 用户管理（管理员）
+  // User management (admin)
   users: {
     title: '用户管理',
     description: '管理平台用户，分配角色和部门',
@@ -616,7 +616,7 @@ export default {
     createSuccess: '用户创建成功',
   },
 
-  // 部门管理
+  // Department management
   departments: {
     title: '部门管理',
     description: '管理组织部门结构',
@@ -651,7 +651,7 @@ export default {
     confirmDelete: '确认删除部门 {{name}}？',
   },
 
-  // 限额管理
+  // Quota management
   limits: {
     title: '限额管理',
     description: '配置全局、部门、用户三级 Token 限额',
@@ -713,7 +713,7 @@ export default {
     formatHoursMonthly: '720 小时 (每月)',
   },
 
-  // LLM 节点管理
+  // LLM backend management
   backends: {
     title: 'LLM 节点',
     description: '管理多个 LLM 后端服务商与模型路由',
@@ -794,7 +794,7 @@ export default {
     },
   },
 
-  // 模型模板
+  // Model templates
   templates: {
     title: '模型模板',
     description: '预置第三方服务商接入模板',
@@ -840,7 +840,7 @@ export default {
     },
   },
 
-  // MCP 服务管理
+  // MCP service management
   mcp: {
     title: 'MCP 服务',
     description: '管理 Model Context Protocol 工具服务',
@@ -920,7 +920,7 @@ export default {
     },
   },
 
-  // 平台配置
+  // Platform configuration
   platform: {
     title: '平台配置',
     description: '配置平台基础参数与安全策略',
@@ -935,7 +935,7 @@ export default {
     endpointHint: '用户在编程工具中配置时，根据所使用的协议选择对应的 Base URL 即可接入。',
   },
 
-  // 系统管理
+  // System management
   system: {
     title: '系统管理',
     pageDescription: '系统配置、公告管理与审计日志查看',
@@ -1019,7 +1019,7 @@ export default {
     },
   },
 
-  // 系统监控
+  // System monitoring
   monitor: {
     title: '系统监控',
     description: '实时监控系统资源与服务状态',
@@ -1101,7 +1101,7 @@ export default {
     },
   },
 
-  // 文档管理
+  // Document management
   docsAdmin: {
     title: '文档管理',
     description: '管理平台的接入文档与使用说明',
@@ -1192,7 +1192,7 @@ export default {
     },
   },
 
-  // 用户端接入文档
+  // User-facing documentation
   docs: {
     title: '接入文档',
     sidebarTitle: '接入指南',
@@ -1216,7 +1216,7 @@ export default {
     },
   },
 
-  // 训练数据
+  // Training data
   training: {
     title: '训练数据',
     description: '管理 LLM 训练语料数据',
@@ -1274,14 +1274,14 @@ export default {
     },
   },
 
-  // 用量进度卡片
+  // Usage progress cards
   usageProgress: {
     daily: '今日用量',
     monthly: '本月用量',
     concurrency: '当前并发',
     unlimited: '无限制',
     usedOf: '{{used}} / {{total}}',
-    // 周期标签
+    // Period labels
     periodDaily: '每日',
     periodWeekly: '每周',
     periodMonthly: '每月',
@@ -1289,7 +1289,7 @@ export default {
     quota: '限额',
     hourQuota: '{{hours}} 小时限额',
     dayQuota: '{{days}} 天限额',
-    // 重置时间
+    // Reset time
     notStarted: '未启动',
     resetSoon: '即将重置',
     minutes: '{{count}} 分钟',
@@ -1298,7 +1298,7 @@ export default {
     daysHours: '{{days}} 天 {{hours}} 小时',
     resetIn: '{{time}} 后重置',
     waitingForUsage: '等待使用后开始计时',
-    // 提示
+    // Tooltips
     quotaExceeded: '已达限额，等待重置',
     cycleInProgress: '周期进行中',
   },

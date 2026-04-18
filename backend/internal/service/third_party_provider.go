@@ -202,7 +202,7 @@ func (s *ThirdPartyProviderService) ListProviders(userID int64) ([]model.UserThi
 }
 
 // UpdateProvider updates a third-party provider.
-func (s *ThirdPartyProviderService) UpdateProvider(
+func (s *ThirdPartyProviderService) UpdateProvider( //nolint:gocyclo // complex business logic.
 	id, userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey *string,
 	models []string, format *string, status *int16,
 ) error {
@@ -306,7 +306,7 @@ const (
 // ResolveThirdPartyModel resolves third-party service routing by model name.
 // Returns nil if the model is not a third-party model.
 func (s *ThirdPartyProviderService) ResolveThirdPartyModel(
-	ctx context.Context, userID int64, modelName string, requestFormat string,
+	ctx context.Context, userID int64, modelName string, _ string,
 ) *model.ThirdPartyRouteInfo {
 	cacheKey := fmt.Sprintf("%s%d", thirdPartyRouteCachePrefix, userID)
 	cached, err := s.rdb.HGet(ctx, cacheKey, modelName).Result()
@@ -426,7 +426,7 @@ func (s *ThirdPartyProviderService) ListPlatformModels() ([]dto.PlatformModelInf
 		return nil, errcode.ErrInternal
 	}
 
-	var result []dto.PlatformModelInfo
+	result := make([]dto.PlatformModelInfo, 0, len(backends))
 	for _, b := range backends {
 		if b.Status != model.LLMBackendEnabled {
 			continue

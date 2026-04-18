@@ -2,8 +2,10 @@ package mcp
 
 import "encoding/json"
 
+// JSONRPCVersion is the JSON-RPC protocol version.
 const JSONRPCVersion = "2.0"
 
+// MCPProtocolVersion is the MCP protocol version.
 const MCPProtocolVersion = "2024-11-05"
 
 // JSONRPCRequest represents a JSON-RPC request message.
@@ -16,10 +18,10 @@ type JSONRPCRequest struct {
 
 // JSONRPCResponse represents a JSON-RPC response message.
 type JSONRPCResponse struct {
-	JSONRPC string          `json:"jsonrpc"`
 	ID      interface{}     `json:"id"`
-	Result  json.RawMessage `json:"result,omitempty"`
 	Error   *JSONRPCError   `json:"error,omitempty"`
+	JSONRPC string          `json:"jsonrpc"`
+	Result  json.RawMessage `json:"result,omitempty"`
 }
 
 // JSONRPCNotification represents a JSON-RPC notification (no ID).
@@ -31,11 +33,12 @@ type JSONRPCNotification struct {
 
 // JSONRPCError represents a JSON-RPC error object.
 type JSONRPCError struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+	Message string      `json:"message"`
+	Code    int         `json:"code"`
 }
 
+// JSON-RPC standard error codes.
 const (
 	ErrCodeParseError     = -32700
 	ErrCodeInvalidRequest = -32600
@@ -44,6 +47,7 @@ const (
 	ErrCodeInternalError  = -32603
 )
 
+// MCP protocol method name constants.
 const (
 	MethodInitialize    = "initialize"
 	MethodInitialized   = "notifications/initialized"
@@ -115,9 +119,9 @@ type PromptsCapability struct {
 
 // Tool represents an MCP tool definition.
 type Tool struct {
+	InputSchema interface{} `json:"inputSchema"`
 	Name        string      `json:"name"`
 	Description string      `json:"description,omitempty"`
-	InputSchema interface{} `json:"inputSchema"` // JSON Schema
 }
 
 // ToolsListResult represents the tools/list response.

@@ -25,8 +25,7 @@ func NewMCPAdminHandler(mcpService *service.MCPService, logger *zap.Logger) *MCP
 	}
 }
 
-// ListServices returns MCP service list.
-// GET /api/v1/mcp/services
+// ListServices returns the list of MCP services (GET /api/v1/mcp/services).
 func (h *MCPAdminHandler) ListServices(c *gin.Context) {
 	status := c.Query("status")
 	services, err := h.mcpService.ListServices(status)
@@ -38,8 +37,7 @@ func (h *MCPAdminHandler) ListServices(c *gin.Context) {
 	response.Success(c, services)
 }
 
-// CreateService creates an MCP service.
-// POST /api/v1/mcp/services
+// CreateService creates a new MCP service (POST /api/v1/mcp/services).
 func (h *MCPAdminHandler) CreateService(c *gin.Context) {
 	var req dto.CreateMCPServiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,8 +55,7 @@ func (h *MCPAdminHandler) CreateService(c *gin.Context) {
 	response.Success(c, svc)
 }
 
-// UpdateService updates an MCP service.
-// PUT /api/v1/mcp/services/:id
+// UpdateService updates an MCP service (PUT /api/v1/mcp/services/:id).
 func (h *MCPAdminHandler) UpdateService(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -81,8 +78,7 @@ func (h *MCPAdminHandler) UpdateService(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteService deletes an MCP service.
-// DELETE /api/v1/mcp/services/:id
+// DeleteService deletes an MCP service (DELETE /api/v1/mcp/services/:id).
 func (h *MCPAdminHandler) DeleteService(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -99,8 +95,7 @@ func (h *MCPAdminHandler) DeleteService(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// SyncTools synchronizes MCP service tools.
-// POST /api/v1/mcp/services/:id/sync
+// SyncTools synchronizes tools for an MCP service (POST /api/v1/mcp/services/:id/sync).
 func (h *MCPAdminHandler) SyncTools(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -117,8 +112,7 @@ func (h *MCPAdminHandler) SyncTools(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetServiceTools returns MCP service tools.
-// GET /api/v1/mcp/services/:id/tools
+// GetServiceTools returns the tool list for an MCP service (GET /api/v1/mcp/services/:id/tools).
 func (h *MCPAdminHandler) GetServiceTools(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -136,8 +130,7 @@ func (h *MCPAdminHandler) GetServiceTools(c *gin.Context) {
 	response.Success(c, tools)
 }
 
-// ListAccessRules returns MCP access rules.
-// GET /api/v1/mcp/access-rules
+// ListAccessRules returns the list of MCP access rules (GET /api/v1/mcp/access-rules).
 func (h *MCPAdminHandler) ListAccessRules(c *gin.Context) {
 	serviceIDStr := c.Query("service_id")
 	var serviceID int64
@@ -160,8 +153,7 @@ func (h *MCPAdminHandler) ListAccessRules(c *gin.Context) {
 	response.Success(c, rules)
 }
 
-// SetAccessRule sets an MCP access rule.
-// POST /api/v1/mcp/access-rules
+// SetAccessRule creates or updates an MCP access rule (POST /api/v1/mcp/access-rules).
 func (h *MCPAdminHandler) SetAccessRule(c *gin.Context) {
 	var req dto.SetMCPAccessRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -178,8 +170,7 @@ func (h *MCPAdminHandler) SetAccessRule(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteAccessRule deletes an MCP access rule.
-// DELETE /api/v1/mcp/access-rules/:id
+// DeleteAccessRule deletes an MCP access rule (DELETE /api/v1/mcp/access-rules/:id).
 func (h *MCPAdminHandler) DeleteAccessRule(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

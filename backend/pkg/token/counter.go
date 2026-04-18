@@ -1,3 +1,4 @@
+// Package token provides LLM token counting utilities.
 package token
 
 // EstimateTokens estimates token count using a simple heuristic.
@@ -15,7 +16,7 @@ func EstimateTokens(text string) int {
 		}
 	}
 
-	tokens := count / 4
+	tokens := count / 4 //nolint:mnd // intentional constant.
 	if tokens == 0 {
 		tokens = 1
 	}

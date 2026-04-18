@@ -1,3 +1,4 @@
+// Package crypto provides encryption and key generation utilities.
 package crypto
 
 import (

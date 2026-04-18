@@ -1,3 +1,4 @@
+// Package response provides unified HTTP response wrappers.
 package response
 
 import (
@@ -10,9 +11,9 @@ import (
 
 // Response represents a unified API response structure.
 type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
+	Message string      `json:"message"`
+	Code    int         `json:"code"`
 }
 
 // Pagination represents pagination information.

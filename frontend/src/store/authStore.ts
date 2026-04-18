@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { UserBrief, UserDetail } from '@/types';
+
 import authService from '@/services/authService';
+import type { UserBrief, UserDetail } from '@/types';
 
 interface AuthState {
   token: string | null;

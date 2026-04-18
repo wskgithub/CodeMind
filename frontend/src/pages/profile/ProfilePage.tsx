@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Form, Input, Button, Divider, message, Descriptions, Tag, Avatar } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Divider, message, Descriptions, Tag, Avatar } from 'antd';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { UserDetail } from '@/types';
-import useAuthStore from '@/store/authStore';
+
 import authService from '@/services/authService';
+import useAuthStore from '@/store/authStore';
+import type { UserDetail } from '@/types';
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();

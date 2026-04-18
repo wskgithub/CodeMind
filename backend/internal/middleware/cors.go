@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CORS configures cross-origin resource sharing
+// CORS configures cross-origin resource sharing.
 func CORS(allowedOrigins []string) gin.HandlerFunc {
 	config := cors.Config{
 		AllowMethods: []string{
@@ -24,7 +24,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			"Content-Length",
 			"Content-Type",
 		},
-		MaxAge: 12 * time.Hour,
+		MaxAge: 12 * time.Hour, //nolint:mnd // intentional constant.
 	}
 
 	if len(allowedOrigins) > 0 {

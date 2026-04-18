@@ -53,6 +53,7 @@ func (s *TrainingDataService) GetStats() (*model.TrainingDataStats, error) {
 func (s *TrainingDataService) ExportJSONL(filter repository.TrainingDataFilter, w io.Writer) (int, error) {
 	exported := 0
 
+	//nolint:mnd // magic number for configuration/defaults.
 	err := s.repo.BatchIterator(filter, 500, func(batch []model.LLMTrainingData) error {
 		for _, record := range batch {
 			line, err := s.convertToTrainingFormat(record)
@@ -98,6 +99,7 @@ func (s *TrainingDataService) convertChatToTraining(record model.LLMTrainingData
 	}
 
 	var respBody struct {
+		Role    string `json:"role"`
 		Choices []struct {
 			Message struct {
 				Role    string `json:"role"`
@@ -108,7 +110,6 @@ func (s *TrainingDataService) convertChatToTraining(record model.LLMTrainingData
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"content"`
-		Role string `json:"role"`
 	}
 	if err := json.Unmarshal(record.ResponseBody, &respBody); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
@@ -119,7 +120,7 @@ func (s *TrainingDataService) convertChatToTraining(record model.LLMTrainingData
 		assistantContent = respBody.Choices[0].Message.Content
 	} else if respBody.Role == "assistant" && len(respBody.Content) > 0 {
 		for _, block := range respBody.Content {
-			if block.Type == "text" {
+			if block.Type == contentTypeText {
 				assistantContent += block.Text
 			}
 		}

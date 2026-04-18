@@ -29,7 +29,7 @@ func (r *MonitorRepository) CreateSystemMetric(ctx context.Context, metric *moni
 
 // CreateSystemMetrics batch creates system metric records.
 func (r *MonitorRepository) CreateSystemMetrics(ctx context.Context, metrics []*monitor.SystemMetric) error {
-	return r.db.WithContext(ctx).CreateInBatches(metrics, 100).Error
+	return r.db.WithContext(ctx).CreateInBatches(metrics, 100).Error //nolint:mnd // batch size
 }
 
 // GetLatestSystemMetrics returns the latest system metrics.
@@ -49,16 +49,18 @@ func (r *MonitorRepository) GetSystemMetricsByTimeRange(ctx context.Context, hos
 	query := r.db.WithContext(ctx).
 		Where("host_name = ?", hostname).
 		Where("created_at BETWEEN ? AND ?", start, end)
-	
+
 	if metricType != "" {
 		query = query.Where("metric_type = ?", metricType)
 	}
-	
+
 	err := query.Order("created_at ASC").Find(&metrics).Error
 	return metrics, err
 }
 
 // GetSystemMetricsSummary returns system metrics summary for dashboard.
+//
+//nolint:gocyclo // complex dashboard aggregation logic
 func (r *MonitorRepository) GetSystemMetricsSummary(ctx context.Context, hostname string) (*monitor.SystemMetricsSummary, error) {
 	var cpuUsage monitor.SystemMetric
 	err := r.db.WithContext(ctx).
@@ -92,7 +94,7 @@ func (r *MonitorRepository) GetSystemMetricsSummary(ctx context.Context, hostnam
 	diskMap := make(map[string]*monitor.DiskMetrics)
 	for _, m := range diskMetrics {
 		var labels map[string]string
-		json.Unmarshal([]byte(m.Labels), &labels)
+		_ = json.Unmarshal([]byte(m.Labels), &labels)
 		mountPoint := labels["mount_point"]
 		if mountPoint == "" {
 			mountPoint = "unknown"
@@ -135,9 +137,9 @@ func (r *MonitorRepository) GetSystemMetricsSummary(ctx context.Context, hostnam
 			UsagePercent: cpuUsage.Value,
 		}
 		var cpuLabels map[string]string
-		json.Unmarshal([]byte(cpuUsage.Labels), &cpuLabels)
+		_ = json.Unmarshal([]byte(cpuUsage.Labels), &cpuLabels)
 		if cores, ok := cpuLabels["core_count"]; ok {
-			fmt.Sscanf(cores, "%d", &summary.CPUUsage.CoreCount)
+			_, _ = fmt.Sscanf(cores, "%d", &summary.CPUUsage.CoreCount)
 		}
 		summary.CPUUsage.ModelName = cpuLabels["model_name"]
 	}
@@ -217,7 +219,7 @@ func (r *MonitorRepository) GetLLMNodeMetricSummary(ctx context.Context) ([]moni
 		return nil, err
 	}
 
-	var summaries []monitor.LLMNodeSummary
+	summaries := make([]monitor.LLMNodeSummary, 0, len(metrics))
 	for _, m := range metrics {
 		summary := monitor.LLMNodeSummary{
 			NodeID:            m.NodeID,
@@ -235,12 +237,12 @@ func (r *MonitorRepository) GetLLMNodeMetricSummary(ctx context.Context) ([]moni
 		}
 
 		if m.MemoryTotalGB > 0 {
-			summary.MemoryUsagePercent = (m.MemoryUsedGB / m.MemoryTotalGB) * 100
+			summary.MemoryUsagePercent = (m.MemoryUsedGB / m.MemoryTotalGB) * 100 //nolint:mnd // percentage calculation
 		}
 		summary.CPUUsagePercent = m.CPUUsagePercent
 
 		var models []monitor.LoadedModelInfo
-		json.Unmarshal([]byte(m.LoadedModels), &models)
+		_ = json.Unmarshal([]byte(m.LoadedModels), &models)
 		for _, model := range models {
 			summary.LoadedModels = append(summary.LoadedModels, model.ModelName)
 		}

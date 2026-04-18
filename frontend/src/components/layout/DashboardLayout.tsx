@@ -1,6 +1,3 @@
-import { useMemo } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Avatar, Dropdown, Button, Tooltip } from 'antd';
 import {
   DashboardOutlined,
   KeyOutlined,
@@ -24,11 +21,15 @@ import {
   BlockOutlined,
   GlobalOutlined,
 } from '@ant-design/icons';
+import { Layout, Menu, Avatar, Dropdown, Button, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import useAuthStore from '@/store/authStore';
-import useAppStore from '@/store/appStore';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+
 import { type SupportedLanguage } from '@/i18n';
+import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
 
 const { Header, Sider, Content } = Layout;
 
@@ -371,7 +372,7 @@ const DashboardLayout: React.FC = () => {
           />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* 语言切换 */}
+            {/* Language switch */}
             <div
               style={{
                 display: 'inline-flex',
@@ -416,7 +417,7 @@ const DashboardLayout: React.FC = () => {
               })}
             </div>
 
-            {/* 主题切换 */}
+            {/* Theme toggle */}
             <Tooltip title={themeMode === 'dark' ? t('theme.toggleLight') : t('theme.toggleDark')}>
               <Button
                 type="text"

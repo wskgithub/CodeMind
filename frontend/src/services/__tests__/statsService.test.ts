@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import request from '../request';
 import {
   getOverview,
   getUsageStats,
   getRanking,
   exportUsageCSV,
 } from '../statsService';
+
 import type { ApiResponse, StatsOverview, UsageResponse, RankingItem } from '@/types';
 
 // Mock request module
@@ -14,7 +17,6 @@ vi.mock('../request', () => ({
   },
 }));
 
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;
@@ -142,21 +144,21 @@ describe('statsService', () => {
       {
         rank: 1,
         id: 1,
-        name: '用户1',
+        name: 'User 1',
         total_tokens: 1000000,
         request_count: 5000,
       },
       {
         rank: 2,
         id: 2,
-        name: '用户2',
+        name: 'User 2',
         total_tokens: 800000,
         request_count: 4000,
       },
       {
         rank: 3,
         id: 3,
-        name: '用户3',
+        name: 'User 3',
         total_tokens: 600000,
         request_count: 3000,
       },

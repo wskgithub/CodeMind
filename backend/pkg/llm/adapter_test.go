@@ -7,10 +7,10 @@ import (
 )
 
 // ══════════════════════════════════
-// OpenAI → Anthropic 请求转换
+// OpenAI to Anthropic request conversion
 // ══════════════════════════════════
 
-// TestOpenAIToAnthropicBasic 测试基本请求转换
+// TestOpenAIToAnthropicBasic tests basic request conversion.
 func TestOpenAIToAnthropicBasic(t *testing.T) {
 	temp := 0.7
 	maxTokens := 2048
@@ -25,23 +25,23 @@ func TestOpenAIToAnthropicBasic(t *testing.T) {
 	result := OpenAIToAnthropic(req)
 
 	if result.Model != "gpt-4" {
-		t.Errorf("Model 不正确: %s", result.Model)
+		t.Errorf("incorrect Model: %s", result.Model)
 	}
 	if result.MaxTokens != 2048 {
-		t.Errorf("MaxTokens 不正确: %d", result.MaxTokens)
+		t.Errorf("incorrect MaxTokens: %d", result.MaxTokens)
 	}
 	if *result.Temperature != 0.7 {
-		t.Errorf("Temperature 不正确: %f", *result.Temperature)
+		t.Errorf("incorrect Temperature: %f", *result.Temperature)
 	}
 	if !result.Stream {
-		t.Error("Stream 应为 true")
+		t.Error("Stream should be true")
 	}
 	if len(result.Messages) != 1 || result.Messages[0].Role != "user" {
-		t.Error("Messages 不正确")
+		t.Error("incorrect Messages")
 	}
 }
 
-// TestOpenAIToAnthropicSystemMessage 测试 system 消息提取
+// TestOpenAIToAnthropicSystemMessage tests system message extraction.
 func TestOpenAIToAnthropicSystemMessage(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
@@ -54,19 +54,19 @@ func TestOpenAIToAnthropicSystemMessage(t *testing.T) {
 
 	result := OpenAIToAnthropic(req)
 
-	// system 消息应被提取到 System 字段
+	// system message should be extracted to System field
 	if result.System == nil || result.System != "You are helpful." {
-		t.Errorf("System 不正确: %v", result.System)
+		t.Errorf("incorrect System: %v", result.System)
 	}
-	// Messages 中不应包含 system 角色
+	// Messages should not contain system role
 	for _, msg := range result.Messages {
 		if msg.Role == "system" {
-			t.Error("Anthropic Messages 不应包含 system 角色")
+			t.Error("Anthropic Messages should not contain system role")
 		}
 	}
 }
 
-// TestOpenAIToAnthropicMaxTokensDefault 测试 max_tokens 默认值
+// TestOpenAIToAnthropicMaxTokensDefault tests default max_tokens.
 func TestOpenAIToAnthropicMaxTokensDefault(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model:    "gpt-4",
@@ -75,11 +75,11 @@ func TestOpenAIToAnthropicMaxTokensDefault(t *testing.T) {
 
 	result := OpenAIToAnthropic(req)
 	if result.MaxTokens != 4096 {
-		t.Errorf("默认 MaxTokens 应为 4096, 实际: %d", result.MaxTokens)
+		t.Errorf("default MaxTokens should be 4096, got: %d", result.MaxTokens)
 	}
 }
 
-// TestOpenAIToAnthropicMaxCompletionTokensPriority 测试 max_completion_tokens 优先级
+// TestOpenAIToAnthropicMaxCompletionTokensPriority tests max_completion_tokens priority.
 func TestOpenAIToAnthropicMaxCompletionTokensPriority(t *testing.T) {
 	maxTokens := 1024
 	maxCompletionTokens := 2048
@@ -92,11 +92,11 @@ func TestOpenAIToAnthropicMaxCompletionTokensPriority(t *testing.T) {
 
 	result := OpenAIToAnthropic(req)
 	if result.MaxTokens != 2048 {
-		t.Errorf("应优先使用 max_completion_tokens: %d", result.MaxTokens)
+		t.Errorf("should prioritize max_completion_tokens: %d", result.MaxTokens)
 	}
 }
 
-// TestOpenAIToAnthropicToolConversion 测试工具定义转换
+// TestOpenAIToAnthropicToolConversion tests tool definition conversion.
 func TestOpenAIToAnthropicToolConversion(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model:    "gpt-4",
@@ -114,15 +114,15 @@ func TestOpenAIToAnthropicToolConversion(t *testing.T) {
 	result := OpenAIToAnthropic(req)
 
 	if len(result.Tools) != 1 {
-		t.Fatalf("Tools 数量不正确: %d", len(result.Tools))
+		t.Fatalf("incorrect Tools count: %d", len(result.Tools))
 	}
 	tool := result.Tools[0]
 	if tool.Name != "get_weather" || tool.Description != "获取天气" {
-		t.Errorf("工具定义不正确: name=%s, desc=%s", tool.Name, tool.Description)
+		t.Errorf("incorrect tool definition: name=%s, desc=%s", tool.Name, tool.Description)
 	}
 }
 
-// TestOpenAIToAnthropicToolChoice 测试 tool_choice 转换
+// TestOpenAIToAnthropicToolChoice tests tool_choice conversion.
 func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -144,20 +144,20 @@ func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 
 			result := OpenAIToAnthropic(req)
 			if result.ToolChoice == nil {
-				t.Fatal("ToolChoice 不应为 nil")
+				t.Fatal("ToolChoice should not be nil")
 			}
 			tc, ok := result.ToolChoice.(AnthropicToolChoice)
 			if !ok {
-				t.Fatalf("ToolChoice 类型不正确: %T", result.ToolChoice)
+				t.Fatalf("incorrect ToolChoice type: %T", result.ToolChoice)
 			}
 			if tc.Type != tt.expected {
-				t.Errorf("ToolChoice.Type 不正确: 预期 %s, 实际 %s", tt.expected, tc.Type)
+				t.Errorf("incorrect ToolChoice.Type: expected %s, got %s", tt.expected, tc.Type)
 			}
 		})
 	}
 }
 
-// TestOpenAIToAnthropicToolCallConversion 测试 tool_calls → tool_use 转换
+// TestOpenAIToAnthropicToolCallConversion tests tool_calls to tool_use conversion.
 func TestOpenAIToAnthropicToolCallConversion(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
@@ -177,26 +177,26 @@ func TestOpenAIToAnthropicToolCallConversion(t *testing.T) {
 
 	result := OpenAIToAnthropic(req)
 
-	// assistant 消息应包含 tool_use 内容块
+	// assistant message should contain tool_use content blocks
 	assistantMsg := result.Messages[1]
 	blocks, ok := assistantMsg.Content.([]AnthropicContentBlock)
 	if !ok {
-		t.Fatal("assistant content 应为 []AnthropicContentBlock")
+		t.Fatal("assistant content should be []AnthropicContentBlock")
 	}
 	if len(blocks) == 0 || blocks[0].Type != "tool_use" {
-		t.Error("应包含 tool_use 内容块")
+		t.Error("should contain tool_use content block")
 	}
 
-	// tool 消息应转为 user 角色 + tool_result 内容块
+	// tool message should convert to user role + tool_result content block
 	toolResultMsg := result.Messages[2]
 	if toolResultMsg.Role != "user" {
-		t.Errorf("tool 消息应转为 user 角色: %s", toolResultMsg.Role)
+		t.Errorf("tool message should convert to user role: %s", toolResultMsg.Role)
 	}
 }
 
-// TestOpenAIToAnthropicStopSequence 测试 stop 序列转换
+// TestOpenAIToAnthropicStopSequence tests stop sequence conversion.
 func TestOpenAIToAnthropicStopSequence(t *testing.T) {
-	// string 类型
+	// string type
 	req := &ChatCompletionRequest{
 		Model:    "gpt-4",
 		Messages: []ChatMessage{{Role: "user", Content: "Hi"}},
@@ -204,11 +204,11 @@ func TestOpenAIToAnthropicStopSequence(t *testing.T) {
 	}
 	result := OpenAIToAnthropic(req)
 	if len(result.StopSequences) != 1 || result.StopSequences[0] != "END" {
-		t.Errorf("StopSequences 不正确: %v", result.StopSequences)
+		t.Errorf("incorrect StopSequences: %v", result.StopSequences)
 	}
 }
 
-// TestOpenAIToAnthropicFirstMessageMustBeUser 测试第一条消息必须是 user 角色
+// TestOpenAIToAnthropicFirstMessageMustBeUser tests that first message must be user role.
 func TestOpenAIToAnthropicFirstMessageMustBeUser(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
@@ -219,15 +219,15 @@ func TestOpenAIToAnthropicFirstMessageMustBeUser(t *testing.T) {
 
 	result := OpenAIToAnthropic(req)
 	if result.Messages[0].Role != "user" {
-		t.Error("第一条 Anthropic 消息必须是 user 角色")
+		t.Error("first Anthropic message must be user role")
 	}
 }
 
 // ══════════════════════════════════
-// Anthropic → OpenAI 请求转换
+// Anthropic to OpenAI request conversion
 // ══════════════════════════════════
 
-// TestAnthropicToOpenAIBasic 测试基本请求转换
+// TestAnthropicToOpenAIBasic tests basic request conversion.
 func TestAnthropicToOpenAIBasic(t *testing.T) {
 	temp := 0.5
 	req := &AnthropicMessagesRequest{
@@ -242,43 +242,43 @@ func TestAnthropicToOpenAIBasic(t *testing.T) {
 	result := AnthropicToOpenAI(req)
 
 	if result.Model != "claude-sonnet-4-20250514" {
-		t.Errorf("Model 不正确: %s", result.Model)
+		t.Errorf("incorrect Model: %s", result.Model)
 	}
 	if result.MaxTokens == nil || *result.MaxTokens != 2048 {
-		t.Error("MaxTokens 不正确")
+		t.Error("incorrect MaxTokens")
 	}
 	if !result.Stream {
-		t.Error("Stream 应为 true")
+		t.Error("Stream should be true")
 	}
 
-	// system 应转为 system 消息
+	// system should convert to a system message
 	if len(result.Messages) < 2 {
-		t.Fatal("应至少有 2 条消息（system + user）")
+		t.Fatal("should have at least 2 messages (system + user)")
 	}
 	if result.Messages[0].Role != "system" {
-		t.Error("第一条消息应为 system 角色")
+		t.Error("first message should be system role")
 	}
 	if result.Messages[0].ContentString() != "You are helpful." {
-		t.Error("system 内容不正确")
+		t.Error("incorrect system content")
 	}
 }
 
-// TestAnthropicToOpenAIToolChoice 测试 tool_choice 转换
+// TestAnthropicToOpenAIToolChoice tests tool_choice conversion.
 func TestAnthropicToOpenAIToolChoice(t *testing.T) {
 	tests := []struct {
-		name     string
 		choice   interface{}
 		expected interface{}
+		name     string
 	}{
 		{
-			"auto → auto",
-			map[string]interface{}{"type": "auto"},
-			"auto",
+			name:     "auto",
+			choice:   map[string]interface{}{"type": "auto"},
+			expected: "auto",
 		},
 		{
-			"any → required",
-			map[string]interface{}{"type": "any"},
-			"required",
+			name:     "required",
+			choice:   map[string]interface{}{"type": "any"},
+			expected: "required",
 		},
 	}
 
@@ -294,13 +294,13 @@ func TestAnthropicToOpenAIToolChoice(t *testing.T) {
 
 			result := AnthropicToOpenAI(req)
 			if result.ToolChoice != tt.expected {
-				t.Errorf("ToolChoice 不正确: 预期 %v, 实际 %v", tt.expected, result.ToolChoice)
+				t.Errorf("incorrect ToolChoice: expected %v, got %v", tt.expected, result.ToolChoice)
 			}
 		})
 	}
 }
 
-// TestAnthropicToOpenAIToolResultConversion 测试 tool_result → tool 消息转换
+// TestAnthropicToOpenAIToolResultConversion tests tool_result to tool message conversion.
 func TestAnthropicToOpenAIToolResultConversion(t *testing.T) {
 	reqJSON := `{
 		"model": "claude-sonnet-4-20250514",
@@ -322,7 +322,7 @@ func TestAnthropicToOpenAIToolResultConversion(t *testing.T) {
 
 	result := AnthropicToOpenAI(&req)
 
-	// 查找 tool 角色消息
+	// Find tool role message
 	var toolMsg *ChatMessage
 	for i := range result.Messages {
 		if result.Messages[i].Role == "tool" {
@@ -331,13 +331,13 @@ func TestAnthropicToOpenAIToolResultConversion(t *testing.T) {
 		}
 	}
 	if toolMsg == nil {
-		t.Fatal("应生成 tool 角色消息")
+		t.Fatal("should generate tool role message")
 	}
 	if toolMsg.ToolCallID != "toolu_1" {
-		t.Errorf("ToolCallID 不正确: %s", toolMsg.ToolCallID)
+		t.Errorf("incorrect ToolCallID: %s", toolMsg.ToolCallID)
 	}
 
-	// 查找 assistant 消息的 tool_calls
+	// Find assistant message's tool_calls
 	var assistantMsg *ChatMessage
 	for i := range result.Messages {
 		if result.Messages[i].Role == "assistant" {
@@ -346,21 +346,21 @@ func TestAnthropicToOpenAIToolResultConversion(t *testing.T) {
 		}
 	}
 	if assistantMsg == nil {
-		t.Fatal("应有 assistant 消息")
+		t.Fatal("should have assistant message")
 	}
 	if len(assistantMsg.ToolCalls) != 1 {
-		t.Fatalf("应有 1 个 tool_call, 实际: %d", len(assistantMsg.ToolCalls))
+		t.Fatalf("should have 1 tool_call, got: %d", len(assistantMsg.ToolCalls))
 	}
 	if assistantMsg.ToolCalls[0].Function.Name != "get_weather" {
-		t.Errorf("tool_call 名称不正确: %s", assistantMsg.ToolCalls[0].Function.Name)
+		t.Errorf("incorrect tool_call name: %s", assistantMsg.ToolCalls[0].Function.Name)
 	}
 }
 
 // ══════════════════════════════════
-// 响应转换
+// Response conversion
 // ══════════════════════════════════
 
-// TestOpenAIResponseToAnthropic 测试 OpenAI 响应→ Anthropic 格式
+// TestOpenAIResponseToAnthropic tests OpenAI response to Anthropic format.
 func TestOpenAIResponseToAnthropic(t *testing.T) {
 	finishReason := "tool_calls"
 	resp := &ChatCompletionResponse{
@@ -385,38 +385,38 @@ func TestOpenAIResponseToAnthropic(t *testing.T) {
 	result := OpenAIResponseToAnthropic(resp)
 
 	if result.ID != "chatcmpl-123" {
-		t.Errorf("ID 不正确: %s", result.ID)
+		t.Errorf("incorrect ID: %s", result.ID)
 	}
 	if result.Type != "message" {
-		t.Errorf("Type 不正确: %s", result.Type)
+		t.Errorf("incorrect Type: %s", result.Type)
 	}
 	if result.Role != "assistant" {
-		t.Errorf("Role 不正确: %s", result.Role)
+		t.Errorf("incorrect Role: %s", result.Role)
 	}
 
-	// 应有 text + tool_use 两个内容块
+	// Should have text + tool_use content blocks
 	if len(result.Content) != 2 {
-		t.Fatalf("Content 数量不正确: %d", len(result.Content))
+		t.Fatalf("incorrect Content count: %d", len(result.Content))
 	}
 	if result.Content[0].Type != "text" || result.Content[0].Text != "我来查天气" {
-		t.Error("text 内容块不正确")
+		t.Error("incorrect text content block")
 	}
 	if result.Content[1].Type != "tool_use" || result.Content[1].Name != "get_weather" {
-		t.Error("tool_use 内容块不正确")
+		t.Error("incorrect tool_use content block")
 	}
 
-	// stop_reason 应映射
+	// stop_reason should be mapped
 	if result.StopReason == nil || *result.StopReason != "tool_use" {
-		t.Error("StopReason 映射不正确")
+		t.Error("incorrect StopReason mapping")
 	}
 
-	// usage 应转换
+	// usage should be converted
 	if result.Usage == nil || result.Usage.InputTokens != 50 || result.Usage.OutputTokens != 30 {
-		t.Error("Usage 转换不正确")
+		t.Error("incorrect Usage conversion")
 	}
 }
 
-// TestAnthropicResponseToOpenAI 测试 Anthropic 响应 → OpenAI 格式
+// TestAnthropicResponseToOpenAI tests Anthropic response to OpenAI format.
 func TestAnthropicResponseToOpenAI(t *testing.T) {
 	stopReason := "end_turn"
 	resp := &AnthropicMessagesResponse{
@@ -436,41 +436,41 @@ func TestAnthropicResponseToOpenAI(t *testing.T) {
 	result := AnthropicResponseToOpenAI(resp)
 
 	if result.ID != "msg_abc" {
-		t.Errorf("ID 不正确: %s", result.ID)
+		t.Errorf("incorrect ID: %s", result.ID)
 	}
 	if result.Object != "chat.completion" {
-		t.Errorf("Object 不正确: %s", result.Object)
+		t.Errorf("incorrect Object: %s", result.Object)
 	}
 
 	if len(result.Choices) != 1 {
-		t.Fatalf("Choices 数量不正确: %d", len(result.Choices))
+		t.Fatalf("incorrect Choices count: %d", len(result.Choices))
 	}
 	choice := result.Choices[0]
 
-	// thinking 块应被跳过，只有 text 内容
+	// thinking blocks should be skipped, only text content
 	if choice.Message.ContentString() != "The answer is 42." {
-		t.Errorf("Content 不正确（thinking 应被跳过）: %s", choice.Message.ContentString())
+		t.Errorf("incorrect Content (thinking should be skipped): %s", choice.Message.ContentString())
 	}
 
 	// tool_use → tool_calls
 	if len(choice.Message.ToolCalls) != 1 {
-		t.Fatalf("ToolCalls 数量不正确: %d", len(choice.Message.ToolCalls))
+		t.Fatalf("incorrect ToolCalls count: %d", len(choice.Message.ToolCalls))
 	}
 	if choice.Message.ToolCalls[0].Function.Name != "calc" {
-		t.Error("ToolCall 名称不正确")
+		t.Error("incorrect ToolCall name")
 	}
 
 	// stop_reason → finish_reason
 	if choice.FinishReason == nil || *choice.FinishReason != "stop" {
-		t.Error("FinishReason 映射不正确")
+		t.Error("incorrect FinishReason mapping")
 	}
 }
 
 // ══════════════════════════════════
-// 停止原因映射
+// Stop reason mapping
 // ══════════════════════════════════
 
-// TestStopReasonMapping 测试双向停止原因映射
+// TestStopReasonMapping tests bidirectional stop reason mapping.
 func TestStopReasonMapping(t *testing.T) {
 	// OpenAI → Anthropic
 	o2aTests := []struct{ input, expected string }{
@@ -483,7 +483,7 @@ func TestStopReasonMapping(t *testing.T) {
 	for _, tt := range o2aTests {
 		result := mapOpenAIStopReasonToAnthropic(tt.input)
 		if result != tt.expected {
-			t.Errorf("OpenAI→Anthropic: %s → %s (预期 %s)", tt.input, result, tt.expected)
+			t.Errorf("OpenAI→Anthropic: %s → %s (expected %s)", tt.input, result, tt.expected)
 		}
 	}
 
@@ -498,23 +498,23 @@ func TestStopReasonMapping(t *testing.T) {
 	for _, tt := range a2oTests {
 		result := mapAnthropicStopReasonToOpenAI(tt.input)
 		if result != tt.expected {
-			t.Errorf("Anthropic→OpenAI: %s → %s (预期 %s)", tt.input, result, tt.expected)
+			t.Errorf("Anthropic→OpenAI: %s → %s (expected %s)", tt.input, result, tt.expected)
 		}
 	}
 }
 
 // ══════════════════════════════════
-// tool_choice 映射
+// tool_choice mapping
 // ══════════════════════════════════
 
-// TestToolChoiceMapping 测试双向 tool_choice 映射
+// TestToolChoiceMapping tests bidirectional tool_choice mapping.
 func TestToolChoiceMapping(t *testing.T) {
 	// OpenAI → Anthropic
 	t.Run("OpenAI auto → Anthropic auto", func(t *testing.T) {
 		result := mapOpenAIToolChoiceToAnthropic("auto")
 		tc, ok := result.(AnthropicToolChoice)
 		if !ok || tc.Type != "auto" {
-			t.Errorf("预期 {type:auto}, 实际: %v", result)
+			t.Errorf("expected {type:auto}, got: %v", result)
 		}
 	})
 
@@ -522,18 +522,18 @@ func TestToolChoiceMapping(t *testing.T) {
 		result := mapOpenAIToolChoiceToAnthropic("required")
 		tc, ok := result.(AnthropicToolChoice)
 		if !ok || tc.Type != "any" {
-			t.Errorf("预期 {type:any}, 实际: %v", result)
+			t.Errorf("expected {type:any}, got: %v", result)
 		}
 	})
 
 	t.Run("OpenAI none → nil", func(t *testing.T) {
 		result := mapOpenAIToolChoiceToAnthropic("none")
 		if result != nil {
-			t.Errorf("预期 nil, 实际: %v", result)
+			t.Errorf("expected nil, got: %v", result)
 		}
 	})
 
-	t.Run("OpenAI 指定函数 → Anthropic tool", func(t *testing.T) {
+	t.Run("OpenAI specific function → Anthropic tool", func(t *testing.T) {
 		input := map[string]interface{}{
 			"type":     "function",
 			"function": map[string]interface{}{"name": "get_weather"},
@@ -541,7 +541,7 @@ func TestToolChoiceMapping(t *testing.T) {
 		result := mapOpenAIToolChoiceToAnthropic(input)
 		tc, ok := result.(AnthropicToolChoice)
 		if !ok || tc.Type != "tool" || tc.Name != "get_weather" {
-			t.Errorf("预期 {type:tool, name:get_weather}, 实际: %v", result)
+			t.Errorf("expected {type:tool, name:get_weather}, got: %v", result)
 		}
 	})
 
@@ -549,38 +549,38 @@ func TestToolChoiceMapping(t *testing.T) {
 	t.Run("Anthropic auto → OpenAI auto", func(t *testing.T) {
 		result := mapAnthropicToolChoiceToOpenAI(map[string]interface{}{"type": "auto"})
 		if result != "auto" {
-			t.Errorf("预期 auto, 实际: %v", result)
+			t.Errorf("expected auto, got: %v", result)
 		}
 	})
 
 	t.Run("Anthropic any → OpenAI required", func(t *testing.T) {
 		result := mapAnthropicToolChoiceToOpenAI(map[string]interface{}{"type": "any"})
 		if result != "required" {
-			t.Errorf("预期 required, 实际: %v", result)
+			t.Errorf("expected required, got: %v", result)
 		}
 	})
 
-	t.Run("Anthropic tool → OpenAI 指定函数", func(t *testing.T) {
+	t.Run("Anthropic tool → OpenAI specific function", func(t *testing.T) {
 		result := mapAnthropicToolChoiceToOpenAI(map[string]interface{}{
 			"type": "tool",
 			"name": "get_weather",
 		})
 		m, ok := result.(map[string]interface{})
 		if !ok {
-			t.Fatalf("预期 map, 实际: %T", result)
+			t.Fatalf("expected map, got: %T", result)
 		}
 		fn, _ := m["function"].(map[string]interface{})
 		if fn["name"] != "get_weather" {
-			t.Errorf("函数名不正确: %v", fn["name"])
+			t.Errorf("incorrect function name: %v", fn["name"])
 		}
 	})
 }
 
 // ══════════════════════════════════
-// 流式格式转换：Anthropic → OpenAI
+// Stream format conversion: Anthropic to OpenAI
 // ══════════════════════════════════
 
-// TestAnthropicEventToOpenAIChunkText 测试文本增量转换
+// TestAnthropicEventToOpenAIChunkText tests text delta conversion.
 func TestAnthropicEventToOpenAIChunkText(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 
@@ -588,7 +588,7 @@ func TestAnthropicEventToOpenAIChunkText(t *testing.T) {
 	event := &AnthropicStreamEvent{Type: AnthropicEventMessageStart}
 	result := AnthropicEventToOpenAIChunk(AnthropicEventMessageStart, event, "claude-sonnet-4-20250514", state)
 	if !strings.Contains(result, `"role":"assistant"`) {
-		t.Error("message_start 应生成包含 role:assistant 的 chunk")
+		t.Error("message_start should generate chunk with role:assistant")
 	}
 
 	// text_delta
@@ -598,21 +598,21 @@ func TestAnthropicEventToOpenAIChunkText(t *testing.T) {
 	}
 	result = AnthropicEventToOpenAIChunk(AnthropicEventContentBlockDelta, event, "claude-sonnet-4-20250514", state)
 	if !strings.Contains(result, "Hello") {
-		t.Error("text_delta 应包含文本内容")
+		t.Error("text_delta should contain text content")
 	}
 	if !strings.Contains(result, "chat.completion.chunk") {
-		t.Error("应为 chat.completion.chunk 格式")
+		t.Error("should be chat.completion.chunk format")
 	}
 
 	// message_stop → [DONE]
 	event = &AnthropicStreamEvent{Type: AnthropicEventMessageStop}
 	result = AnthropicEventToOpenAIChunk(AnthropicEventMessageStop, event, "claude-sonnet-4-20250514", state)
 	if result != "data: [DONE]\n\n" {
-		t.Errorf("message_stop 应生成 [DONE], 实际: %s", result)
+		t.Errorf("message_stop should generate [DONE], got: %s", result)
 	}
 }
 
-// TestAnthropicEventToOpenAIChunkToolUse 测试工具调用流式转换
+// TestAnthropicEventToOpenAIChunkToolUse tests tool call stream conversion.
 func TestAnthropicEventToOpenAIChunkToolUse(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 
@@ -623,13 +623,13 @@ func TestAnthropicEventToOpenAIChunkToolUse(t *testing.T) {
 	}
 	result := AnthropicEventToOpenAIChunk(AnthropicEventContentBlockStart, event, "claude-sonnet-4-20250514", state)
 	if !strings.Contains(result, "get_weather") {
-		t.Error("tool_use start 应包含工具名")
+		t.Error("tool_use start should contain tool name")
 	}
 	if !strings.Contains(result, "toolu_01") {
-		t.Error("tool_use start 应包含工具 ID")
+		t.Error("tool_use start should contain tool ID")
 	}
 	if !strings.Contains(result, "tool_calls") {
-		t.Error("应包含 tool_calls 字段")
+		t.Error("should contain tool_calls field")
 	}
 
 	// input_json_delta
@@ -639,53 +639,53 @@ func TestAnthropicEventToOpenAIChunkToolUse(t *testing.T) {
 	}
 	result = AnthropicEventToOpenAIChunk(AnthropicEventContentBlockDelta, event, "claude-sonnet-4-20250514", state)
 	if !strings.Contains(result, "tool_calls") {
-		t.Error("input_json_delta 应转为 tool_calls arguments")
+		t.Error("input_json_delta should convert to tool_calls arguments")
 	}
 
-	// content_block_stop → 索引递增
+	// content_block_stop increments index
 	event = &AnthropicStreamEvent{Type: AnthropicEventContentBlockStop}
 	AnthropicEventToOpenAIChunk(AnthropicEventContentBlockStop, event, "claude-sonnet-4-20250514", state)
 	if state.ToolCallIndex != 1 {
-		t.Errorf("tool_use 结束后索引应递增: %d", state.ToolCallIndex)
+		t.Errorf("index should increment after tool_use ends: %d", state.ToolCallIndex)
 	}
 }
 
-// TestAnthropicEventToOpenAIChunkThinkingIgnored 测试 thinking 事件被忽略
+// TestAnthropicEventToOpenAIChunkThinkingIgnored tests thinking events are ignored.
 func TestAnthropicEventToOpenAIChunkThinkingIgnored(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 
-	// content_block_start (thinking) → 不输出
+	// content_block_start (thinking) produces no output
 	event := &AnthropicStreamEvent{
 		Type:         AnthropicEventContentBlockStart,
 		ContentBlock: &AnthropicContentBlock{Type: "thinking"},
 	}
 	result := AnthropicEventToOpenAIChunk(AnthropicEventContentBlockStart, event, "claude-sonnet-4-20250514", state)
 	if result != "" {
-		t.Errorf("thinking block_start 不应输出任何内容: %s", result)
+		t.Errorf("thinking block_start should not produce any output: %s", result)
 	}
 
-	// thinking_delta → 不输出
+	// thinking_delta produces no output
 	event = &AnthropicStreamEvent{
 		Type:  AnthropicEventContentBlockDelta,
 		Delta: &AnthropicStreamDelta{Type: "thinking_delta", Thinking: "thinking..."},
 	}
 	result = AnthropicEventToOpenAIChunk(AnthropicEventContentBlockDelta, event, "claude-sonnet-4-20250514", state)
 	if result != "" {
-		t.Errorf("thinking_delta 不应输出任何内容: %s", result)
+		t.Errorf("thinking_delta should not produce any output: %s", result)
 	}
 
-	// signature_delta → 不输出
+	// signature_delta produces no output
 	event = &AnthropicStreamEvent{
 		Type:  AnthropicEventContentBlockDelta,
 		Delta: &AnthropicStreamDelta{Type: "signature_delta", Signature: "sig..."},
 	}
 	result = AnthropicEventToOpenAIChunk(AnthropicEventContentBlockDelta, event, "claude-sonnet-4-20250514", state)
 	if result != "" {
-		t.Errorf("signature_delta 不应输出任何内容: %s", result)
+		t.Errorf("signature_delta should not produce any output: %s", result)
 	}
 }
 
-// TestAnthropicEventToOpenAIChunkMessageDelta 测试 message_delta（含 usage）转换
+// TestAnthropicEventToOpenAIChunkMessageDelta tests message_delta (with usage) conversion.
 func TestAnthropicEventToOpenAIChunkMessageDelta(t *testing.T) {
 	state := &AnthropicToOpenAIState{}
 	stopReason := "end_turn"
@@ -698,30 +698,30 @@ func TestAnthropicEventToOpenAIChunkMessageDelta(t *testing.T) {
 
 	result := AnthropicEventToOpenAIChunk(AnthropicEventMessageDelta, event, "claude-sonnet-4-20250514", state)
 	if !strings.Contains(result, `"finish_reason":"stop"`) {
-		t.Error("应包含映射后的 finish_reason: stop")
+		t.Error("should contain mapped finish_reason: stop")
 	}
 
-	// 验证 usage 附加
+	// Verify usage attachment
 	var chunk ChatCompletionChunk
-	// 提取 data: 后面的 JSON
+	// Extract JSON after data: prefix
 	jsonStr := strings.TrimPrefix(strings.TrimSpace(result), "data: ")
 	jsonStr = strings.TrimSuffix(jsonStr, "\n\n")
 	if err := json.Unmarshal([]byte(jsonStr), &chunk); err != nil {
-		t.Fatalf("无法解析 chunk JSON: %v", err)
+		t.Fatalf("failed to parse chunk JSON: %v", err)
 	}
 	if chunk.Usage == nil {
-		t.Fatal("chunk 应包含 usage")
+		t.Fatal("chunk should contain usage")
 	}
 	if chunk.Usage.CompletionTokens != 50 {
-		t.Errorf("CompletionTokens 不正确: %d", chunk.Usage.CompletionTokens)
+		t.Errorf("incorrect CompletionTokens: %d", chunk.Usage.CompletionTokens)
 	}
 }
 
 // ══════════════════════════════════
-// 流式格式转换：OpenAI → Anthropic
+// Stream format conversion: OpenAI to Anthropic
 // ══════════════════════════════════
 
-// TestOpenAIChunkToAnthropicEventsFirstChunk 测试首个 chunk 生成 message_start
+// TestOpenAIChunkToAnthropicEventsFirstChunk tests first chunk generates message_start.
 func TestOpenAIChunkToAnthropicEventsFirstChunk(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	chunk := &ChatCompletionChunk{
@@ -736,17 +736,17 @@ func TestOpenAIChunkToAnthropicEventsFirstChunk(t *testing.T) {
 	result := OpenAIChunkToAnthropicEvents(chunk, true, state)
 
 	if !strings.Contains(result, "event: message_start") {
-		t.Error("首个 chunk 应包含 message_start 事件")
+		t.Error("first chunk should contain message_start event")
 	}
 	if !strings.Contains(result, "event: ping") {
-		t.Error("首个 chunk 应包含 ping 事件")
+		t.Error("first chunk should contain ping event")
 	}
 	if !strings.Contains(result, "text_delta") {
-		t.Error("应包含 text_delta 事件")
+		t.Error("should contain text_delta event")
 	}
 }
 
-// TestOpenAIChunkToAnthropicEventsFinish 测试结束事件
+// TestOpenAIChunkToAnthropicEventsFinish tests finish events.
 func TestOpenAIChunkToAnthropicEventsFinish(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	finishReason := "stop"
@@ -764,20 +764,20 @@ func TestOpenAIChunkToAnthropicEventsFinish(t *testing.T) {
 	result := OpenAIChunkToAnthropicEvents(chunk, false, state)
 
 	if !strings.Contains(result, "content_block_stop") {
-		t.Error("应包含 content_block_stop 事件")
+		t.Error("should contain content_block_stop event")
 	}
 	if !strings.Contains(result, "message_delta") {
-		t.Error("应包含 message_delta 事件")
+		t.Error("should contain message_delta event")
 	}
 	if !strings.Contains(result, `"stop_reason":"end_turn"`) {
-		t.Error("stop_reason 应映射为 end_turn")
+		t.Error("stop_reason should map to end_turn")
 	}
 	if !strings.Contains(result, "message_stop") {
-		t.Error("应包含 message_stop 事件")
+		t.Error("should contain message_stop event")
 	}
 }
 
-// TestOpenAIChunkToAnthropicEventsToolCall 测试工具调用 chunk 转换
+// TestOpenAIChunkToAnthropicEventsToolCall tests tool call chunk conversion.
 func TestOpenAIChunkToAnthropicEventsToolCall(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	idx := 0
@@ -800,13 +800,13 @@ func TestOpenAIChunkToAnthropicEventsToolCall(t *testing.T) {
 	result := OpenAIChunkToAnthropicEvents(chunk, true, state)
 
 	if !strings.Contains(result, "tool_use") {
-		t.Error("应包含 tool_use content_block_start")
+		t.Error("should contain tool_use content_block_start")
 	}
 	if !strings.Contains(result, "get_weather") {
-		t.Error("应包含工具名称")
+		t.Error("should contain tool name")
 	}
 
-	// 参数增量
+	// Argument increments
 	chunk2 := &ChatCompletionChunk{
 		ID:    "chatcmpl-tc",
 		Model: "gpt-4",
@@ -823,12 +823,12 @@ func TestOpenAIChunkToAnthropicEventsToolCall(t *testing.T) {
 
 	result2 := OpenAIChunkToAnthropicEvents(chunk2, false, state)
 	if !strings.Contains(result2, "input_json_delta") {
-		t.Error("应包含 input_json_delta 事件")
+		t.Error("should contain input_json_delta event")
 	}
 }
 
 // ══════════════════════════════════
-// 辅助函数
+// Helper functions
 // ══════════════════════════════════
 
 func intPtr(i int) *int { return &i }

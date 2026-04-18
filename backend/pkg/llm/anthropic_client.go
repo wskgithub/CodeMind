@@ -9,16 +9,17 @@ import (
 	"time"
 )
 
+// Anthropic API version constant.
 const (
 	AnthropicAPIVersion = "2023-06-01"
 )
 
 // AnthropicClient is the native Anthropic API client.
 type AnthropicClient struct {
-	baseURL      string
-	apiKey       string
 	httpClient   *http.Client
 	streamClient *http.Client
+	baseURL      string
+	apiKey       string
 }
 
 // NewAnthropicClient creates an Anthropic client.
@@ -43,7 +44,7 @@ func (c *AnthropicClient) Messages(req *AnthropicMessagesRequest) (*AnthropicMes
 	if err != nil {
 		return nil, err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	var resp AnthropicMessagesResponse
 	if err := json.NewDecoder(body).Decode(&resp); err != nil {
@@ -65,7 +66,7 @@ func (c *AnthropicClient) MessagesRaw(rawBody []byte, extraHeaders map[string]st
 	if err != nil {
 		return nil, nil, err
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	respBytes, err := io.ReadAll(body)
 	if err != nil {
@@ -75,7 +76,7 @@ func (c *AnthropicClient) MessagesRaw(rawBody []byte, extraHeaders map[string]st
 	var partial struct {
 		Usage *AnthropicUsage `json:"usage"`
 	}
-	json.Unmarshal(respBytes, &partial)
+	_ = json.Unmarshal(respBytes, &partial)
 
 	return respBytes, partial.Usage, nil
 }
@@ -121,16 +122,16 @@ func (c *AnthropicClient) doRequestRaw(path string, rawBody []byte, isStream boo
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		bodyBytes, _ := io.ReadAll(resp.Body)
 
 		switch {
-		case resp.StatusCode == 429:
-			return nil, &LLMError{StatusCode: 529, Message: "Anthropic service overloaded, please retry later", Body: bodyBytes}
-		case resp.StatusCode >= 500:
-			return nil, &LLMError{StatusCode: 502, Message: "Anthropic service internal error", Body: bodyBytes}
+		case resp.StatusCode == 429: //nolint:mnd // intentional constant.
+			return nil, &Error{StatusCode: 529, Message: "Anthropic service overloaded, please retry later", Body: bodyBytes} //nolint:mnd // intentional constant.
+		case resp.StatusCode >= 500: //nolint:mnd // intentional constant.
+			return nil, &Error{StatusCode: 502, Message: "Anthropic service internal error", Body: bodyBytes} //nolint:mnd // intentional constant.
 		default:
-			return nil, &LLMError{StatusCode: resp.StatusCode, Message: "Anthropic service request failed", Body: bodyBytes}
+			return nil, &Error{StatusCode: resp.StatusCode, Message: "Anthropic service request failed", Body: bodyBytes}
 		}
 	}
 

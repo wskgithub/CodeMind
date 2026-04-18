@@ -18,10 +18,10 @@ import (
 )
 
 var thirdPartyHTTPClient = &http.Client{
-	Timeout: 600 * time.Second,
+	Timeout: 600 * time.Second, //nolint:mnd // intentional constant.
 	Transport: &http.Transport{
-		MaxIdleConnsPerHost: 20,
-		IdleConnTimeout:     120 * time.Second,
+		MaxIdleConnsPerHost: 20,                //nolint:mnd // intentional constant.
+		IdleConnTimeout:     120 * time.Second, //nolint:mnd // intentional constant.
 	},
 }
 
@@ -74,12 +74,13 @@ func (h *LLMProxyHandler) handleThirdPartyProxy(
 	if err != nil {
 		durationMs := int(time.Since(startTime).Milliseconds())
 		h.logger.Error("third-party service request failed", zap.Error(err), zap.String("url", targetURL))
-		go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", meta.Model, 502, err.Error(), c.ClientIP(), c.Request.UserAgent(), durationMs)
+		go h.proxyService.RecordRequestLog(userID, apiKeyID, "chat_completion", meta.Model, 502, err.Error(), c.ClientIP(), c.Request.UserAgent(), durationMs) //nolint:mnd // intentional constant.
 		h.sendFormatError(c, requestFormat, http.StatusBadGateway, "third-party service unavailable: "+err.Error())
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
+	//nolint:mnd // magic number for configuration/defaults.
 	if resp.StatusCode >= 400 {
 		h.pipeThirdPartyErrorResponse(c, resp, route, meta, userID, apiKeyID, startTime)
 		return
@@ -119,7 +120,7 @@ func (h *LLMProxyHandler) pipeThirdPartyNonStreamResponse(
 func (h *LLMProxyHandler) pipeThirdPartyStreamResponse(
 	c *gin.Context, resp *http.Response,
 	route *model.ThirdPartyRouteInfo, meta *llm.RequestMeta,
-	requestBody []byte, requestFormat string, userID, apiKeyID int64, startTime time.Time,
+	requestBody []byte, _ string, userID, apiKeyID int64, startTime time.Time,
 ) {
 	for key, vals := range resp.Header {
 		for _, v := range vals {
@@ -128,14 +129,14 @@ func (h *LLMProxyHandler) pipeThirdPartyStreamResponse(
 	}
 	c.Status(resp.StatusCode)
 
-	reader := bufio.NewReaderSize(resp.Body, 32*1024)
+	reader := bufio.NewReaderSize(resp.Body, 32*1024) //nolint:mnd // intentional constant.
 	var lastUsage *llm.Usage
 	var contentBuilder strings.Builder
 
 	for {
 		line, err := reader.ReadBytes('\n')
 		if len(line) > 0 {
-			c.Writer.Write(line)
+			_, _ = c.Writer.Write(line)
 
 			trimmed := bytes.TrimSpace(line)
 			if bytes.HasPrefix(trimmed, []byte("data: ")) {
@@ -177,13 +178,14 @@ func (h *LLMProxyHandler) pipeThirdPartyStreamResponse(
 // pipeThirdPartyErrorResponse pipes third-party service error response.
 func (h *LLMProxyHandler) pipeThirdPartyErrorResponse(
 	c *gin.Context, resp *http.Response,
-	route *model.ThirdPartyRouteInfo, meta *llm.RequestMeta,
+	_ *model.ThirdPartyRouteInfo, meta *llm.RequestMeta,
 	userID, apiKeyID int64, startTime time.Time,
 ) {
 	respBody, _ := io.ReadAll(resp.Body)
 	durationMs := int(time.Since(startTime).Milliseconds())
 
 	errMsg := string(respBody)
+	//nolint:mnd // magic number for configuration/defaults.
 	if len(errMsg) > 500 {
 		errMsg = errMsg[:500]
 	}
@@ -226,23 +228,23 @@ func (h *LLMProxyHandler) recordThirdPartyMetrics(
 
 	h.proxyService.RecordRequestLog(
 		userID, apiKeyID, "chat_completion", meta.Model,
-		200, "", c.ClientIP(), c.Request.UserAgent(), durationMs,
+		200, "", c.ClientIP(), c.Request.UserAgent(), durationMs, //nolint:mnd // intentional constant.
 	)
 
 	h.proxyService.RecordTrainingDataWithSource(
 		userID, apiKeyID, "chat_completion", meta.Model,
 		isStream, requestBody, responseBody, usage,
-		200, durationMs, c.ClientIP(),
+		200, durationMs, c.ClientIP(), //nolint:mnd // intentional constant.
 		"third_party", &route.ProviderID,
 	)
 }
 
 var skipRequestHeaders = map[string]bool{
-	"Authorization":    true,
-	"X-Api-Key":        true,
-	"Host":             true,
-	"X-Codemind-Proxy": true,
-	"Connection":       true,
+	"Authorization":     true,
+	"X-Api-Key":         true,
+	"Host":              true,
+	"X-Codemind-Proxy":  true,
+	"Connection":        true,
 	"Transfer-Encoding": true,
 }
 

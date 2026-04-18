@@ -22,11 +22,11 @@ func NewTrainingDataRepository(db *gorm.DB) *TrainingDataRepository {
 // TrainingDataFilter defines query filter conditions for training data.
 type TrainingDataFilter struct {
 	UserID      *int64
-	Model       string
-	RequestType string
 	StartDate   *time.Time
 	EndDate     *time.Time
 	IsExcluded  *bool
+	Model       string
+	RequestType string
 	Page        int
 	PageSize    int
 }
@@ -124,7 +124,7 @@ func (r *TrainingDataRepository) GetStats() (*model.TrainingDataStats, error) {
 		Select("model, COUNT(*) as count").
 		Group("model").
 		Order("count DESC").
-		Limit(20).
+		Limit(20). //nolint:mnd // top N models
 		Scan(&stats.ModelDistribution).Error
 	if err != nil {
 		return nil, err

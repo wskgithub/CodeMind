@@ -1,19 +1,20 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import {
-  Table, Button, Modal, Form, Input, Select, Space, Tag, message,
-} from 'antd';
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined, StopOutlined, 
   CheckCircleOutlined, ReloadOutlined, UserOutlined, UnlockOutlined, LockOutlined 
 } from '@ant-design/icons';
+import {
+  Table, Button, Modal, Form, Input, Select, Space, Tag, message,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import type { UserDetail, DeptTree } from '@/types';
-import userService, { type UserListParams, type CreateUserParams } from '@/services/userService';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import departmentService from '@/services/departmentService';
-import useAuthStore from '@/store/authStore';
+import userService, { type UserListParams, type CreateUserParams } from '@/services/userService';
 import useAppStore from '@/store/appStore';
+import useAuthStore from '@/store/authStore';
+import type { UserDetail, DeptTree } from '@/types';
 
 const PageIcon = ({ icon }: { icon: React.ReactNode }) => (
   <span

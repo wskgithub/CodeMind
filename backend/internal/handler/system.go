@@ -19,8 +19,7 @@ func NewSystemHandler(systemService SystemService) *SystemHandler {
 	return &SystemHandler{systemService: systemService}
 }
 
-// GetConfigs returns system configurations.
-// GET /api/v1/system/configs
+// GetConfigs handles GET /api/v1/system/configs requests.
 func (h *SystemHandler) GetConfigs(c *gin.Context) {
 	configs, err := h.systemService.GetConfigs()
 	if err != nil {
@@ -30,8 +29,7 @@ func (h *SystemHandler) GetConfigs(c *gin.Context) {
 	response.Success(c, configs)
 }
 
-// UpdateConfigs updates system configurations.
-// PUT /api/v1/system/configs
+// UpdateConfigs handles PUT /api/v1/system/configs requests.
 func (h *SystemHandler) UpdateConfigs(c *gin.Context) {
 	var req dto.UpdateConfigsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -48,19 +46,17 @@ func (h *SystemHandler) UpdateConfigs(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetPlatformServiceURL returns platform service URL.
-// GET /api/v1/settings/platform
+// GetPlatformServiceURL handles GET /api/v1/settings/platform requests.
 func (h *SystemHandler) GetPlatformServiceURL(c *gin.Context) {
 	url := h.systemService.GetPlatformServiceURL()
 	response.Success(c, gin.H{
-		"service_url":          url,
-		"openai_base_url":     url + "/api/openai/v1",
-		"anthropic_base_url":  url + "/api/anthropic",
+		"service_url":        url,
+		"openai_base_url":    url + "/api/openai/v1",
+		"anthropic_base_url": url + "/api/anthropic",
 	})
 }
 
-// ListAnnouncements returns announcement list.
-// GET /api/v1/system/announcements
+// ListAnnouncements returns the list of announcements (GET /api/v1/system/announcements).
 func (h *SystemHandler) ListAnnouncements(c *gin.Context) {
 	role := middleware.GetUserRole(c)
 	isAdmin := role == model.RoleSuperAdmin
@@ -73,8 +69,7 @@ func (h *SystemHandler) ListAnnouncements(c *gin.Context) {
 	response.Success(c, anns)
 }
 
-// CreateAnnouncement creates an announcement.
-// POST /api/v1/system/announcements
+// CreateAnnouncement creates a new announcement (POST /api/v1/system/announcements).
 func (h *SystemHandler) CreateAnnouncement(c *gin.Context) {
 	var req dto.CreateAnnouncementRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -92,8 +87,7 @@ func (h *SystemHandler) CreateAnnouncement(c *gin.Context) {
 	response.Success(c, ann)
 }
 
-// UpdateAnnouncement updates an announcement.
-// PUT /api/v1/system/announcements/:id
+// UpdateAnnouncement updates an announcement (PUT /api/v1/system/announcements/:id).
 func (h *SystemHandler) UpdateAnnouncement(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -116,8 +110,7 @@ func (h *SystemHandler) UpdateAnnouncement(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// DeleteAnnouncement deletes an announcement.
-// DELETE /api/v1/system/announcements/:id
+// DeleteAnnouncement deletes an announcement (DELETE /api/v1/system/announcements/:id).
 func (h *SystemHandler) DeleteAnnouncement(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -134,8 +127,7 @@ func (h *SystemHandler) DeleteAnnouncement(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// ListAuditLogs returns audit logs.
-// GET /api/v1/system/audit-logs
+// ListAuditLogs returns the list of audit logs (GET /api/v1/system/audit-logs).
 func (h *SystemHandler) ListAuditLogs(c *gin.Context) {
 	var query dto.AuditLogQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

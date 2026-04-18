@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import LoginPage from '../login/LoginPage';
 
 // mock functions must be defined before vi.mock
@@ -54,12 +55,25 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    isAxiosError: (error: unknown) => error && typeof error === 'object' && 'response' in error,
-  },
-}));
+// Mock axios - must provide create() since request.ts calls it at module scope
+vi.mock('axios', () => {
+  const mockInstance = {
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  };
+  return {
+    default: {
+      create: () => mockInstance,
+      isAxiosError: (error: unknown) => error && typeof error === 'object' && 'response' in error,
+    },
+  };
+});
 
 describe('LoginPage', () => {
   beforeEach(() => {
@@ -73,9 +87,9 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByPlaceholderText('用户名')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('密码')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /登 录/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Username')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Login/i })).toBeInTheDocument();
     expect(screen.getByText('CodeMind')).toBeInTheDocument();
   });
 
@@ -86,12 +100,12 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    const submitButton = screen.getByRole('button', { name: /登 录/i });
+    const submitButton = screen.getByRole('button', { name: /Login/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('请输入用户名')).toBeInTheDocument();
-      expect(screen.getByText('请输入密码')).toBeInTheDocument();
+      expect(screen.getByText('Please enter username')).toBeInTheDocument();
+      expect(screen.getByText('Please enter password')).toBeInTheDocument();
     });
   });
 
@@ -104,9 +118,9 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    const usernameInput = screen.getByPlaceholderText('用户名');
-    const passwordInput = screen.getByPlaceholderText('密码');
-    const submitButton = screen.getByRole('button', { name: /登 录/i });
+    const usernameInput = screen.getByPlaceholderText('Username');
+    const passwordInput = screen.getByPlaceholderText('Password');
+    const submitButton = screen.getByRole('button', { name: /Login/i });
 
     fireEvent.change(usernameInput, { target: { value: 'admin' } });
     fireEvent.change(passwordInput, { target: { value: 'Admin@123456' } });
@@ -114,7 +128,7 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(mockFns.login).toHaveBeenCalledWith('admin', 'Admin@123456');
-      expect(mockFns.messageSuccess).toHaveBeenCalledWith('登录成功');
+      expect(mockFns.messageSuccess).toHaveBeenCalledWith('Login successful');
       expect(mockFns.navigate).toHaveBeenCalledWith('/dashboard', { replace: true });
     });
   });
@@ -125,7 +139,7 @@ describe('LoginPage', () => {
         status: 401,
         data: {
           code: 401,
-          message: '用户名或密码错误',
+          message: 'Invalid username or password',
           data: { fail_count: 1, max_fail_count: 5 },
         },
       },
@@ -138,16 +152,16 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    const usernameInput = screen.getByPlaceholderText('用户名');
-    const passwordInput = screen.getByPlaceholderText('密码');
-    const submitButton = screen.getByRole('button', { name: /登 录/i });
+    const usernameInput = screen.getByPlaceholderText('Username');
+    const passwordInput = screen.getByPlaceholderText('Password');
+    const submitButton = screen.getByRole('button', { name: /Login/i });
 
     fireEvent.change(usernameInput, { target: { value: 'admin' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockFns.messageError).toHaveBeenCalledWith(expect.stringContaining('用户名或密码错误'));
+      expect(mockFns.messageError).toHaveBeenCalledWith(expect.stringContaining('Invalid username or password'));
     });
   });
 
@@ -157,7 +171,7 @@ describe('LoginPage', () => {
         status: 403,
         data: {
           code: 40008,
-          message: '账号已被锁定',
+          message: 'Account has been locked',
           data: {
             locked: true,
             remaining_time: 300,
@@ -175,17 +189,17 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    const usernameInput = screen.getByPlaceholderText('用户名');
-    const passwordInput = screen.getByPlaceholderText('密码');
-    const submitButton = screen.getByRole('button', { name: /登 录/i });
+    const usernameInput = screen.getByPlaceholderText('Username');
+    const passwordInput = screen.getByPlaceholderText('Password');
+    const submitButton = screen.getByRole('button', { name: /Login/i });
 
     fireEvent.change(usernameInput, { target: { value: 'admin' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('账号已被锁定')).toBeInTheDocument();
-      expect(screen.getByText(/剩余时间/)).toBeInTheDocument();
+      expect(screen.getByText('Account has been locked')).toBeInTheDocument();
+      expect(screen.getByText(/Remaining time/i)).toBeInTheDocument();
     });
   });
 
@@ -198,9 +212,9 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    const usernameInput = screen.getByPlaceholderText('用户名');
-    const passwordInput = screen.getByPlaceholderText('密码');
-    const submitButton = screen.getByRole('button', { name: /登 录/i });
+    const usernameInput = screen.getByPlaceholderText('Username');
+    const passwordInput = screen.getByPlaceholderText('Password');
+    const submitButton = screen.getByRole('button', { name: /Login/i });
 
     fireEvent.change(usernameInput, { target: { value: 'admin' } });
     fireEvent.change(passwordInput, { target: { value: 'password' } });
@@ -219,7 +233,7 @@ describe('LoginPage', () => {
         status: 403,
         data: {
           code: 40008,
-          message: '账号已被锁定',
+          message: 'Account has been locked',
           data: {
             locked: true,
             remaining_time: 300,
@@ -237,18 +251,18 @@ describe('LoginPage', () => {
       </MemoryRouter>
     );
 
-    const usernameInput = screen.getByPlaceholderText('用户名');
-    const passwordInput = screen.getByPlaceholderText('密码');
-    const submitButton = screen.getByRole('button', { name: /登 录/i });
+    const usernameInput = screen.getByPlaceholderText('Username');
+    const passwordInput = screen.getByPlaceholderText('Password');
+    const submitButton = screen.getByRole('button', { name: /Login/i });
 
     fireEvent.change(usernameInput, { target: { value: 'admin' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('用户名')).toBeDisabled();
-      expect(screen.getByPlaceholderText('密码')).toBeDisabled();
-      expect(screen.getByRole('button', { name: /账号已锁定/i })).toBeDisabled();
+      expect(screen.getByPlaceholderText('Username')).toBeDisabled();
+      expect(screen.getByPlaceholderText('Password')).toBeDisabled();
+      expect(screen.getByRole('button', { name: /Account Locked/i })).toBeDisabled();
     });
   });
 });

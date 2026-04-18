@@ -20,8 +20,7 @@ func NewLimitHandler(limitService LimitService) *LimitHandler {
 	return &LimitHandler{limitService: limitService}
 }
 
-// List returns limit configurations.
-// GET /api/v1/limits
+// List returns the rate limit rules (GET /api/v1/limits).
 func (h *LimitHandler) List(c *gin.Context) {
 	var query dto.LimitListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -38,8 +37,7 @@ func (h *LimitHandler) List(c *gin.Context) {
 	response.Success(c, limits)
 }
 
-// Upsert creates or updates a limit configuration.
-// PUT /api/v1/limits
+// Upsert creates or updates a rate limit rule (PUT /api/v1/limits).
 func (h *LimitHandler) Upsert(c *gin.Context) {
 	var req dto.UpsertRateLimitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,8 +61,7 @@ func (h *LimitHandler) Upsert(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// GetMyLimits returns current user's limit info.
-// GET /api/v1/limits/my
+// GetMyLimits returns the current user's rate limit configuration (GET /api/v1/limits/my).
 func (h *LimitHandler) GetMyLimits(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	deptID := middleware.GetDepartmentID(c)
@@ -78,8 +75,7 @@ func (h *LimitHandler) GetMyLimits(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// GetMyProgress returns current user's limit progress with reset time.
-// GET /api/v1/limits/my/progress
+// GetMyProgress returns the current user's rate limit usage progress (GET /api/v1/limits/my/progress).
 func (h *LimitHandler) GetMyProgress(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	deptID := middleware.GetDepartmentID(c)
@@ -93,8 +89,7 @@ func (h *LimitHandler) GetMyProgress(c *gin.Context) {
 	response.Success(c, data)
 }
 
-// Delete deletes a limit configuration.
-// DELETE /api/v1/limits/:id
+// Delete removes a rate limit rule (DELETE /api/v1/limits/:id).
 func (h *LimitHandler) Delete(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {

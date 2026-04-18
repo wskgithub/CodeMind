@@ -40,13 +40,13 @@ func (r *UsageRepository) UpsertDaily(userID int64, date time.Time, promptTokens
 	return r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "user_id"}, {Name: "usage_date"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"prompt_tokens":                 gorm.Expr("token_usage_daily.prompt_tokens + ?", promptTokens),
-			"completion_tokens":             gorm.Expr("token_usage_daily.completion_tokens + ?", completionTokens),
-			"total_tokens":                  gorm.Expr("token_usage_daily.total_tokens + ?", totalTokens),
-			"cache_creation_input_tokens":   gorm.Expr("token_usage_daily.cache_creation_input_tokens + ?", cacheCreationTokens),
-			"cache_read_input_tokens":       gorm.Expr("token_usage_daily.cache_read_input_tokens + ?", cacheReadTokens),
-			"request_count":                 gorm.Expr("token_usage_daily.request_count + 1"),
-			"updated_at":                    gorm.Expr("NOW()"),
+			"prompt_tokens":               gorm.Expr("token_usage_daily.prompt_tokens + ?", promptTokens),
+			"completion_tokens":           gorm.Expr("token_usage_daily.completion_tokens + ?", completionTokens),
+			"total_tokens":                gorm.Expr("token_usage_daily.total_tokens + ?", totalTokens),
+			"cache_creation_input_tokens": gorm.Expr("token_usage_daily.cache_creation_input_tokens + ?", cacheCreationTokens),
+			"cache_read_input_tokens":     gorm.Expr("token_usage_daily.cache_read_input_tokens + ?", cacheReadTokens),
+			"request_count":               gorm.Expr("token_usage_daily.request_count + 1"),
+			"updated_at":                  gorm.Expr("NOW()"),
 		}),
 	}).Create(&daily).Error
 }
@@ -68,13 +68,13 @@ func (r *UsageRepository) UpsertDailyKey(keyID, userID int64, date time.Time, pr
 	return r.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "api_key_id"}, {Name: "usage_date"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"prompt_tokens":                 gorm.Expr("token_usage_daily_key.prompt_tokens + ?", promptTokens),
-			"completion_tokens":             gorm.Expr("token_usage_daily_key.completion_tokens + ?", completionTokens),
-			"total_tokens":                  gorm.Expr("token_usage_daily_key.total_tokens + ?", totalTokens),
-			"cache_creation_input_tokens":   gorm.Expr("token_usage_daily_key.cache_creation_input_tokens + ?", cacheCreationTokens),
-			"cache_read_input_tokens":       gorm.Expr("token_usage_daily_key.cache_read_input_tokens + ?", cacheReadTokens),
-			"request_count":                 gorm.Expr("token_usage_daily_key.request_count + 1"),
-			"updated_at":                    gorm.Expr("NOW()"),
+			"prompt_tokens":               gorm.Expr("token_usage_daily_key.prompt_tokens + ?", promptTokens),
+			"completion_tokens":           gorm.Expr("token_usage_daily_key.completion_tokens + ?", completionTokens),
+			"total_tokens":                gorm.Expr("token_usage_daily_key.total_tokens + ?", totalTokens),
+			"cache_creation_input_tokens": gorm.Expr("token_usage_daily_key.cache_creation_input_tokens + ?", cacheCreationTokens),
+			"cache_read_input_tokens":     gorm.Expr("token_usage_daily_key.cache_read_input_tokens + ?", cacheReadTokens),
+			"request_count":               gorm.Expr("token_usage_daily_key.request_count + 1"),
+			"updated_at":                  gorm.Expr("NOW()"),
 		}),
 	}).Create(&daily).Error
 }
@@ -321,8 +321,8 @@ type DailyStatRow struct {
 
 // RankingRow represents a ranking query result row.
 type RankingRow struct {
-	ID           int64  `gorm:"column:id"`
 	Name         string `gorm:"column:name"`
+	ID           int64  `gorm:"column:id"`
 	TotalTokens  int64  `gorm:"column:total_tokens"`
 	RequestCount int64  `gorm:"column:request_count"`
 }
@@ -373,8 +373,8 @@ func (r *UsageRepository) GetThirdPartyKeyUsageSummary(userID *int64, deptID *in
 
 // KeyUsageRow represents a key usage query result row.
 type KeyUsageRow struct {
-	ID               int64  `gorm:"column:id"`
 	Name             string `gorm:"column:name"`
+	ID               int64  `gorm:"column:id"`
 	PromptTokens     int64  `gorm:"column:prompt_tokens"`
 	CompletionTokens int64  `gorm:"column:completion_tokens"`
 	TotalTokens      int64  `gorm:"column:total_tokens"`

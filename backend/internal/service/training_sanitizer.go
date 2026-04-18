@@ -22,13 +22,12 @@ type SensitivePattern struct {
 
 // TrainingDataSanitizer redacts sensitive data from training records.
 type TrainingDataSanitizer struct {
+	lastRefresh   time.Time
 	sysConfigRepo *repository.SystemRepository
 	logger        *zap.Logger
-
-	mu          sync.RWMutex
-	enabled     bool
-	patterns    []string
-	lastRefresh time.Time
+	patterns      []string
+	mu            sync.RWMutex
+	enabled       bool
 }
 
 var builtinPatterns = []SensitivePattern{
@@ -98,7 +97,7 @@ func (s *TrainingDataSanitizer) SanitizeResponseBody(body json.RawMessage) json.
 	return s.SanitizeRequestBody(body)
 }
 
-func (s *TrainingDataSanitizer) sanitizeMap(m map[string]interface{}) {
+func (s *TrainingDataSanitizer) sanitizeMap(m map[string]interface{}) { //nolint:gocyclo // complex business logic.
 	sensitiveKeys := s.getSensitiveKeys()
 
 	for key, value := range m {
@@ -177,7 +176,7 @@ func (s *TrainingDataSanitizer) refreshConfigIfNeeded() {
 
 	if s.sysConfigRepo != nil {
 		if cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingSanitizeEnabled); err == nil {
-			s.enabled = cfg.ConfigValue == "true"
+			s.enabled = cfg.ConfigValue == configValueTrue
 		}
 		if cfg, err := s.sysConfigRepo.GetByKey(model.ConfigTrainingSanitizePatterns); err == nil {
 			var patterns []string

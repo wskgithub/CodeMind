@@ -176,11 +176,11 @@ func (m *mockProvider) AnthropicMessagesStreamRaw(ctx context.Context, rawBody [
 	return nil, args.Error(1)
 }
 
-// mockReadCloser 用于模拟流式响应
+// mockReadCloser mocks a streaming response body.
 type mockReadCloser struct {
 	io.Reader
-	closed bool
 	onClose func()
+	closed  bool
 }
 
 func newMockReadCloser(data string) *mockReadCloser {
@@ -225,21 +225,21 @@ func TestProviderManager_GetProvider(t *testing.T) {
 	pm.Register(provider)
 
 	tests := []struct {
-		name        string
+		name         string
 		providerName string
-		wantErr     bool
-		errMsg      string
+		errMsg       string
+		wantErr      bool
 	}{
 		{
-			name:        "existing provider",
+			name:         "existing provider",
 			providerName: "test-provider",
-			wantErr:     false,
+			wantErr:      false,
 		},
 		{
-			name:        "non-existent provider",
+			name:         "non-existent provider",
 			providerName: "non-existent",
-			wantErr:     true,
-			errMsg:      "Provider 'non-existent' 未注册",
+			wantErr:      true,
+			errMsg:       "provider 'non-existent' not registered",
 		},
 	}
 
@@ -261,7 +261,7 @@ func TestProviderManager_GetProvider(t *testing.T) {
 
 func TestProviderManager_GetDefault(t *testing.T) {
 	pm := NewProviderManager("default")
-	
+
 	// Test when default provider is not registered
 	p, err := pm.GetDefault()
 	assert.Error(t, err)
@@ -281,15 +281,15 @@ func TestProviderManager_SetModelRoutes(t *testing.T) {
 	pm := NewProviderManager("default")
 	openai := newMockProvider("openai", FormatOpenAI)
 	anthropic := newMockProvider("anthropic", FormatAnthropic)
-	
+
 	pm.Register(openai)
 	pm.Register(anthropic)
 
 	routes := map[string]string{
-		"gpt-*":           "openai",
-		"claude-*":        "anthropic",
-		"gpt-4":           "openai",
-		"*":               "openai",
+		"gpt-*":    "openai",
+		"claude-*": "anthropic",
+		"gpt-4":    "openai",
+		"*":        "openai",
 	}
 
 	pm.SetModelRoutes(routes)
@@ -319,15 +319,15 @@ func TestProviderManager_RouteByModel_Priority(t *testing.T) {
 	pm := NewProviderManager("default")
 	openai := newMockProvider("openai", FormatOpenAI)
 	anthropic := newMockProvider("anthropic", FormatAnthropic)
-	
+
 	pm.Register(openai)
 	pm.Register(anthropic)
 
 	// Exact match should take priority over wildcard
 	routes := map[string]string{
-		"gpt-4":    "anthropic", // exact match
-		"gpt-*":    "openai",    // wildcard
-		"*":        "default",
+		"gpt-4": "anthropic", // exact match
+		"gpt-*": "openai",    // wildcard
+		"*":     "default",
 	}
 	pm.SetModelRoutes(routes)
 
@@ -353,7 +353,7 @@ func TestProviderManager_RouteByModel_FallbackToDefault(t *testing.T) {
 
 func TestProviderManager_ListProviders(t *testing.T) {
 	pm := NewProviderManager("default")
-	
+
 	// Empty list
 	names := pm.ListProviders()
 	assert.Empty(t, names)
@@ -374,7 +374,7 @@ func TestProviderManager_GetProviderByFormat(t *testing.T) {
 	pm := NewProviderManager("default")
 	openai := newMockProvider("openai", FormatOpenAI)
 	anthropic := newMockProvider("anthropic", FormatAnthropic)
-	
+
 	pm.Register(openai)
 	pm.Register(anthropic)
 
@@ -430,7 +430,7 @@ func TestProviderManager_DebugRoutes(t *testing.T) {
 
 func TestProviderManager_ConcurrentAccess(t *testing.T) {
 	pm := NewProviderManager("default")
-	
+
 	var wg sync.WaitGroup
 	numGoroutines := 100
 
@@ -470,7 +470,7 @@ func TestProviderManager_ConcurrentAccess(t *testing.T) {
 func TestNewLoadBalancer(t *testing.T) {
 	logger := zap.NewNop()
 	lb := NewLoadBalancer(nil, logger)
-	
+
 	assert.NotNil(t, lb)
 	assert.Equal(t, 0, lb.NodeCount())
 	assert.NotNil(t, lb.logger)
@@ -489,9 +489,9 @@ func TestLoadBalancer_UpdateNodes(t *testing.T) {
 	}
 
 	lb.UpdateNodes(nodes)
-	
+
 	assert.Equal(t, 2, lb.NodeCount())
-	
+
 	// Verify nodes are healthy after update
 	assert.True(t, lb.IsNodeHealthy(1))
 	assert.True(t, lb.IsNodeHealthy(2))
@@ -506,7 +506,7 @@ func TestLoadBalancer_SelectProvider_NoNodes(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, provider)
-	assert.Contains(t, err.Error(), "没有可用的后端节点")
+	assert.Contains(t, err.Error(), "no available backend node")
 }
 
 func TestLoadBalancer_SelectProvider_NoMatchingModel(t *testing.T) {
@@ -524,7 +524,7 @@ func TestLoadBalancer_SelectProvider_NoMatchingModel(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, selected)
-	assert.Contains(t, err.Error(), "没有可用的后端节点")
+	assert.Contains(t, err.Error(), "no available backend node")
 }
 
 func TestLoadBalancer_SelectProvider_UnhealthyNode(t *testing.T) {
@@ -556,7 +556,7 @@ func TestLoadBalancer_SelectProvider_MaxConnReached(t *testing.T) {
 	lb.UpdateNodes(nodes)
 
 	ctx := context.Background()
-	
+
 	// First selection should succeed
 	selected1, err := lb.SelectProvider(ctx, 1, "gpt-4")
 	assert.NoError(t, err)
@@ -591,7 +591,7 @@ func TestLoadBalancer_SelectProvider_WeightedDistribution(t *testing.T) {
 
 	provider1 := newMockProvider("provider1", FormatOpenAI)
 	provider2 := newMockProvider("provider2", FormatOpenAI)
-	
+
 	nodes := []*LBNode{
 		{ID: 1, Name: "node1", Provider: provider1, Weight: 90, MaxConn: 1000, ModelPatterns: []string{"*"}},
 		{ID: 2, Name: "node2", Provider: provider2, Weight: 10, MaxConn: 1000, ModelPatterns: []string{"*"}},
@@ -599,17 +599,17 @@ func TestLoadBalancer_SelectProvider_WeightedDistribution(t *testing.T) {
 	lb.UpdateNodes(nodes)
 
 	ctx := context.Background()
-	
+
 	// Run multiple selections to verify weight distribution
 	counts := map[int64]int{1: 0, 2: 0}
 	iterations := 1000
-	
+
 	for i := 0; i < iterations; i++ {
 		selected, err := lb.SelectProvider(ctx, int64(i), "gpt-4")
 		if err != nil {
 			continue
 		}
-		
+
 		// Use wrapper to get the underlying provider name
 		if wrapper, ok := selected.(*lbProviderWrapper); ok {
 			counts[wrapper.node.ID]++
@@ -620,7 +620,7 @@ func TestLoadBalancer_SelectProvider_WeightedDistribution(t *testing.T) {
 	// Node1 should have significantly more selections than node2
 	// (90% weight vs 10% weight, though load balancing may affect this)
 	assert.Greater(t, counts[1], counts[2])
-	t.Logf("Distribution: node1=%d (%.1f%%), node2=%d (%.1f%%)", 
+	t.Logf("Distribution: node1=%d (%.1f%%), node2=%d (%.1f%%)",
 		counts[1], float64(counts[1])*100/float64(iterations),
 		counts[2], float64(counts[2])*100/float64(iterations))
 }
@@ -669,12 +669,12 @@ func TestLoadBalancer_ReleaseConnection(t *testing.T) {
 	lb.UpdateNodes(nodes)
 
 	ctx := context.Background()
-	
+
 	// Select and release multiple times
 	for i := 0; i < 5; i++ {
 		selected, err := lb.SelectProvider(ctx, int64(i), "gpt-4")
 		assert.NoError(t, err)
-		
+
 		if wrapper, ok := selected.(*lbProviderWrapper); ok {
 			lb.ReleaseConnection(wrapper.node.ID)
 		}
@@ -691,7 +691,7 @@ func TestLoadBalancer_GetNodeStats(t *testing.T) {
 
 	provider1 := newMockProvider("provider1", FormatOpenAI)
 	provider2 := newMockProvider("provider2", FormatOpenAI)
-	
+
 	nodes := []*LBNode{
 		{ID: 1, Name: "node1", Provider: provider1, Weight: 10, MaxConn: 100, ModelPatterns: []string{"*"}},
 		{ID: 2, Name: "node2", Provider: provider2, Weight: 10, MaxConn: 100, ModelPatterns: []string{"*"}},
@@ -699,13 +699,13 @@ func TestLoadBalancer_GetNodeStats(t *testing.T) {
 	lb.UpdateNodes(nodes)
 
 	ctx := context.Background()
-	
+
 	// Select multiple providers
 	selected1, _ := lb.SelectProvider(ctx, 1, "gpt-4")
 	selected2, _ := lb.SelectProvider(ctx, 2, "gpt-4")
 
 	stats := lb.GetNodeStats()
-	
+
 	// Total active should be 2
 	totalActive := int64(0)
 	for _, count := range stats {
@@ -782,7 +782,7 @@ func TestLoadBalancer_ConcurrentAccess(t *testing.T) {
 
 	provider1 := newMockProvider("provider1", FormatOpenAI)
 	provider2 := newMockProvider("provider2", FormatOpenAI)
-	
+
 	nodes := []*LBNode{
 		{ID: 1, Name: "node1", Provider: provider1, Weight: 10, MaxConn: 1000, ModelPatterns: []string{"*"}},
 		{ID: 2, Name: "node2", Provider: provider2, Weight: 10, MaxConn: 1000, ModelPatterns: []string{"*"}},
@@ -800,12 +800,12 @@ func TestLoadBalancer_ConcurrentAccess(t *testing.T) {
 			defer wg.Done()
 			userID := int64(idx)
 			model := "gpt-4"
-			
+
 			selected, err := lb.SelectProvider(ctx, userID, model)
 			if err != nil {
 				return
 			}
-			
+
 			if wrapper, ok := selected.(*lbProviderWrapper); ok {
 				// Simulate some work
 				time.Sleep(time.Millisecond)
@@ -828,10 +828,10 @@ func TestLoadBalancer_ConcurrentAccess(t *testing.T) {
 
 func TestMatchesPatterns(t *testing.T) {
 	tests := []struct {
-		name       string
-		patterns   []string
-		modelName  string
-		wantMatch  bool
+		name      string
+		modelName string
+		patterns  []string
+		wantMatch bool
 	}{
 		{
 			name:      "exact match",
@@ -910,7 +910,7 @@ func TestLoadBalancer_FilterByModel(t *testing.T) {
 	provider1 := newMockProvider("provider1", FormatOpenAI)
 	provider2 := newMockProvider("provider2", FormatOpenAI)
 	provider3 := newMockProvider("provider3", FormatOpenAI)
-	
+
 	nodes := []*LBNode{
 		{ID: 1, Name: "node1", Provider: provider1, Weight: 10, MaxConn: 100, ModelPatterns: []string{"gpt-*"}},
 		{ID: 2, Name: "node2", Provider: provider2, Weight: 10, MaxConn: 100, ModelPatterns: []string{"claude-*"}},
@@ -920,34 +920,16 @@ func TestLoadBalancer_FilterByModel(t *testing.T) {
 
 	// Use reflection to test private method through public behavior
 	ctx := context.Background()
-	
+
 	// Select for gpt model - should only match node1 or node3
 	selected, err := lb.SelectProvider(ctx, 1, "gpt-4")
 	assert.NoError(t, err)
 	assert.NotNil(t, selected)
-	
+
 	if wrapper, ok := selected.(*lbProviderWrapper); ok {
 		// Should be node1 or node3, not node2
 		assert.NotEqual(t, int64(2), wrapper.node.ID)
 	}
-}
-
-// Helper type for initialization
-type atomicBool struct {
-	value bool
-	mu    sync.RWMutex
-}
-
-func (a *atomicBool) Load() bool {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	return a.value
-}
-
-func (a *atomicBool) Store(val bool) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.value = val
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -980,9 +962,9 @@ func TestLBProviderWrapper_ChatCompletion(t *testing.T) {
 
 	ctx := context.Background()
 	req := &ChatCompletionRequest{Model: "gpt-4"}
-	
+
 	resp, err := wrapper.ChatCompletion(ctx, req)
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, resp)
 	provider.AssertExpectations(t)
@@ -998,12 +980,12 @@ func TestLBProviderWrapper_ChatCompletionStream_Success(t *testing.T) {
 
 	ctx := context.Background()
 	req := &ChatCompletionRequest{Model: "gpt-4"}
-	
+
 	body, err := wrapper.ChatCompletionStream(ctx, req)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, body)
-	
+
 	// Close should release connection
 	err = body.Close()
 	assert.NoError(t, err)
@@ -1018,9 +1000,9 @@ func TestLBProviderWrapper_ChatCompletionStream_Error(t *testing.T) {
 
 	ctx := context.Background()
 	req := &ChatCompletionRequest{Model: "gpt-4"}
-	
+
 	body, err := wrapper.ChatCompletionStream(ctx, req)
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, body)
 }
@@ -1035,7 +1017,7 @@ func TestLBProviderWrapper_ListModels(t *testing.T) {
 
 	ctx := context.Background()
 	resp, err := wrapper.ListModels(ctx)
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, resp)
 }
@@ -1051,7 +1033,7 @@ func TestLBProviderWrapper_EmbeddingRaw(t *testing.T) {
 
 	ctx := context.Background()
 	data, usage, err := wrapper.EmbeddingRaw(ctx, []byte("test"))
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, data)
 	assert.Equal(t, expectedUsage, usage)
@@ -1068,7 +1050,7 @@ func TestLBProviderWrapper_ChatCompletionRaw(t *testing.T) {
 
 	ctx := context.Background()
 	data, usage, err := wrapper.ChatCompletionRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, data)
 	assert.Equal(t, expectedUsage, usage)
@@ -1084,7 +1066,7 @@ func TestLBProviderWrapper_ChatCompletionStreamRaw(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.ChatCompletionStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, body)
 	body.Close()
@@ -1099,7 +1081,7 @@ func TestLBProviderWrapper_ChatCompletionStreamRaw_Error(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.ChatCompletionStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, body)
 }
@@ -1114,9 +1096,9 @@ func TestLBProviderWrapper_Completion(t *testing.T) {
 
 	ctx := context.Background()
 	req := &CompletionRequest{Model: "gpt-4"}
-	
+
 	resp, err := wrapper.Completion(ctx, req)
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResp, resp)
 }
@@ -1131,9 +1113,9 @@ func TestLBProviderWrapper_CompletionStream(t *testing.T) {
 
 	ctx := context.Background()
 	req := &CompletionRequest{Model: "gpt-4"}
-	
+
 	body, err := wrapper.CompletionStream(ctx, req)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, body)
 	body.Close()
@@ -1148,9 +1130,9 @@ func TestLBProviderWrapper_CompletionStream_Error(t *testing.T) {
 
 	ctx := context.Background()
 	req := &CompletionRequest{Model: "gpt-4"}
-	
+
 	body, err := wrapper.CompletionStream(ctx, req)
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, body)
 }
@@ -1166,7 +1148,7 @@ func TestLBProviderWrapper_CompletionRaw(t *testing.T) {
 
 	ctx := context.Background()
 	data, usage, err := wrapper.CompletionRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, data)
 	assert.Equal(t, expectedUsage, usage)
@@ -1182,7 +1164,7 @@ func TestLBProviderWrapper_CompletionStreamRaw(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.CompletionStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, body)
 	body.Close()
@@ -1197,7 +1179,7 @@ func TestLBProviderWrapper_CompletionStreamRaw_Error(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.CompletionStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, body)
 }
@@ -1212,7 +1194,7 @@ func TestLBProviderWrapper_RetrieveModel(t *testing.T) {
 
 	ctx := context.Background()
 	info, err := wrapper.RetrieveModel(ctx, "gpt-4")
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedInfo, info)
 }
@@ -1228,7 +1210,7 @@ func TestLBProviderWrapper_ResponsesRaw(t *testing.T) {
 
 	ctx := context.Background()
 	data, usage, err := wrapper.ResponsesRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, data)
 	assert.Equal(t, expectedUsage, usage)
@@ -1244,7 +1226,7 @@ func TestLBProviderWrapper_ResponsesStreamRaw(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.ResponsesStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, body)
 	body.Close()
@@ -1259,7 +1241,7 @@ func TestLBProviderWrapper_ResponsesStreamRaw_Error(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.ResponsesStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, body)
 }
@@ -1275,7 +1257,7 @@ func TestLBProviderWrapper_AnthropicMessagesRaw(t *testing.T) {
 
 	ctx := context.Background()
 	data, usage, err := wrapper.AnthropicMessagesRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedData, data)
 	assert.Equal(t, expectedUsage, usage)
@@ -1291,7 +1273,7 @@ func TestLBProviderWrapper_AnthropicMessagesStreamRaw(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.AnthropicMessagesStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, body)
 	body.Close()
@@ -1306,7 +1288,7 @@ func TestLBProviderWrapper_AnthropicMessagesStreamRaw_Error(t *testing.T) {
 
 	ctx := context.Background()
 	body, err := wrapper.AnthropicMessagesStreamRaw(ctx, []byte("raw"))
-	
+
 	assert.Error(t, err)
 	assert.Nil(t, body)
 }
@@ -1357,7 +1339,7 @@ func setupTestRedis(t *testing.T) *redis.Client {
 
 	// Clean up test keys
 	client.Del(ctx, "codemind:lb:affinity:*")
-	
+
 	return client
 }
 
@@ -1373,7 +1355,7 @@ func TestLoadBalancer_AffinityWithRedis(t *testing.T) {
 
 	provider1 := newMockProvider("provider1", FormatOpenAI)
 	provider2 := newMockProvider("provider2", FormatOpenAI)
-	
+
 	nodes := []*LBNode{
 		{ID: 1, Name: "node1", Provider: provider1, Weight: 10, MaxConn: 100, ModelPatterns: []string{"*"}},
 		{ID: 2, Name: "node2", Provider: provider2, Weight: 10, MaxConn: 100, ModelPatterns: []string{"*"}},
@@ -1389,7 +1371,7 @@ func TestLoadBalancer_AffinityWithRedis(t *testing.T) {
 	// First selection
 	selected1, err := lb.SelectProvider(ctx, userID, "gpt-4")
 	assert.NoError(t, err)
-	
+
 	var firstNodeID int64
 	if wrapper, ok := selected1.(*lbProviderWrapper); ok {
 		firstNodeID = wrapper.node.ID
@@ -1402,9 +1384,9 @@ func TestLoadBalancer_AffinityWithRedis(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		selected, err := lb.SelectProvider(ctx, userID, "gpt-4")
 		assert.NoError(t, err)
-		
+
 		if wrapper, ok := selected.(*lbProviderWrapper); ok {
-			assert.Equal(t, firstNodeID, wrapper.node.ID, 
+			assert.Equal(t, firstNodeID, wrapper.node.ID,
 				"Expected affinity to same node, got different node on iteration %d", i)
 			lb.ReleaseConnection(wrapper.node.ID)
 		}
@@ -1498,7 +1480,7 @@ func TestLoadBalancer_NoRedis(t *testing.T) {
 	lb.UpdateNodes(nodes)
 
 	ctx := context.Background()
-	
+
 	// Should work without Redis (no affinity, just weighted selection)
 	selected, err := lb.SelectProvider(ctx, 1, "gpt-4")
 	assert.NoError(t, err)
@@ -1515,7 +1497,7 @@ func TestLoadBalancer_NoRedis(t *testing.T) {
 func TestOpenAIProvider_Methods(t *testing.T) {
 	// These are integration tests that would require a real Client
 	// For unit tests, we verify the provider interface is properly defined
-	
+
 	var _ Provider = (*OpenAIProvider)(nil)
 	var _ Provider = (*AnthropicProvider)(nil)
 }

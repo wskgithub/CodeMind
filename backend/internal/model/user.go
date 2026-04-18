@@ -6,46 +6,50 @@ import (
 	"gorm.io/gorm"
 )
 
-// User represents a platform user
+// User represents a platform user.
 type User struct {
-	ID               int64          `gorm:"primaryKey;autoIncrement" json:"id"`
-	Username         string         `gorm:"size:50;not null;uniqueIndex" json:"username"`
-	PasswordHash     string         `gorm:"size:255;not null" json:"-"`
-	DisplayName      string         `gorm:"size:100;not null" json:"display_name"`
-	Email            *string        `gorm:"size:255;uniqueIndex" json:"email"`
-	Phone            *string        `gorm:"size:20" json:"phone"`
-	AvatarURL        *string        `gorm:"size:500" json:"avatar_url"`
-	Role             string         `gorm:"size:20;not null;default:user;index" json:"role"`
-	DepartmentID     *int64         `gorm:"index" json:"department_id"`
-	Status           int16          `gorm:"not null;default:1;index" json:"status"`
-	LastLoginAt      *time.Time     `json:"last_login_at"`
-	LastLoginIP      *string        `gorm:"size:45" json:"last_login_ip"`
-	LoginFailCount   int            `gorm:"not null;default:0" json:"login_fail_count"`
-	LockedUntil      *time.Time     `json:"locked_until"`
-	LastLoginFailAt  *time.Time     `json:"last_login_fail_at"`
-	CreatedAt        time.Time      `gorm:"not null;autoCreateTime" json:"created_at"`
-	UpdatedAt        time.Time      `gorm:"not null;autoUpdateTime" json:"updated_at"`
-	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
-
-	Department *Department `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
+	CreatedAt       time.Time      `gorm:"not null;autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time      `gorm:"not null;autoUpdateTime" json:"updated_at"`
+	DepartmentID    *int64         `gorm:"index" json:"department_id"`
+	LockedUntil     *time.Time     `json:"locked_until"`
+	Email           *string        `gorm:"size:255;uniqueIndex" json:"email"`
+	Phone           *string        `gorm:"size:20" json:"phone"`
+	AvatarURL       *string        `gorm:"size:500" json:"avatar_url"`
+	Department      *Department    `gorm:"foreignKey:DepartmentID" json:"department,omitempty"`
+	LastLoginFailAt *time.Time     `json:"last_login_fail_at"`
+	LastLoginAt     *time.Time     `json:"last_login_at"`
+	LastLoginIP     *string        `gorm:"size:45" json:"last_login_ip"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
+	Role            string         `gorm:"size:20;not null;default:user;index" json:"role"`
+	PasswordHash    string         `gorm:"size:255;not null" json:"-"`
+	Username        string         `gorm:"size:50;not null;uniqueIndex" json:"username"`
+	DisplayName     string         `gorm:"size:100;not null" json:"display_name"`
+	LoginFailCount  int            `gorm:"not null;default:0" json:"login_fail_count"`
+	ID              int64          `gorm:"primaryKey;autoIncrement" json:"id"`
+	Status          int16          `gorm:"not null;default:1;index" json:"status"`
 }
 
+// TableName returns the database table name.
 func (User) TableName() string {
 	return "users"
 }
 
+// IsSuperAdmin reports whether the user is a super admin.
 func (u *User) IsSuperAdmin() bool {
 	return u.Role == RoleSuperAdmin
 }
 
+// IsDeptManager reports whether the user is a department manager.
 func (u *User) IsDeptManager() bool {
 	return u.Role == RoleDeptManager
 }
 
+// IsActive reports whether the user is active.
 func (u *User) IsActive() bool {
 	return u.Status == StatusEnabled
 }
 
+// IsLocked reports whether the user account is locked.
 func (u *User) IsLocked() bool {
 	if u.LockedUntil == nil {
 		return false
@@ -53,7 +57,7 @@ func (u *User) IsLocked() bool {
 	return u.LockedUntil.After(time.Now())
 }
 
-// GetRemainingLockTime returns remaining lock time in seconds
+// GetRemainingLockTime returns remaining lock time in seconds.
 func (u *User) GetRemainingLockTime() int64 {
 	if u.LockedUntil == nil {
 		return 0
@@ -65,12 +69,14 @@ func (u *User) GetRemainingLockTime() int64 {
 	return remaining
 }
 
+// User role constants.
 const (
-	RoleSuperAdmin = "super_admin"
+	RoleSuperAdmin  = "super_admin"
 	RoleDeptManager = "dept_manager"
-	RoleUser       = "user"
+	RoleUser        = "user"
 )
 
+// User status constants.
 const (
 	StatusDisabled int16 = 0
 	StatusEnabled  int16 = 1

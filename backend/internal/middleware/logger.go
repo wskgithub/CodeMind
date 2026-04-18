@@ -39,9 +39,9 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 		}
 
 		switch {
-		case statusCode >= 500:
+		case statusCode >= 500: //nolint:mnd // intentional constant.
 			logger.Error("server error", fields...)
-		case statusCode >= 400:
+		case statusCode >= 400: //nolint:mnd // intentional constant.
 			logger.Warn("client error", fields...)
 		default:
 			logger.Info("request completed", fields...)

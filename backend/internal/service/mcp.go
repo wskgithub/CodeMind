@@ -7,6 +7,7 @@ import (
 	"codemind/internal/model"
 	"codemind/internal/model/dto"
 	"codemind/internal/repository"
+
 	mcpPkg "codemind/pkg/mcp"
 
 	"go.uber.org/zap"
@@ -14,9 +15,9 @@ import (
 
 // MCPService handles MCP service management.
 type MCPService struct {
-	mcpRepo  *repository.MCPRepository
-	proxy    *mcpPkg.Proxy
-	logger   *zap.Logger
+	mcpRepo *repository.MCPRepository
+	proxy   *mcpPkg.Proxy
+	logger  *zap.Logger
 }
 
 // NewMCPService creates a new MCP service instance.
@@ -83,7 +84,7 @@ func (s *MCPService) ListServices(status string) ([]dto.MCPServiceResponse, erro
 		return nil, err
 	}
 
-	var result []dto.MCPServiceResponse
+	result := make([]dto.MCPServiceResponse, 0, len(services))
 	for _, svc := range services {
 		toolsCount := 0
 		if svc.ToolsSchema != nil {
@@ -166,7 +167,8 @@ func (s *MCPService) SyncTools(id int64) error {
 
 	if !s.proxy.IsConnected(svc.Name) {
 		authToken, authHeader := s.extractAuth(svc)
-		if err := s.proxy.ConnectService(svc.Name, svc.EndpointURL, svc.AuthType, authToken, authHeader); err != nil {
+		err = s.proxy.ConnectService(svc.Name, svc.EndpointURL, svc.AuthType, authToken, authHeader)
+		if err != nil {
 			return fmt.Errorf("failed to connect service: %w", err)
 		}
 	}
@@ -211,7 +213,7 @@ func (s *MCPService) GetServiceTools(id int64) ([]dto.MCPToolInfo, error) {
 		return nil, fmt.Errorf("failed to parse tools list: %w", err)
 	}
 
-	var result []dto.MCPToolInfo
+	result := make([]dto.MCPToolInfo, 0, len(tools))
 	for _, t := range tools {
 		result = append(result, dto.MCPToolInfo{
 			Name:        t.Name,
@@ -256,7 +258,7 @@ func (s *MCPService) GetServiceInfosForGateway() ([]mcpPkg.ServiceInfo, error) {
 		return nil, err
 	}
 
-	var infos []mcpPkg.ServiceInfo
+	infos := make([]mcpPkg.ServiceInfo, 0, len(services))
 	for _, svc := range services {
 		infos = append(infos, mcpPkg.ServiceInfo{
 			Name:        svc.Name,

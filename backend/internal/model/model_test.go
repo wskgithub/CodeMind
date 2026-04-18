@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// ==================== User 模型测试 ====================
+// ==================== User model tests ====================
 
 func TestUser_IsSuperAdmin(t *testing.T) {
 	tests := []struct {
@@ -16,11 +16,11 @@ func TestUser_IsSuperAdmin(t *testing.T) {
 		role     string
 		expected bool
 	}{
-		{"超级管理员", RoleSuperAdmin, true},
-		{"部门经理", RoleDeptManager, false},
-		{"普通用户", RoleUser, false},
-		{"空角色", "", false},
-		{"其他角色", "admin", false},
+		{"super admin", RoleSuperAdmin, true},
+		{"department manager", RoleDeptManager, false},
+		{"regular user", RoleUser, false},
+		{"empty role", "", false},
+		{"other role", "admin", false},
 	}
 
 	for _, tt := range tests {
@@ -37,11 +37,11 @@ func TestUser_IsDeptManager(t *testing.T) {
 		role     string
 		expected bool
 	}{
-		{"超级管理员", RoleSuperAdmin, false},
-		{"部门经理", RoleDeptManager, true},
-		{"普通用户", RoleUser, false},
-		{"空角色", "", false},
-		{"其他角色", "manager", false},
+		{"super admin", RoleSuperAdmin, false},
+		{"department manager", RoleDeptManager, true},
+		{"regular user", RoleUser, false},
+		{"empty role", "", false},
+		{"other role", "manager", false},
 	}
 
 	for _, tt := range tests {
@@ -58,10 +58,10 @@ func TestUser_IsActive(t *testing.T) {
 		status   int16
 		expected bool
 	}{
-		{"启用状态", StatusEnabled, true},
-		{"禁用状态", StatusDisabled, false},
-		{"其他状态-2", int16(2), false},
-		{"其他状态--1", int16(-1), false},
+		{"enabled status", StatusEnabled, true},
+		{"disabled status", StatusDisabled, false},
+		{"other status 2", int16(2), false},
+		{"other status -1", int16(-1), false},
 	}
 
 	for _, tt := range tests {
@@ -82,10 +82,10 @@ func TestUser_IsLocked(t *testing.T) {
 		lockUntil *time.Time
 		expected  bool
 	}{
-		{"未锁定-nil", nil, false},
-		{"锁定中-未来时间", &future, true},
-		{"锁定已过期-过去时间", &past, false},
-		{"锁定刚好到期-现在", &now, false},
+		{"not locked - nil", nil, false},
+		{"locked - future time", &future, true},
+		{"lock expired - past time", &past, false},
+		{"lock just expired - now", &now, false},
 	}
 
 	for _, tt := range tests {
@@ -100,16 +100,16 @@ func TestUser_GetRemainingLockTime(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name         string
-		lockUntil    *time.Time
-		expectedMin  int64
-		expectedMax  int64
+		name        string
+		lockUntil   *time.Time
+		expectedMin int64
+		expectedMax int64
 	}{
-		{"未锁定-nil", nil, 0, 0},
-		{"锁定已过期", func() *time.Time { t := now.Add(-time.Hour); return &t }(), 0, 0},
-		{"锁定30分钟", func() *time.Time { t := now.Add(30 * time.Minute); return &t }(), 29 * 60, 31 * 60},
-		{"锁定1小时", func() *time.Time { t := now.Add(time.Hour); return &t }(), 59 * 60, 61 * 60},
-		{"锁定1秒", func() *time.Time { t := now.Add(time.Second); return &t }(), 0, 2},
+		{"not locked - nil", nil, 0, 0},
+		{"lock expired", func() *time.Time { t := now.Add(-time.Hour); return &t }(), 0, 0},
+		{"locked for 30 minutes", func() *time.Time { t := now.Add(30 * time.Minute); return &t }(), 29 * 60, 31 * 60},
+		{"locked for 1 hour", func() *time.Time { t := now.Add(time.Hour); return &t }(), 59 * 60, 61 * 60},
+		{"locked for 1 second", func() *time.Time { t := now.Add(time.Second); return &t }(), 0, 2},
 	}
 
 	for _, tt := range tests {
@@ -122,7 +122,7 @@ func TestUser_GetRemainingLockTime(t *testing.T) {
 	}
 }
 
-// ==================== APIKey 模型测试 ====================
+// ==================== APIKey model tests ====================
 
 func TestAPIKey_IsActive(t *testing.T) {
 	tests := []struct {
@@ -130,9 +130,9 @@ func TestAPIKey_IsActive(t *testing.T) {
 		status   int16
 		expected bool
 	}{
-		{"启用状态", StatusEnabled, true},
-		{"禁用状态", StatusDisabled, false},
-		{"其他状态", int16(2), false},
+		{"enabled status", StatusEnabled, true},
+		{"disabled status", StatusDisabled, false},
+		{"other status", int16(2), false},
 	}
 
 	for _, tt := range tests {
@@ -153,10 +153,10 @@ func TestAPIKey_IsExpired(t *testing.T) {
 		expiresAt *time.Time
 		expected  bool
 	}{
-		{"永不过期-nil", nil, false},
-		{"已过期-过去时间", &past, true},
-		{"未过期-未来时间", &future, false},
-		{"刚好过期-现在", &now, true},
+		{"never expires - nil", nil, false},
+		{"expired - past time", &past, true},
+		{"not expired - future time", &future, false},
+		{"just expired - now", &now, true},
 	}
 
 	for _, tt := range tests {
@@ -167,7 +167,7 @@ func TestAPIKey_IsExpired(t *testing.T) {
 	}
 }
 
-// ==================== RateLimit 模型测试 ====================
+// ==================== RateLimit model tests ====================
 
 func TestPeriodLabel(t *testing.T) {
 	tests := []struct {
@@ -218,21 +218,21 @@ func TestPeriodHoursFromLabel(t *testing.T) {
 
 func TestRateLimit_EffectiveHours(t *testing.T) {
 	tests := []struct {
-		name         string
-		periodHours  int
-		period       string
-		expected     int
+		name        string
+		periodHours int
+		period      string
+		expected    int
 	}{
-		{"已设置PeriodHours-24", 24, "", 24},
-		{"已设置PeriodHours-168", 168, "", 168},
-		{"已设置PeriodHours-720", 720, "", 720},
-		{"已设置PeriodHours-48", 48, "", 48},
-		{"已设置PeriodHours-负数", -1, "", 24},
-		{"PeriodHours为0-使用daily", 0, PeriodDaily, 24},
-		{"PeriodHours为0-使用weekly", 0, PeriodWeekly, 168},
-		{"PeriodHours为0-使用monthly", 0, PeriodMonthly, 720},
-		{"PeriodHours为0-使用custom", 0, PeriodCustom, 24},
-		{"PeriodHours为0-空字符串", 0, "", 24},
+		{"PeriodHours set to 24", 24, "", 24},
+		{"PeriodHours set to 168", 168, "", 168},
+		{"PeriodHours set to 720", 720, "", 720},
+		{"PeriodHours set to 48", 48, "", 48},
+		{"PeriodHours set to negative", -1, "", 24},
+		{"PeriodHours is 0 - use daily", 0, PeriodDaily, 24},
+		{"PeriodHours is 0 - use weekly", 0, PeriodWeekly, 168},
+		{"PeriodHours is 0 - use monthly", 0, PeriodMonthly, 720},
+		{"PeriodHours is 0 - use custom", 0, PeriodCustom, 24},
+		{"PeriodHours is 0 - empty string", 0, "", 24},
 	}
 
 	for _, tt := range tests {
@@ -246,7 +246,7 @@ func TestRateLimit_EffectiveHours(t *testing.T) {
 	}
 }
 
-// ==================== 常量验证测试 ====================
+// ==================== Constant validation tests ====================
 
 func TestUserRoleConstants(t *testing.T) {
 	assert.Equal(t, "super_admin", RoleSuperAdmin)
@@ -260,12 +260,12 @@ func TestStatusConstants(t *testing.T) {
 }
 
 func TestRateLimitConstants(t *testing.T) {
-	// 目标类型常量
+	// Target type constants
 	assert.Equal(t, "global", TargetTypeGlobal)
 	assert.Equal(t, "department", TargetTypeDepartment)
 	assert.Equal(t, "user", TargetTypeUser)
 
-	// 周期常量
+	// Period constants
 	assert.Equal(t, "daily", PeriodDaily)
 	assert.Equal(t, "weekly", PeriodWeekly)
 	assert.Equal(t, "monthly", PeriodMonthly)
@@ -279,20 +279,20 @@ func TestLLMBackendConstants(t *testing.T) {
 }
 
 func TestMCPConstants(t *testing.T) {
-	// 服务状态
+	// Service status
 	assert.Equal(t, "enabled", MCPServiceEnabled)
 	assert.Equal(t, "disabled", MCPServiceDisabled)
 
-	// 传输类型
+	// Transport type
 	assert.Equal(t, "sse", MCPTransportSSE)
 	assert.Equal(t, "streamable-http", MCPTransportStreamableHTTP)
 
-	// 认证类型
+	// Auth type
 	assert.Equal(t, "none", MCPAuthNone)
 	assert.Equal(t, "bearer", MCPAuthBearer)
 	assert.Equal(t, "header", MCPAuthHeader)
 
-	// 访问规则目标类型
+	// Access rule target types
 	assert.Equal(t, "user", MCPTargetUser)
 	assert.Equal(t, "department", MCPTargetDepartment)
 	assert.Equal(t, "role", MCPTargetRole)
@@ -308,7 +308,7 @@ func TestSystemConfigConstants(t *testing.T) {
 	assert.Equal(t, "system.force_change_password", ConfigForceChangePwd)
 }
 
-// ==================== 模型结构体验证测试 ====================
+// ==================== Model struct validation tests ====================
 
 func TestUser_StructFields(t *testing.T) {
 	email := "test@example.com"
@@ -600,10 +600,10 @@ func TestRequestLog_StructFields(t *testing.T) {
 	assert.Equal(t, &durationMs, log.DurationMs)
 }
 
-// ==================== Audit 模型测试 ====================
+// ==================== Audit model tests ====================
 
 func TestAuditConstants(t *testing.T) {
-	// 审计操作类型常量
+	// Audit action type constants
 	assert.Equal(t, "create_user", AuditActionCreateUser)
 	assert.Equal(t, "update_user", AuditActionUpdateUser)
 	assert.Equal(t, "delete_user", AuditActionDeleteUser)
@@ -626,7 +626,7 @@ func TestAuditConstants(t *testing.T) {
 	assert.Equal(t, "update_announcement", AuditActionUpdateAnnounce)
 	assert.Equal(t, "delete_announcement", AuditActionDeleteAnnounce)
 
-	// 审计目标类型常量
+	// Audit target type constants
 	assert.Equal(t, "user", AuditTargetUser)
 	assert.Equal(t, "department", AuditTargetDepartment)
 	assert.Equal(t, "api_key", AuditTargetAPIKey)
@@ -659,7 +659,7 @@ func TestAuditLog_StructFields(t *testing.T) {
 	assert.Equal(t, &clientIP, log.ClientIP)
 }
 
-// ==================== MCP 认证配置结构体测试 ====================
+// ==================== MCP auth config struct tests ====================
 
 func TestMCPAuthConfigBearer_StructFields(t *testing.T) {
 	config := MCPAuthConfigBearer{
@@ -677,17 +677,17 @@ func TestMCPAuthConfigHeader_StructFields(t *testing.T) {
 	assert.Equal(t, "secret-value", config.HeaderValue)
 }
 
-// ==================== 边界条件测试 ====================
+// ==================== Edge case tests ====================
 
 func TestUser_IsLocked_Boundary(t *testing.T) {
 	now := time.Now()
 
-	// 边界测试：刚好1秒后的未来
+	// Edge case: exactly 1 second in the future
 	oneSecondFuture := now.Add(time.Second)
 	u := &User{LockedUntil: &oneSecondFuture}
 	assert.True(t, u.IsLocked())
 
-	// 边界测试：刚好1秒前的过去
+	// Edge case: exactly 1 second in the past
 	oneSecondPast := now.Add(-time.Second)
 	u2 := &User{LockedUntil: &oneSecondPast}
 	assert.False(t, u2.IsLocked())
@@ -696,42 +696,42 @@ func TestUser_IsLocked_Boundary(t *testing.T) {
 func TestAPIKey_IsExpired_Boundary(t *testing.T) {
 	now := time.Now()
 
-	// 边界测试：刚好1秒后的未来
+	// Edge case: exactly 1 second in the future
 	oneSecondFuture := now.Add(time.Second)
 	k := &APIKey{ExpiresAt: &oneSecondFuture}
 	assert.False(t, k.IsExpired())
 
-	// 边界测试：刚好1秒前的过去
+	// Edge case: exactly 1 second in the past
 	oneSecondPast := now.Add(-time.Second)
 	k2 := &APIKey{ExpiresAt: &oneSecondPast}
 	assert.True(t, k2.IsExpired())
 }
 
 func TestRateLimit_PeriodLabel_AllPossibleHours(t *testing.T) {
-	// 测试所有可能的小时值
+	// Test all possible hour values
 	testCases := map[int]string{
-		-720:         PeriodCustom,
-		-168:         PeriodCustom,
-		-24:          PeriodCustom,
-		-1:           PeriodCustom,
-		0:            PeriodCustom,
-		1:            PeriodCustom,
-		12:           PeriodCustom,
-		23:           PeriodCustom,
-		24:           PeriodDaily,
-		25:           PeriodCustom,
-		48:           PeriodCustom,
-		72:           PeriodCustom,
-		100:          PeriodCustom,
-		167:          PeriodCustom,
-		168:          PeriodWeekly,
-		169:          PeriodCustom,
-		500:          PeriodCustom,
-		719:          PeriodCustom,
-		720:          PeriodMonthly,
-		721:          PeriodCustom,
-		1000:         PeriodCustom,
-		8760:         PeriodCustom, // 一年
+		-720: PeriodCustom,
+		-168: PeriodCustom,
+		-24:  PeriodCustom,
+		-1:   PeriodCustom,
+		0:    PeriodCustom,
+		1:    PeriodCustom,
+		12:   PeriodCustom,
+		23:   PeriodCustom,
+		24:   PeriodDaily,
+		25:   PeriodCustom,
+		48:   PeriodCustom,
+		72:   PeriodCustom,
+		100:  PeriodCustom,
+		167:  PeriodCustom,
+		168:  PeriodWeekly,
+		169:  PeriodCustom,
+		500:  PeriodCustom,
+		719:  PeriodCustom,
+		720:  PeriodMonthly,
+		721:  PeriodCustom,
+		1000: PeriodCustom,
+		8760: PeriodCustom, // one year
 	}
 
 	for hours, expected := range testCases {
@@ -741,19 +741,19 @@ func TestRateLimit_PeriodLabel_AllPossibleHours(t *testing.T) {
 }
 
 func TestRateLimit_EffectiveHours_Boundary(t *testing.T) {
-	// 边界测试：PeriodHours为1（最小正值）
+	// Edge case: PeriodHours is 1 (minimum positive value)
 	rl1 := &RateLimit{PeriodHours: 1, Period: PeriodDaily}
 	assert.Equal(t, 1, rl1.EffectiveHours())
 
-	// 边界测试：PeriodHours为负数（此时会使用Period标签推导）
+	// Edge case: PeriodHours is negative (falls back to Period label derivation)
 	rl2 := &RateLimit{PeriodHours: -1, Period: PeriodDaily}
 	assert.Equal(t, 24, rl2.EffectiveHours())
 
-	// 边界测试：PeriodHours为0，从Period推断
+	// Edge case: PeriodHours is 0, inferred from Period
 	rl3 := &RateLimit{PeriodHours: 0, Period: PeriodWeekly}
 	assert.Equal(t, 168, rl3.EffectiveHours())
 
-	// 边界测试：PeriodHours很大
+	// Edge case: PeriodHours is very large
 	rl4 := &RateLimit{PeriodHours: 9999, Period: PeriodDaily}
 	assert.Equal(t, 9999, rl4.EffectiveHours())
 }
@@ -761,20 +761,20 @@ func TestRateLimit_EffectiveHours_Boundary(t *testing.T) {
 func TestUser_GetRemainingLockTime_Boundary(t *testing.T) {
 	now := time.Now()
 
-	// 边界测试：剩余1秒
+	// Edge case: 1 second remaining
 	oneSecondFuture := now.Add(time.Second)
 	u := &User{LockedUntil: &oneSecondFuture}
 	remaining := u.GetRemainingLockTime()
 	assert.GreaterOrEqual(t, remaining, int64(0))
 	assert.LessOrEqual(t, remaining, int64(2))
 
-	// 边界测试：剩余0秒（刚好过期）
+	// Edge case: 0 seconds remaining (just expired)
 	u2 := &User{LockedUntil: &now}
 	remaining2 := u2.GetRemainingLockTime()
 	assert.Equal(t, int64(0), remaining2)
 
-	// 边界测试：剩余很长时间
-	longFuture := now.Add(time.Hour * 24 * 365) // 1年
+	// Edge case: very long time remaining
+	longFuture := now.Add(time.Hour * 24 * 365) // 1 year
 	u3 := &User{LockedUntil: &longFuture}
 	remaining3 := u3.GetRemainingLockTime()
 	expectedSeconds := int64(24 * 365 * 3600)

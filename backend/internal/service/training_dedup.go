@@ -21,13 +21,12 @@ const (
 
 // TrainingDataDeduplicator deduplicates training data using Redis.
 type TrainingDataDeduplicator struct {
+	lastRefresh   time.Time
 	rdb           *redis.Client
 	sysConfigRepo *repository.SystemRepository
 	logger        *zap.Logger
 	ttl           time.Duration
-
-	enabled     bool
-	lastRefresh time.Time
+	enabled       bool
 }
 
 // NewTrainingDataDeduplicator creates a new deduplicator.
@@ -116,14 +115,14 @@ func (d *TrainingDataDeduplicator) extractPrompt(body json.RawMessage) string {
 
 	var chatReq struct {
 		Messages []struct {
-			Role    string `json:"role"`
 			Content interface{} `json:"content"`
+			Role    string      `json:"role"`
 		} `json:"messages"`
 	}
 	if err := json.Unmarshal(body, &chatReq); err == nil && len(chatReq.Messages) > 0 {
 		var result string
 		for _, m := range chatReq.Messages {
-			if m.Role == "user" {
+			if m.Role == messageRoleUser {
 				result += contentToString(m.Content)
 			}
 		}
@@ -163,16 +162,16 @@ func (d *TrainingDataDeduplicator) extractResponse(body json.RawMessage) string 
 	}
 
 	var anthropicResp struct {
+		Role    string `json:"role"`
 		Content []struct {
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"content"`
-		Role string `json:"role"`
 	}
 	if err := json.Unmarshal(body, &anthropicResp); err == nil && anthropicResp.Role == "assistant" {
 		var result string
 		for _, b := range anthropicResp.Content {
-			if b.Type == "text" {
+			if b.Type == contentTypeText {
 				result += b.Text
 			}
 		}
@@ -191,7 +190,7 @@ func contentToString(content interface{}) string {
 	case []interface{}:
 		for _, item := range v {
 			if itemMap, ok := item.(map[string]interface{}); ok {
-				if itemMap["type"] == "text" {
+				if itemMap["type"] == contentTypeText {
 					if text, ok := itemMap["text"].(string); ok {
 						return text
 					}
@@ -209,7 +208,7 @@ func (d *TrainingDataDeduplicator) refreshConfigIfNeeded() {
 
 	if d.sysConfigRepo != nil {
 		if cfg, err := d.sysConfigRepo.GetByKey(model.ConfigTrainingDedupEnabled); err == nil {
-			d.enabled = cfg.ConfigValue == "true"
+			d.enabled = cfg.ConfigValue == configValueTrue
 		}
 	}
 	d.lastRefresh = time.Now()

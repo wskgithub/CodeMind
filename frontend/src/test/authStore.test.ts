@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import useAuthStore from '@/store/authStore';
 
 // Mock authService
@@ -21,22 +22,22 @@ describe('AuthStore', () => {
     });
   });
 
-  it('初始状态：未登录', () => {
+  it('initial state: not logged in', () => {
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(false);
     expect(state.token).toBeNull();
     expect(state.user).toBeNull();
   });
 
-  it('restore: localStorage 无 token 时保持未登录', () => {
+  it('restore: stays logged out when localStorage has no token', () => {
     useAuthStore.getState().restore();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 
-  it('clear: 清除所有认证状态', () => {
+  it('clear: clears all auth state', () => {
     useAuthStore.setState({
       token: 'test-token',
-      user: { id: 1, username: 'admin', display_name: '管理员', role: 'super_admin' },
+      user: { id: 1, username: 'admin', display_name: 'Admin', role: 'super_admin' },
       isAuthenticated: true,
     });
 

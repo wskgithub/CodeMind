@@ -1,3 +1,4 @@
+// Package main is the entry point for the CodeMind server.
 package main
 
 import (
@@ -14,11 +15,13 @@ import (
 	"codemind/internal/model"
 	"codemind/internal/model/monitor"
 	"codemind/internal/pkg/crypto"
-	jwtPkg "codemind/internal/pkg/jwt"
 	"codemind/internal/repository"
 	"codemind/internal/router"
 	"codemind/internal/service"
 	"codemind/pkg/llm"
+
+	jwtPkg "codemind/internal/pkg/jwt"
+
 	mcpPkg "codemind/pkg/mcp"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +32,7 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
-// Build-time injected version info
+// Build-time injected version info.
 var (
 	Version   = "dev"
 	BuildTime = "unknown"
@@ -50,7 +53,7 @@ func main() {
 		fmt.Printf("failed to init logger: %v\n", err)
 		os.Exit(1)
 	}
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	logger.Info("CodeMind starting",
 		zap.String("version", Version),
@@ -66,7 +69,7 @@ func main() {
 	logger.Info("database connected")
 
 	// Auto-migrate: add new columns/tables without dropping existing data
-	if err := db.AutoMigrate(
+	if err = db.AutoMigrate(
 		&model.APIKey{},
 		&model.LLMBackend{},
 		&model.RateLimit{},
@@ -181,13 +184,14 @@ func main() {
 	router.Setup(engine, handlers, jwtManager, db, rdb, logger, cfg.Server.CORSOrigins, cfg.Upload.Dir)
 
 	// 11. Start HTTP server with graceful shutdown
+	const llmStreamWriteTimeout = 600
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
 		Addr:         addr,
 		Handler:      engine,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 600 * time.Second, // longer timeout for LLM streaming
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  30 * time.Second,                    //nolint:mnd // intentional constant.
+		WriteTimeout: llmStreamWriteTimeout * time.Second, // LLM streaming requests require a longer timeout
+		IdleTimeout:  120 * time.Second,                   //nolint:mnd // intentional constant.
 	}
 
 	go func() {
@@ -205,7 +209,7 @@ func main() {
 	logger.Info("shutdown signal received, gracefully stopping...")
 
 	// Allow 10 seconds for in-flight requests
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -220,8 +224,8 @@ func main() {
 	logger.Info("server stopped")
 }
 
-// initDatabase initializes database connection
-func initDatabase(cfg *config.Config, logger *zap.Logger) (*gorm.DB, error) {
+// initDatabase initializes database connection.
+func initDatabase(cfg *config.Config, _ *zap.Logger) (*gorm.DB, error) {
 	var logLevel gormLogger.LogLevel
 	switch cfg.Server.Mode {
 	case "debug":
@@ -251,7 +255,7 @@ func initDatabase(cfg *config.Config, logger *zap.Logger) (*gorm.DB, error) {
 	return db, nil
 }
 
-// initProviderManager initializes multi-provider manager
+// initProviderManager initializes multi-provider manager.
 func initProviderManager(cfg *config.Config, logger *zap.Logger) *llm.ProviderManager {
 	providers := cfg.LLM.GetEffectiveProviders()
 	defaultName := cfg.LLM.GetDefaultProviderName()
@@ -288,11 +292,11 @@ func initProviderManager(cfg *config.Config, logger *zap.Logger) *llm.ProviderMa
 	return manager
 }
 
-// fixPeriodHours migrates rate_limits table: populates period_hours and updates unique index
+// fixPeriodHours migrates rate_limits table: populates period_hours and updates unique index.
 func fixPeriodHours(db *gorm.DB, logger *zap.Logger) {
 	// Populate period_hours for legacy records
 	periodMap := map[string]int{
-		"daily": 24, "weekly": 168, "monthly": 720,
+		"daily": 24, "weekly": 168, "monthly": 720, //nolint:mnd // intentional constant.
 	}
 	for period, hours := range periodMap {
 		result := db.Exec(
@@ -331,8 +335,8 @@ func fixPeriodHours(db *gorm.DB, logger *zap.Logger) {
 	}
 }
 
-// initRedis initializes Redis connection
-func initRedis(cfg *config.Config, logger *zap.Logger) (*redis.Client, error) {
+// initRedis initializes Redis connection.
+func initRedis(cfg *config.Config, _ *zap.Logger) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Addr(),
 		Password: cfg.Redis.Password,
@@ -340,7 +344,7 @@ func initRedis(cfg *config.Config, logger *zap.Logger) (*redis.Client, error) {
 		PoolSize: cfg.Redis.PoolSize,
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) //nolint:mnd // intentional constant.
 	defer cancel()
 
 	if err := rdb.Ping(ctx).Err(); err != nil {

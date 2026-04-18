@@ -1,4 +1,5 @@
 import request from './request';
+
 import type { ApiResponse, LoginParams, LoginResult, UserDetail } from '@/types';
 
 const authService = {

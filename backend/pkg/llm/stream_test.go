@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-// TestStreamReader 测试 SSE 流式读取器
+// TestStreamReader tests SSE stream reader.
 func TestStreamReader(t *testing.T) {
-	// 模拟 SSE 数据流
+	// Simulate SSE data stream
 	sseData := `data: {"id":"1","object":"chat.completion.chunk","model":"gpt-4","choices":[{"index":0,"delta":{"role":"assistant","content":"Hello"}}]}
 
 data: {"id":"1","object":"chat.completion.chunk","model":"gpt-4","choices":[{"index":0,"delta":{"content":" world"}}]}
@@ -20,43 +20,43 @@ data: [DONE]
 	reader := NewStreamReader(body)
 	defer reader.Close()
 
-	// 第一个 chunk
+	// First chunk
 	rawLine, chunk, err := reader.ReadChunk()
 	if err != nil {
-		t.Fatalf("读取第一个 chunk 失败: %v", err)
+		t.Fatalf("failed to read first chunk: %v", err)
 	}
 	if !strings.HasPrefix(rawLine, "data: ") {
-		t.Errorf("原始行应以 'data: ' 开头: %s", rawLine)
+		t.Errorf("raw line should start with 'data: ': %s", rawLine)
 	}
 	if chunk == nil {
-		t.Fatal("chunk 不应为 nil")
+		t.Fatal("chunk should not be nil")
 	}
 	if chunk.ID != "1" {
-		t.Errorf("chunk ID 不正确: %s", chunk.ID)
+		t.Errorf("incorrect chunk ID: %s", chunk.ID)
 	}
 
-	// 第二个 chunk
+	// Second chunk
 	_, chunk2, err := reader.ReadChunk()
 	if err != nil {
-		t.Fatalf("读取第二个 chunk 失败: %v", err)
+		t.Fatalf("failed to read second chunk: %v", err)
 	}
 	if chunk2 == nil {
-		t.Fatal("第二个 chunk 不应为 nil")
+		t.Fatal("second chunk should not be nil")
 	}
 
-	// [DONE] 标记
+	// [DONE] marker
 	_, _, err = reader.ReadChunk()
 	if err != io.EOF {
-		t.Errorf("应返回 io.EOF, 实际: %v", err)
+		t.Errorf("should return io.EOF, got: %v", err)
 	}
 
-	// 已结束
+	// Stream ended
 	if !reader.IsDone() {
-		t.Error("reader 应已标记为 done")
+		t.Error("reader should be marked as done")
 	}
 }
 
-// TestStreamReaderEmpty 测试空流
+// TestStreamReaderEmpty tests empty stream.
 func TestStreamReaderEmpty(t *testing.T) {
 	body := io.NopCloser(strings.NewReader(""))
 	reader := NewStreamReader(body)
@@ -64,11 +64,11 @@ func TestStreamReaderEmpty(t *testing.T) {
 
 	_, _, err := reader.ReadChunk()
 	if err != io.EOF {
-		t.Errorf("空流应返回 io.EOF, 实际: %v", err)
+		t.Errorf("empty stream should return io.EOF, got: %v", err)
 	}
 }
 
-// TestStreamReaderInvalidJSON 测试无法解析的 JSON
+// TestStreamReaderInvalidJSON tests unparseable JSON.
 func TestStreamReaderInvalidJSON(t *testing.T) {
 	sseData := "data: {invalid json}\n\n"
 	body := io.NopCloser(strings.NewReader(sseData))
@@ -77,18 +77,18 @@ func TestStreamReaderInvalidJSON(t *testing.T) {
 
 	rawLine, chunk, err := reader.ReadChunk()
 	if err != nil {
-		t.Fatalf("不应返回错误: %v", err)
+		t.Fatalf("should not return error: %v", err)
 	}
-	// 应返回原始行但 chunk 为 nil
+	// Should return raw line but chunk is nil
 	if rawLine == "" {
-		t.Error("原始行不应为空")
+		t.Error("raw line should not be empty")
 	}
 	if chunk != nil {
-		t.Error("无效 JSON 的 chunk 应为 nil")
+		t.Error("chunk should be nil for invalid JSON")
 	}
 }
 
-// TestStreamReaderSkipsComments 测试跳过非 data 行
+// TestStreamReaderSkipsComments tests skipping non-data lines.
 func TestStreamReaderSkipsComments(t *testing.T) {
 	sseData := `: this is a comment
 event: message
@@ -101,12 +101,12 @@ data: [DONE]
 	reader := NewStreamReader(body)
 	defer reader.Close()
 
-	// 应跳过注释和 event 行，直接读到第一个 data 行
+	// Should skip comments and event lines, read directly to first data line
 	_, chunk, err := reader.ReadChunk()
 	if err != nil {
-		t.Fatalf("读取失败: %v", err)
+		t.Fatalf("read failed: %v", err)
 	}
 	if chunk == nil {
-		t.Fatal("chunk 不应为 nil")
+		t.Fatal("chunk should not be nil")
 	}
 }

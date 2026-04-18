@@ -1,18 +1,21 @@
+// Package validator provides input validation utilities.
 package validator
 
 import (
-	"regexp"
 	"unicode"
 )
 
-var passwordRegex = regexp.MustCompile(`^[a-zA-Z\d@$!%*?&]{8,128}$`)
+const (
+	minPasswordLength = 8   //nolint:mnd // minimum password length
+	maxPasswordLength = 128 //nolint:mnd // maximum password length
+)
 
-// ValidatePassword checks password strength (min 8 chars, requires upper, lower, digit)
+// ValidatePassword checks password strength (min 8 chars, requires upper, lower, digit).
 func ValidatePassword(password string) (bool, string) {
-	if len(password) < 8 {
+	if len(password) < minPasswordLength {
 		return false, "password must be at least 8 characters"
 	}
-	if len(password) > 128 {
+	if len(password) > maxPasswordLength {
 		return false, "password cannot exceed 128 characters"
 	}
 
@@ -41,7 +44,7 @@ func ValidatePassword(password string) (bool, string) {
 	return true, ""
 }
 
-// ValidateUsername checks username format (2-50 chars, alphanumeric + underscore)
+// ValidateUsername checks username format (2-50 chars, alphanumeric + underscore).
 func ValidateUsername(username string) (bool, string) {
 	if len(username) < 2 || len(username) > 50 {
 		return false, "username must be 2-50 characters"

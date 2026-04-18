@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// DepartmentService handles department management
+// DepartmentService handles department management.
 type DepartmentService struct {
 	deptRepo  *repository.DepartmentRepository
 	userRepo  *repository.UserRepository
@@ -19,7 +19,7 @@ type DepartmentService struct {
 	logger    *zap.Logger
 }
 
-// NewDepartmentService creates a department service
+// NewDepartmentService creates a department service.
 func NewDepartmentService(
 	deptRepo *repository.DepartmentRepository,
 	userRepo *repository.UserRepository,
@@ -34,7 +34,7 @@ func NewDepartmentService(
 	}
 }
 
-// Create creates a new department
+// Create creates a new department.
 func (s *DepartmentService) Create(req *dto.CreateDepartmentRequest, operatorID int64, clientIP string) (*model.Department, error) {
 	exists, err := s.deptRepo.ExistsName(req.Name)
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *DepartmentService) Create(req *dto.CreateDepartmentRequest, operatorID 
 	return dept, nil
 }
 
-// GetByID retrieves department by ID
+// GetByID retrieves department by ID.
 func (s *DepartmentService) GetByID(id int64) (*model.Department, error) {
 	dept, err := s.deptRepo.FindByID(id)
 	if err != nil {
@@ -86,7 +86,7 @@ func (s *DepartmentService) GetByID(id int64) (*model.Department, error) {
 	return dept, nil
 }
 
-// Update updates department information
+// Update updates department information.
 func (s *DepartmentService) Update(id int64, req *dto.UpdateDepartmentRequest, operatorID int64, clientIP string) error {
 	dept, err := s.deptRepo.FindByID(id)
 	if err != nil {
@@ -132,7 +132,7 @@ func (s *DepartmentService) Update(id int64, req *dto.UpdateDepartmentRequest, o
 	return nil
 }
 
-// Delete deletes a department
+// Delete deletes a department.
 func (s *DepartmentService) Delete(id int64, operatorID int64, clientIP string) error {
 	dept, err := s.deptRepo.FindByID(id)
 	if err != nil {
@@ -165,7 +165,7 @@ func (s *DepartmentService) Delete(id int64, operatorID int64, clientIP string) 
 	return nil
 }
 
-// ListTree returns departments as a tree structure
+// ListTree returns departments as a tree structure.
 func (s *DepartmentService) ListTree() ([]dto.DeptTree, error) {
 	depts, err := s.deptRepo.ListAll()
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package llm provides LLM provider client wrappers and format adapters.
 package llm
 
 import (
@@ -9,8 +10,36 @@ import (
 	"github.com/google/uuid"
 )
 
+// Role constants.
+const (
+	RoleSystem    = "system"
+	RoleUser      = "user"
+	RoleAssistant = "assistant"
+	RoleTool      = "tool"
+)
+
+// Content block type constants.
+const (
+	ContentTypeText     = "text"
+	ContentTypeToolUse  = "tool_use"
+	ContentTypeThinking = "thinking"
+)
+
+// Finish reason constants.
+const (
+	FinishReasonStop      = "stop"
+	FinishReasonEndTurn   = "end_turn"
+	FinishReasonToolCalls = "tool_calls"
+)
+
+// Tool choice strategy constants.
+const (
+	ToolChoiceAuto     = "auto"
+	ToolChoiceRequired = "required"
+)
+
 // OpenAIToAnthropic converts an OpenAI ChatCompletion request to Anthropic Messages format.
-func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
+func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest { //nolint:gocyclo // complex business logic.
 	anthropicReq := &AnthropicMessagesRequest{
 		Model:       req.Model,
 		Stream:      req.Stream,
@@ -18,11 +47,12 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
 		TopP:        req.TopP,
 	}
 
-	if req.MaxCompletionTokens != nil {
+	switch {
+	case req.MaxCompletionTokens != nil:
 		anthropicReq.MaxTokens = *req.MaxCompletionTokens
-	} else if req.MaxTokens != nil {
+	case req.MaxTokens != nil:
 		anthropicReq.MaxTokens = *req.MaxTokens
-	} else {
+	default:
 		anthropicReq.MaxTokens = 4096
 	}
 
@@ -58,28 +88,28 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
 
 	for _, msg := range req.Messages {
 		switch msg.Role {
-		case "system", "developer":
+		case RoleSystem, "developer":
 			systemParts = append(systemParts, msg.ContentString())
-		case "user":
+		case RoleUser:
 			messages = append(messages, AnthropicMessage{
-				Role:    "user",
+				Role:    RoleUser,
 				Content: msg.Content,
 			})
-		case "assistant":
+		case RoleAssistant:
 			anthropicMsg := AnthropicMessage{
-				Role: "assistant",
+				Role: RoleAssistant,
 			}
 			if len(msg.ToolCalls) > 0 {
 				var blocks []AnthropicContentBlock
 				text := msg.ContentString()
 				if text != "" {
-					blocks = append(blocks, AnthropicContentBlock{Type: "text", Text: text})
+					blocks = append(blocks, AnthropicContentBlock{Type: ContentTypeText, Text: text})
 				}
 				for _, tc := range msg.ToolCalls {
 					var input interface{}
-					json.Unmarshal([]byte(tc.Function.Arguments), &input)
+					_ = json.Unmarshal([]byte(tc.Function.Arguments), &input)
 					blocks = append(blocks, AnthropicContentBlock{
-						Type:  "tool_use",
+						Type:  ContentTypeToolUse,
 						ID:    tc.ID,
 						Name:  tc.Function.Name,
 						Input: input,
@@ -90,9 +120,9 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
 				anthropicMsg.Content = msg.Content
 			}
 			messages = append(messages, anthropicMsg)
-		case "tool":
+		case RoleTool:
 			messages = append(messages, AnthropicMessage{
-				Role: "user",
+				Role: RoleUser,
 				Content: []AnthropicContentBlock{{
 					Type:      "tool_result",
 					ToolUseID: msg.ToolCallID,
@@ -101,7 +131,7 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
 			})
 		default:
 			messages = append(messages, AnthropicMessage{
-				Role:    "user",
+				Role:    RoleUser,
 				Content: fmt.Sprintf("[%s]: %s", msg.Role, msg.ContentString()),
 			})
 		}
@@ -113,14 +143,14 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest {
 
 	if len(messages) == 0 {
 		messages = append(messages, AnthropicMessage{
-			Role:    "user",
+			Role:    RoleUser,
 			Content: "Hello",
 		})
 	}
 
-	if messages[0].Role != "user" {
+	if messages[0].Role != RoleUser {
 		messages = append([]AnthropicMessage{{
-			Role:    "user",
+			Role:    RoleUser,
 			Content: "Continue",
 		}}, messages...)
 	}
@@ -167,19 +197,19 @@ func AnthropicToOpenAI(req *AnthropicMessagesRequest) *ChatCompletionRequest {
 		switch v := req.System.(type) {
 		case string:
 			if v != "" {
-				messages = append(messages, ChatMessage{Role: "system", Content: v})
+				messages = append(messages, ChatMessage{Role: RoleSystem, Content: v})
 			}
 		case []interface{}:
 			var systemText []string
 			for _, block := range v {
 				if blockMap, ok := block.(map[string]interface{}); ok {
-					if text, ok := blockMap["text"].(string); ok {
+					if text, ok := blockMap[ContentTypeText].(string); ok {
 						systemText = append(systemText, text)
 					}
 				}
 			}
 			if len(systemText) > 0 {
-				messages = append(messages, ChatMessage{Role: "system", Content: strings.Join(systemText, "\n\n")})
+				messages = append(messages, ChatMessage{Role: RoleSystem, Content: strings.Join(systemText, "\n\n")})
 			}
 		}
 	}
@@ -193,7 +223,7 @@ func AnthropicToOpenAI(req *AnthropicMessagesRequest) *ChatCompletionRequest {
 	return openaiReq
 }
 
-func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
+func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nolint:gocyclo // complex business logic.
 	if textContent, ok := msg.Content.(string); ok {
 		return []ChatMessage{{
 			Role:    msg.Role,
@@ -209,7 +239,7 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
 		}}
 	}
 
-	if msg.Role == "assistant" {
+	if msg.Role == RoleAssistant {
 		var textParts []string
 		var toolCalls []ToolCall
 		tcIdx := 0
@@ -219,11 +249,11 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
 				continue
 			}
 			switch blockMap["type"] {
-			case "text":
-				if text, ok := blockMap["text"].(string); ok {
+			case ContentTypeText:
+				if text, ok := blockMap[ContentTypeText].(string); ok {
 					textParts = append(textParts, text)
 				}
-			case "tool_use":
+			case ContentTypeToolUse:
 				tc := ToolCall{
 					Type: "function",
 					Function: ToolCallFunction{
@@ -242,11 +272,11 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
 				tc.Index = &idx
 				toolCalls = append(toolCalls, tc)
 				tcIdx++
-			case "thinking":
+			case ContentTypeThinking:
 			}
 		}
 		result := ChatMessage{
-			Role:    "assistant",
+			Role:    RoleAssistant,
 			Content: strings.Join(textParts, ""),
 		}
 		if len(toolCalls) > 0 {
@@ -266,7 +296,7 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
 		switch blockMap["type"] {
 		case "tool_result":
 			toolMsg := ChatMessage{
-				Role: "tool",
+				Role: RoleTool,
 			}
 			if id, ok := blockMap["tool_use_id"].(string); ok {
 				toolMsg.ToolCallID = id
@@ -275,8 +305,8 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
 				toolMsg.Content = extractAnthropicMessageContent(content)
 			}
 			toolResults = append(toolResults, toolMsg)
-		case "text":
-			if text, ok := blockMap["text"].(string); ok {
+		case ContentTypeText:
+			if text, ok := blockMap[ContentTypeText].(string); ok {
 				regularParts = append(regularParts, text)
 			}
 		case "image":
@@ -302,16 +332,16 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage {
 	if len(imageParts) > 0 {
 		var parts []ContentPart
 		for _, text := range regularParts {
-			parts = append(parts, ContentPart{Type: "text", Text: text})
+			parts = append(parts, ContentPart{Type: ContentTypeText, Text: text})
 		}
 		parts = append(parts, imageParts...)
 		result = append(result, ChatMessage{
-			Role:    "user",
+			Role:    RoleUser,
 			Content: parts,
 		})
 	} else if len(regularParts) > 0 {
 		result = append(result, ChatMessage{
-			Role:    "user",
+			Role:    RoleUser,
 			Content: strings.Join(regularParts, ""),
 		})
 	}
@@ -332,8 +362,8 @@ func extractAnthropicMessageContent(content interface{}) string {
 		var parts []string
 		for _, block := range v {
 			if blockMap, ok := block.(map[string]interface{}); ok {
-				if blockMap["type"] == "text" {
-					if text, ok := blockMap["text"].(string); ok {
+				if blockMap["type"] == ContentTypeText {
+					if text, ok := blockMap[ContentTypeText].(string); ok {
 						parts = append(parts, text)
 					}
 				}
@@ -359,15 +389,15 @@ func OpenAIResponseToAnthropic(resp *ChatCompletionResponse) *AnthropicMessagesR
 		text := choice.Message.ContentString()
 		if text != "" {
 			content = append(content, AnthropicContentBlock{
-				Type: "text",
+				Type: ContentTypeText,
 				Text: text,
 			})
 		}
 		for _, tc := range choice.Message.ToolCalls {
 			var input interface{}
-			json.Unmarshal([]byte(tc.Function.Arguments), &input)
+			_ = json.Unmarshal([]byte(tc.Function.Arguments), &input)
 			content = append(content, AnthropicContentBlock{
-				Type:  "tool_use",
+				Type:  ContentTypeToolUse,
 				ID:    tc.ID,
 				Name:  tc.Function.Name,
 				Input: input,
@@ -396,7 +426,7 @@ func OpenAIResponseToAnthropic(resp *ChatCompletionResponse) *AnthropicMessagesR
 	return &AnthropicMessagesResponse{
 		ID:         resp.ID,
 		Type:       "message",
-		Role:       "assistant",
+		Role:       RoleAssistant,
 		Content:    content,
 		Model:      resp.Model,
 		StopReason: stopReason,
@@ -412,9 +442,9 @@ func AnthropicResponseToOpenAI(resp *AnthropicMessagesResponse) *ChatCompletionR
 
 	for _, block := range resp.Content {
 		switch block.Type {
-		case "text":
+		case ContentTypeText:
 			textParts = append(textParts, block.Text)
-		case "tool_use":
+		case ContentTypeToolUse:
 			var args string
 			if block.Input != nil {
 				if argBytes, err := json.Marshal(block.Input); err == nil {
@@ -432,12 +462,12 @@ func AnthropicResponseToOpenAI(resp *AnthropicMessagesResponse) *ChatCompletionR
 				Index: &idx,
 			})
 			tcIndex++
-		case "thinking":
+		case ContentTypeThinking:
 		}
 	}
 
 	message := &ChatMessage{
-		Role:    "assistant",
+		Role:    RoleAssistant,
 		Content: strings.Join(textParts, ""),
 	}
 	if len(toolCalls) > 0 {
@@ -478,7 +508,7 @@ type OpenAIToAnthropicState struct {
 }
 
 // OpenAIChunkToAnthropicEvents converts an OpenAI stream chunk to Anthropic SSE format.
-func OpenAIChunkToAnthropicEvents(chunk *ChatCompletionChunk, isFirst bool, state *OpenAIToAnthropicState) string {
+func OpenAIChunkToAnthropicEvents(chunk *ChatCompletionChunk, isFirst bool, state *OpenAIToAnthropicState) string { //nolint:gocyclo // complex business logic.
 	var sb strings.Builder
 
 	if isFirst {
@@ -580,7 +610,7 @@ type AnthropicToOpenAIState struct {
 }
 
 // AnthropicEventToOpenAIChunk converts an Anthropic stream event to OpenAI SSE format.
-func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, model string, state *AnthropicToOpenAIState) string {
+func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, model string, state *AnthropicToOpenAIState) string { //nolint:gocyclo // complex business logic.
 	chunkID := "chatcmpl-" + uuid.New().String()[:8]
 	now := time.Now().Unix()
 
@@ -588,7 +618,7 @@ func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, 
 	case AnthropicEventMessageStart:
 		chunk := ChatCompletionChunk{
 			ID: chunkID, Object: "chat.completion.chunk", Created: now, Model: model,
-			Choices: []ChatChoice{{Index: 0, Delta: &ChatMessage{Role: "assistant"}}},
+			Choices: []ChatChoice{{Index: 0, Delta: &ChatMessage{Role: RoleAssistant}}},
 		}
 		data, _ := json.Marshal(chunk)
 		return fmt.Sprintf("data: %s\n\n", string(data))
@@ -597,7 +627,7 @@ func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, 
 		if event.ContentBlock != nil {
 			state.CurrentBlockType = event.ContentBlock.Type
 			switch event.ContentBlock.Type {
-			case "tool_use":
+			case ContentTypeToolUse:
 				state.CurrentBlockID = event.ContentBlock.ID
 				state.CurrentBlockName = event.ContentBlock.Name
 				idx := state.ToolCallIndex
@@ -617,7 +647,7 @@ func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, 
 				}
 				data, _ := json.Marshal(chunk)
 				return fmt.Sprintf("data: %s\n\n", string(data))
-			case "thinking":
+			case ContentTypeThinking:
 			}
 		}
 
@@ -657,7 +687,7 @@ func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, 
 		}
 
 	case AnthropicEventContentBlockStop:
-		if state.CurrentBlockType == "tool_use" {
+		if state.CurrentBlockType == ContentTypeToolUse {
 			state.ToolCallIndex++
 		}
 		state.CurrentBlockType = ""
@@ -688,9 +718,9 @@ func mapOpenAIToolChoiceToAnthropic(choice interface{}) interface{} {
 	switch v := choice.(type) {
 	case string:
 		switch v {
-		case "auto":
-			return AnthropicToolChoice{Type: "auto"}
-		case "required":
+		case ToolChoiceAuto:
+			return AnthropicToolChoice{Type: ToolChoiceAuto}
+		case ToolChoiceRequired:
 			return AnthropicToolChoice{Type: "any"}
 		case "none":
 			return nil
@@ -698,7 +728,7 @@ func mapOpenAIToolChoiceToAnthropic(choice interface{}) interface{} {
 	case map[string]interface{}:
 		if fn, ok := v["function"].(map[string]interface{}); ok {
 			if name, ok := fn["name"].(string); ok {
-				return AnthropicToolChoice{Type: "tool", Name: name}
+				return AnthropicToolChoice{Type: RoleTool, Name: name}
 			}
 		}
 	}
@@ -707,15 +737,14 @@ func mapOpenAIToolChoiceToAnthropic(choice interface{}) interface{} {
 
 // mapAnthropicToolChoiceToOpenAI maps Anthropic tool_choice to OpenAI format.
 func mapAnthropicToolChoiceToOpenAI(choice interface{}) interface{} {
-	switch v := choice.(type) {
-	case map[string]interface{}:
+	if v, ok := choice.(map[string]interface{}); ok {
 		tcType, _ := v["type"].(string)
 		switch tcType {
-		case "auto":
-			return "auto"
+		case ToolChoiceAuto:
+			return ToolChoiceAuto
 		case "any":
-			return "required"
-		case "tool":
+			return ToolChoiceRequired
+		case RoleTool:
 			if name, ok := v["name"].(string); ok {
 				return map[string]interface{}{
 					"type":     "function",
@@ -730,29 +759,29 @@ func mapAnthropicToolChoiceToOpenAI(choice interface{}) interface{} {
 // mapOpenAIStopReasonToAnthropic maps OpenAI stop reason to Anthropic format.
 func mapOpenAIStopReasonToAnthropic(reason string) string {
 	switch reason {
-	case "stop":
-		return "end_turn"
+	case FinishReasonStop:
+		return FinishReasonEndTurn
 	case "length":
 		return "max_tokens"
-	case "tool_calls", "function_call":
-		return "tool_use"
+	case FinishReasonToolCalls, "function_call":
+		return ContentTypeToolUse
 	default:
-		return "end_turn"
+		return FinishReasonEndTurn
 	}
 }
 
 // mapAnthropicStopReasonToOpenAI maps Anthropic stop reason to OpenAI format.
 func mapAnthropicStopReasonToOpenAI(reason string) string {
 	switch reason {
-	case "end_turn":
-		return "stop"
+	case FinishReasonEndTurn:
+		return FinishReasonStop
 	case "max_tokens":
 		return "length"
-	case "tool_use":
-		return "tool_calls"
+	case ContentTypeToolUse:
+		return FinishReasonToolCalls
 	case "stop_sequence":
-		return "stop"
+		return FinishReasonStop
 	default:
-		return "stop"
+		return FinishReasonStop
 	}
 }

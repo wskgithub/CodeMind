@@ -8,17 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DepartmentHandler handles department management endpoints
+// DepartmentHandler handles department management endpoints.
 type DepartmentHandler struct {
 	deptService DepartmentService
 }
 
-// NewDepartmentHandler creates a department handler
+// NewDepartmentHandler creates a department handler.
 func NewDepartmentHandler(deptService DepartmentService) *DepartmentHandler {
 	return &DepartmentHandler{deptService: deptService}
 }
 
-// List returns departments as a tree structure
+// List returns departments as a tree structure.
 func (h *DepartmentHandler) List(c *gin.Context) {
 	tree, err := h.deptService.ListTree()
 	if err != nil {
@@ -29,7 +29,7 @@ func (h *DepartmentHandler) List(c *gin.Context) {
 	response.Success(c, tree)
 }
 
-// Create creates a new department
+// Create creates a new department.
 func (h *DepartmentHandler) Create(c *gin.Context) {
 	var req dto.CreateDepartmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -48,7 +48,7 @@ func (h *DepartmentHandler) Create(c *gin.Context) {
 	response.Success(c, dept)
 }
 
-// GetDetail returns department details
+// GetDetail returns department details.
 func (h *DepartmentHandler) GetDetail(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -65,7 +65,7 @@ func (h *DepartmentHandler) GetDetail(c *gin.Context) {
 	response.Success(c, dept)
 }
 
-// Update updates department information
+// Update updates department information.
 func (h *DepartmentHandler) Update(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -89,7 +89,7 @@ func (h *DepartmentHandler) Update(c *gin.Context) {
 	response.Success(c, nil)
 }
 
-// Delete deletes a department
+// Delete deletes a department.
 func (h *DepartmentHandler) Delete(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {

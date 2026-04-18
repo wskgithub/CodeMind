@@ -1,3 +1,4 @@
+// Package repository provides data access layer for all entities.
 package repository
 
 import (

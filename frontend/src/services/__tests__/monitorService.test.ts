@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import {
   getDashboardSummary,
   getSystemMetrics,
@@ -6,6 +7,8 @@ import {
   getLLMNodeMetrics,
   healthCheck,
 } from '../monitorService';
+import request from '../request';
+
 import type {
   ApiResponse,
   DashboardSummary,
@@ -20,8 +23,6 @@ vi.mock('../request', () => ({
     get: vi.fn(),
   },
 }));
-
-import request from '../request';
 
 const mockRequest = request as unknown as {
   get: ReturnType<typeof vi.fn>;

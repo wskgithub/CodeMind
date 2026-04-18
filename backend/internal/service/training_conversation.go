@@ -56,6 +56,7 @@ func (e *ConversationExtractor) ExtractConversationIDFromMetadata(requestBody js
 
 func (e *ConversationExtractor) normalizeID(id string) string {
 	id = trimSpace(id)
+	//nolint:mnd // magic number for configuration/defaults.
 	if len(id) > 64 {
 		hash := sha256.Sum256([]byte(id))
 		return hex.EncodeToString(hash[:8])
@@ -66,8 +67,8 @@ func (e *ConversationExtractor) normalizeID(id string) string {
 func (e *ConversationExtractor) extractFirstUserMessage(body json.RawMessage) string {
 	var req struct {
 		Messages []struct {
-			Role    string      `json:"role"`
 			Content interface{} `json:"content"`
+			Role    string      `json:"role"`
 		} `json:"messages"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
@@ -75,12 +76,18 @@ func (e *ConversationExtractor) extractFirstUserMessage(body json.RawMessage) st
 	}
 
 	for _, m := range req.Messages {
-		if m.Role == "user" {
+		if m.Role == messageRoleUser {
 			return e.contentToString(m.Content)
 		}
 	}
 	return ""
 }
+
+// messageRoleUser is the identifier for the user role in LLM messages.
+const messageRoleUser = "user"
+
+// contentTypeText is the identifier for text type in multimodal content arrays.
+const contentTypeText = "text"
 
 func (e *ConversationExtractor) contentToString(content interface{}) string {
 	switch v := content.(type) {
@@ -90,8 +97,8 @@ func (e *ConversationExtractor) contentToString(content interface{}) string {
 		var texts []string
 		for _, item := range v {
 			if itemMap, ok := item.(map[string]interface{}); ok {
-				if itemMap["type"] == "text" {
-					if text, ok := itemMap["text"].(string); ok {
+				if itemMap["type"] == contentTypeText {
+					if text, ok := itemMap[contentTypeText].(string); ok {
 						texts = append(texts, text)
 					}
 				}
