@@ -215,7 +215,7 @@ const BackendsPage: React.FC = () => {
     {
       title: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>{t('common.actions')}</span>,
       key: 'actions',
-      width: 130,
+      width: 160,
       render: (_: unknown, record: LLMBackend) => (
         <Space size="small">
           <Button 
@@ -294,6 +294,7 @@ const BackendsPage: React.FC = () => {
             loading={loading}
             pagination={false}
             size="middle"
+            scroll={{ x: 'max-content' }}
             locale={{ 
               emptyText: <span style={{ color: isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }}>{t('backends.emptyText')}</span> 
             }}

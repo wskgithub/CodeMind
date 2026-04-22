@@ -184,6 +184,7 @@ const ProviderTemplatesPage: React.FC = () => {
       title: t('templates.table.modelList'),
       dataIndex: 'models',
       key: 'models',
+      width: 200,
       render: (models: string[]) => (
         <Space size={4} wrap>
           {(models || []).map(m => (
@@ -245,12 +246,11 @@ const ProviderTemplatesPage: React.FC = () => {
     {
       title: t('common.actions'),
       key: 'action',
-      width: 200,
+      width: 220,
       render: (_, record) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ color: '#00D9FF' }}>{t('common.edit')}</Button>
           <Button type="link" size="small"
-            icon={record.status === 1 ? <></> : <></>}
             onClick={() => handleToggleStatus(record)}
             style={{ color: record.status === 1 ? '#FFBE0B' : '#00F5D4' }}
           >
@@ -305,6 +305,7 @@ const ProviderTemplatesPage: React.FC = () => {
             dataSource={templates}
             loading={loading}
             pagination={false}
+            scroll={{ x: 'max-content' }}
             style={{ background: 'transparent' }}
           />
         </div>
