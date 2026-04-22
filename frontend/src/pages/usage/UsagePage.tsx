@@ -749,7 +749,12 @@ const UsagePage = () => {
                 dataSource={usageData}
                 columns={columns}
                 rowKey="date"
-                pagination={false}
+                pagination={{
+                  pageSize: 10,
+                  showSizeChanger: true,
+                  pageSizeOptions: [10, 20, 50],
+                  showTotal: (total) => t('common.totalRecords', { total }),
+                }}
                 size="small"
                 scroll={{ y: 360 }}
               />
