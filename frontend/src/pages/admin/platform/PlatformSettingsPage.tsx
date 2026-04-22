@@ -97,7 +97,7 @@ const PlatformSettingsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="glass-card animate-fade-in-up" style={{ padding: 24, animationDelay: '0.05s', maxWidth: 720 }}>
+        <div className="glass-card animate-fade-in-up" style={{ padding: 24, animationDelay: '0.05s', width: '100%' }}>
           <h3 style={{ margin: '0 0 20px 0', color: isDark ? '#fff' : 'rgba(0, 0, 0, 0.85)', fontSize: 16, fontWeight: 600 }}>
             {t('platform.serviceUrl')}
           </h3>
