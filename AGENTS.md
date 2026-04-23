@@ -2,7 +2,8 @@
 
 > This document provides project navigation and documentation index for AI coding assistants.
 > 
-> **Note**: Code comments should be written in Chinese (项目约定)
+> **Note**: Code comments should be written in Chinese (项目约定)  
+> **Note**: Git commit messages must be written in English
 
 ---
 
