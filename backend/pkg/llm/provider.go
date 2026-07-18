@@ -179,7 +179,10 @@ func (p *AnthropicProvider) Format() ProviderFormat { return FormatAnthropic }
 
 // ChatCompletion converts OpenAI request to Anthropic format.
 func (p *AnthropicProvider) ChatCompletion(_ context.Context, req *ChatCompletionRequest) (*ChatCompletionResponse, error) {
-	anthropicReq := OpenAIToAnthropic(req)
+	anthropicReq, err := OpenAIToAnthropic(req)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := p.client.Messages(anthropicReq)
 	if err != nil {
 		return nil, err
@@ -189,7 +192,10 @@ func (p *AnthropicProvider) ChatCompletion(_ context.Context, req *ChatCompletio
 
 // ChatCompletionStream returns Anthropic stream (handler converts format).
 func (p *AnthropicProvider) ChatCompletionStream(_ context.Context, req *ChatCompletionRequest) (io.ReadCloser, error) {
-	anthropicReq := OpenAIToAnthropic(req)
+	anthropicReq, err := OpenAIToAnthropic(req)
+	if err != nil {
+		return nil, err
+	}
 	return p.client.MessagesStream(anthropicReq)
 }
 
@@ -222,7 +228,10 @@ func (p *AnthropicProvider) ChatCompletionStreamRaw(ctx context.Context, rawBody
 // Completion converts to Messages call (Anthropic doesn't support raw Completions).
 func (p *AnthropicProvider) Completion(_ context.Context, req *CompletionRequest) (*CompletionResponse, error) {
 	chatReq := completionToChatRequest(req)
-	anthropicReq := OpenAIToAnthropic(chatReq)
+	anthropicReq, err := OpenAIToAnthropic(chatReq)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := p.client.Messages(anthropicReq)
 	if err != nil {
 		return nil, err
@@ -234,7 +243,10 @@ func (p *AnthropicProvider) Completion(_ context.Context, req *CompletionRequest
 // CompletionStream performs a streaming text completion (converted to Anthropic Messages call).
 func (p *AnthropicProvider) CompletionStream(_ context.Context, req *CompletionRequest) (io.ReadCloser, error) {
 	chatReq := completionToChatRequest(req)
-	anthropicReq := OpenAIToAnthropic(chatReq)
+	anthropicReq, err := OpenAIToAnthropic(chatReq)
+	if err != nil {
+		return nil, err
+	}
 	return p.client.MessagesStream(anthropicReq)
 }
 

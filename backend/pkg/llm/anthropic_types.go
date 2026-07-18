@@ -57,8 +57,9 @@ type AnthropicContentBlock struct {
 // AnthropicImageSource represents image source data.
 type AnthropicImageSource struct {
 	Type      string `json:"type"`
-	MediaType string `json:"media_type"`
-	Data      string `json:"data"`
+	MediaType string `json:"media_type,omitempty"`
+	Data      string `json:"data,omitempty"`
+	URL       string `json:"url,omitempty"`
 }
 
 // AnthropicMetadata represents request metadata.
@@ -100,14 +101,16 @@ type AnthropicUsage struct {
 }
 
 // ToUsage converts to the common Usage format.
+// OpenAI prompt_tokens 包含缓存部分，需将 cache 字段加回 input_tokens。
 func (u *AnthropicUsage) ToUsage() *Usage {
 	if u == nil {
 		return nil
 	}
+	promptTokens := u.InputTokens + u.CacheCreationInputTokens + u.CacheReadInputTokens
 	usage := &Usage{
-		PromptTokens:     u.InputTokens,
+		PromptTokens:     promptTokens,
 		CompletionTokens: u.OutputTokens,
-		TotalTokens:      u.InputTokens + u.OutputTokens,
+		TotalTokens:      promptTokens + u.OutputTokens,
 	}
 	if u.CacheCreationInputTokens > 0 || u.CacheReadInputTokens > 0 {
 		usage.PromptTokensDetails = &PromptTokensDetails{

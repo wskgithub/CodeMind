@@ -3,12 +3,16 @@ package llm
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var errEmptyMessages = errors.New("messages cannot be empty")
 
 // Role constants.
 const (
@@ -39,7 +43,7 @@ const (
 )
 
 // OpenAIToAnthropic converts an OpenAI ChatCompletion request to Anthropic Messages format.
-func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest { //nolint:gocyclo // complex business logic.
+func OpenAIToAnthropic(req *ChatCompletionRequest) (*AnthropicMessagesRequest, error) { //nolint:gocyclo // complex business logic.
 	anthropicReq := &AnthropicMessagesRequest{
 		Model:       req.Model,
 		Stream:      req.Stream,
@@ -86,14 +90,32 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest { /
 	var systemParts []string
 	var messages []AnthropicMessage
 
-	for _, msg := range req.Messages {
+	for i := 0; i < len(req.Messages); i++ {
+		msg := req.Messages[i]
 		switch msg.Role {
 		case RoleSystem, "developer":
 			systemParts = append(systemParts, msg.ContentString())
 		case RoleUser:
 			messages = append(messages, AnthropicMessage{
 				Role:    RoleUser,
-				Content: msg.Content,
+				Content: convertOpenAIUserContent(msg.Content),
+			})
+		case RoleTool:
+			// 连续 tool 消息合并为一条 user 消息（Anthropic 要求 tool_result 在同一条 user 消息中）
+			var toolBlocks []AnthropicContentBlock
+			for i < len(req.Messages) && req.Messages[i].Role == RoleTool {
+				toolMsg := req.Messages[i]
+				toolBlocks = append(toolBlocks, AnthropicContentBlock{
+					Type:      "tool_result",
+					ToolUseID: toolMsg.ToolCallID,
+					Content:   toolMsg.Content,
+				})
+				i++
+			}
+			i--
+			messages = append(messages, AnthropicMessage{
+				Role:    RoleUser,
+				Content: toolBlocks,
 			})
 		case RoleAssistant:
 			anthropicMsg := AnthropicMessage{
@@ -120,15 +142,6 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest { /
 				anthropicMsg.Content = msg.Content
 			}
 			messages = append(messages, anthropicMsg)
-		case RoleTool:
-			messages = append(messages, AnthropicMessage{
-				Role: RoleUser,
-				Content: []AnthropicContentBlock{{
-					Type:      "tool_result",
-					ToolUseID: msg.ToolCallID,
-					Content:   msg.Content,
-				}},
-			})
 		default:
 			messages = append(messages, AnthropicMessage{
 				Role:    RoleUser,
@@ -142,21 +155,11 @@ func OpenAIToAnthropic(req *ChatCompletionRequest) *AnthropicMessagesRequest { /
 	}
 
 	if len(messages) == 0 {
-		messages = append(messages, AnthropicMessage{
-			Role:    RoleUser,
-			Content: "Hello",
-		})
-	}
-
-	if messages[0].Role != RoleUser {
-		messages = append([]AnthropicMessage{{
-			Role:    RoleUser,
-			Content: "Continue",
-		}}, messages...)
+		return nil, errEmptyMessages
 	}
 
 	anthropicReq.Messages = messages
-	return anthropicReq
+	return anthropicReq, nil
 }
 
 // AnthropicToOpenAI converts an Anthropic Messages request to OpenAI ChatCompletion format.
@@ -189,6 +192,18 @@ func AnthropicToOpenAI(req *AnthropicMessagesRequest) *ChatCompletionRequest {
 
 	if req.ToolChoice != nil && len(openaiReq.Tools) > 0 {
 		openaiReq.ToolChoice = mapAnthropicToolChoiceToOpenAI(req.ToolChoice)
+	}
+
+	if req.Stream {
+		includeUsage := true
+		openaiReq.StreamOptions = &StreamOptions{IncludeUsage: &includeUsage}
+	}
+
+	if isOSeriesModel(req.Model) {
+		if openaiReq.MaxTokens != nil {
+			openaiReq.MaxCompletionTokens = openaiReq.MaxTokens
+			openaiReq.MaxTokens = nil
+		}
 	}
 
 	var messages []ChatMessage
@@ -413,14 +428,7 @@ func OpenAIResponseToAnthropic(resp *ChatCompletionResponse) *AnthropicMessagesR
 
 	var usage *AnthropicUsage
 	if resp.Usage != nil {
-		usage = &AnthropicUsage{
-			InputTokens:  resp.Usage.PromptTokens,
-			OutputTokens: resp.Usage.CompletionTokens,
-		}
-		if resp.Usage.PromptTokensDetails != nil {
-			usage.CacheCreationInputTokens = resp.Usage.PromptTokensDetails.CacheCreationInputTokens
-			usage.CacheReadInputTokens = resp.Usage.PromptTokensDetails.CacheReadInputTokens
-		}
+		usage = openAIUsageToAnthropic(resp.Usage)
 	}
 
 	return &AnthropicMessagesResponse{
@@ -501,104 +509,472 @@ func AnthropicResponseToOpenAI(resp *AnthropicMessagesResponse) *ChatCompletionR
 	}
 }
 
-// OpenAIToAnthropicState tracks content block index during OpenAI to Anthropic stream conversion.
-type OpenAIToAnthropicState struct {
-	ContentIndex int
-	InToolCall   bool
+// ToolBlockState 跟踪单个 tool_call 的流式转换状态。
+type ToolBlockState struct {
+	Started        bool
+	AnthropicIndex int
+	ID             string
+	Name           string
+	PendingArgs    string
+	Open           bool
 }
 
-// OpenAIChunkToAnthropicEvents converts an OpenAI stream chunk to Anthropic SSE format.
+// OpenAIToAnthropicState 跟踪 OpenAI → Anthropic 流式转换状态。
+type OpenAIToAnthropicState struct {
+	MessageStarted      bool
+	MessageID           string
+	Model               string
+	NextBlockIndex      int
+	OpenTextBlock       bool
+	TextBlockIndex      int
+	ToolBlocks          map[int]*ToolBlockState
+	PendingStopReason   *string
+	PendingUsage        *AnthropicUsage
+	MessageDeltaEmitted bool
+}
+
+// OpenAIChunkToAnthropicEvents 将 OpenAI 流式 chunk 转换为 Anthropic SSE 事件。
 func OpenAIChunkToAnthropicEvents(chunk *ChatCompletionChunk, isFirst bool, state *OpenAIToAnthropicState) string { //nolint:gocyclo // complex business logic.
 	var sb strings.Builder
 
-	if isFirst {
-		msgStart := fmt.Sprintf(
-			`{"id":"%s","type":"message","role":"assistant","content":[],"model":"%s","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0}}`,
-			chunk.ID, chunk.Model,
-		)
-		sb.WriteString(fmt.Sprintf("event: message_start\ndata: {\"type\":\"message_start\",\"message\":%s}\n\n", msgStart))
-		sb.WriteString("event: ping\ndata: {\"type\":\"ping\"}\n\n")
+	if state.ToolBlocks == nil {
+		state.ToolBlocks = make(map[int]*ToolBlockState)
+	}
+
+	// usage chunk 通常 choices 为空，需先处理 usage
+	if chunk.Usage != nil {
+		state.PendingUsage = mergeAnthropicUsage(state.PendingUsage, openAIUsageToAnthropic(chunk.Usage))
+	}
+
+	if !state.MessageStarted && (isFirst || chunk.ID != "" || len(chunk.Choices) > 0) {
+		if chunk.ID != "" {
+			state.MessageID = chunk.ID
+		}
+		if chunk.Model != "" {
+			state.Model = chunk.Model
+		}
+		writeMessageStart(&sb, state)
+		state.MessageStarted = true
 	}
 
 	if len(chunk.Choices) == 0 {
 		return sb.String()
 	}
 
-	delta := chunk.Choices[0].Delta
-	if delta != nil {
-		text := delta.ContentString()
+	choice := chunk.Choices[0]
+	if choice.Delta != nil {
+		text := choice.Delta.ContentString()
 		if text != "" {
-			if state.ContentIndex == 0 && !state.InToolCall && isFirst {
-				sb.WriteString(fmt.Sprintf(
-					"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":%d,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
-					state.ContentIndex,
-				))
+			if !state.OpenTextBlock {
+				state.TextBlockIndex = state.NextBlockIndex
+				state.NextBlockIndex++
+				state.OpenTextBlock = true
+				writeContentBlockStart(&sb, state.TextBlockIndex, ContentTypeText)
 			}
 			textJSON, _ := json.Marshal(text)
 			sb.WriteString(fmt.Sprintf(
 				"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":%d,\"delta\":{\"type\":\"text_delta\",\"text\":%s}}\n\n",
-				state.ContentIndex, string(textJSON),
+				state.TextBlockIndex, string(textJSON),
 			))
 		}
 
-		if len(delta.ToolCalls) > 0 {
-			for _, tc := range delta.ToolCalls {
-				if tc.Function.Name != "" {
-					if state.ContentIndex > 0 || state.InToolCall {
-						sb.WriteString(fmt.Sprintf(
-							"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":%d}\n\n",
-							state.ContentIndex,
-						))
-						state.ContentIndex++
-					} else if isFirst {
-						state.ContentIndex = 0
-					}
-					state.InToolCall = true
-					toolID := tc.ID
-					if toolID == "" {
-						toolID = "toolu_" + uuid.New().String()[:8]
-					}
-					nameJSON, _ := json.Marshal(tc.Function.Name)
-					sb.WriteString(fmt.Sprintf(
-						"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":%d,\"content_block\":{\"type\":\"tool_use\",\"id\":\"%s\",\"name\":%s,\"input\":{}}}\n\n",
-						state.ContentIndex, toolID, string(nameJSON),
-					))
-				}
-				if tc.Function.Arguments != "" {
-					argsJSON, _ := json.Marshal(tc.Function.Arguments)
-					sb.WriteString(fmt.Sprintf(
-						"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":%d,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":%s}}\n\n",
-						state.ContentIndex, string(argsJSON),
-					))
-				}
-			}
+		if len(choice.Delta.ToolCalls) > 0 {
+			processOpenAIToolCallDeltas(&sb, state, choice.Delta.ToolCalls)
 		}
 	}
 
-	if chunk.Choices[0].FinishReason != nil {
-		stopReason := mapOpenAIStopReasonToAnthropic(*chunk.Choices[0].FinishReason)
-		sb.WriteString(fmt.Sprintf(
-			"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":%d}\n\n",
-			state.ContentIndex,
-		))
-		usage := AnthropicUsage{}
-		if chunk.Usage != nil {
-			usage.InputTokens = chunk.Usage.PromptTokens
-			usage.OutputTokens = chunk.Usage.CompletionTokens
-			if chunk.Usage.PromptTokensDetails != nil {
-				usage.CacheCreationInputTokens = chunk.Usage.PromptTokensDetails.CacheCreationInputTokens
-				usage.CacheReadInputTokens = chunk.Usage.PromptTokensDetails.CacheReadInputTokens
-			}
+	if choice.FinishReason != nil {
+		if state.PendingStopReason == nil {
+			closeOpenTextBlock(&sb, state)
+			lateStartPendingToolBlocks(&sb, state)
+			closeOpenToolBlocks(&sb, state)
+			reason := mapOpenAIStopReasonToAnthropic(*choice.FinishReason)
+			state.PendingStopReason = &reason
+		} else if chunk.Usage != nil {
+			// 重复 finish chunk：仅更新 usage（已在开头合并）
 		}
-		usageJSON, _ := json.Marshal(usage)
-		sb.WriteString(fmt.Sprintf(
-			"event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"%s\",\"stop_sequence\":null},\"usage\":%s}\n\n",
-			stopReason, string(usageJSON),
-		))
-		sb.WriteString("event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
 	}
 
 	return sb.String()
+}
+
+// OpenAIStreamFinalize 在流结束时发出缓存的 message_delta 与 message_stop。
+func OpenAIStreamFinalize(state *OpenAIToAnthropicState) string {
+	if state.MessageDeltaEmitted {
+		return ""
+	}
+	var sb strings.Builder
+
+	if state.ToolBlocks == nil {
+		state.ToolBlocks = make(map[int]*ToolBlockState)
+	}
+
+	closeOpenTextBlock(&sb, state)
+	lateStartPendingToolBlocks(&sb, state)
+	closeOpenToolBlocks(&sb, state)
+
+	stopReason := FinishReasonEndTurn
+	if state.PendingStopReason != nil {
+		stopReason = *state.PendingStopReason
+	}
+
+	usage := state.PendingUsage
+	if usage == nil {
+		usage = &AnthropicUsage{}
+	}
+	usageJSON, _ := json.Marshal(usage)
+	sb.WriteString(fmt.Sprintf(
+		"event: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"%s\",\"stop_sequence\":null},\"usage\":%s}\n\n",
+		stopReason, string(usageJSON),
+	))
+	sb.WriteString("event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n")
+	state.MessageDeltaEmitted = true
+
+	return sb.String()
+}
+
+func writeMessageStart(sb *strings.Builder, state *OpenAIToAnthropicState) {
+	usage := state.PendingUsage
+	if usage == nil {
+		usage = &AnthropicUsage{}
+	}
+	usageJSON, _ := json.Marshal(usage)
+	msgStart := fmt.Sprintf(
+		`{"id":"%s","type":"message","role":"assistant","content":[],"model":"%s","stop_reason":null,"stop_sequence":null,"usage":%s}`,
+		state.MessageID, state.Model, string(usageJSON),
+	)
+	sb.WriteString(fmt.Sprintf("event: message_start\ndata: {\"type\":\"message_start\",\"message\":%s}\n\n", msgStart))
+	sb.WriteString("event: ping\ndata: {\"type\":\"ping\"}\n\n")
+}
+
+func writeContentBlockStart(sb *strings.Builder, index int, blockType string) {
+	if blockType == ContentTypeText {
+		sb.WriteString(fmt.Sprintf(
+			"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":%d,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+			index,
+		))
+	}
+}
+
+func writeToolBlockStart(sb *strings.Builder, index int, id, name string) {
+	nameJSON, _ := json.Marshal(name)
+	sb.WriteString(fmt.Sprintf(
+		"event: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":%d,\"content_block\":{\"type\":\"tool_use\",\"id\":\"%s\",\"name\":%s,\"input\":{}}}\n\n",
+		index, id, string(nameJSON),
+	))
+}
+
+func closeOpenTextBlock(sb *strings.Builder, state *OpenAIToAnthropicState) {
+	if !state.OpenTextBlock {
+		return
+	}
+	sb.WriteString(fmt.Sprintf(
+		"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":%d}\n\n",
+		state.TextBlockIndex,
+	))
+	state.OpenTextBlock = false
+}
+
+func closeOpenToolBlocks(sb *strings.Builder, state *OpenAIToAnthropicState) {
+	indices := make([]int, 0, len(state.ToolBlocks))
+	for _, tb := range state.ToolBlocks {
+		if tb.Open {
+			indices = append(indices, tb.AnthropicIndex)
+			tb.Open = false
+		}
+	}
+	sortToolBlockIndices(indices)
+	for _, idx := range indices {
+		sb.WriteString(fmt.Sprintf(
+			"event: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":%d}\n\n",
+			idx,
+		))
+	}
+}
+
+func sortToolBlockIndices(indices []int) {
+	for i := 0; i < len(indices); i++ {
+		for j := i + 1; j < len(indices); j++ {
+			if indices[j] < indices[i] {
+				indices[i], indices[j] = indices[j], indices[i]
+			}
+		}
+	}
+}
+
+func getToolCallIndex(tc ToolCall) int {
+	if tc.Index != nil {
+		return *tc.Index
+	}
+	return 0
+}
+
+func getOrCreateToolBlock(state *OpenAIToAnthropicState, toolIdx int) *ToolBlockState {
+	if tb, ok := state.ToolBlocks[toolIdx]; ok {
+		return tb
+	}
+	tb := &ToolBlockState{
+		AnthropicIndex: state.NextBlockIndex,
+	}
+	state.NextBlockIndex++
+	state.ToolBlocks[toolIdx] = tb
+	return tb
+}
+
+func processOpenAIToolCallDeltas(sb *strings.Builder, state *OpenAIToAnthropicState, toolCalls []ToolCall) {
+	closeOpenTextBlock(sb, state)
+
+	for _, tc := range toolCalls {
+		toolIdx := getToolCallIndex(tc)
+		tb := getOrCreateToolBlock(state, toolIdx)
+
+		if tc.ID != "" {
+			tb.ID = tc.ID
+		}
+		if tc.Function.Name != "" {
+			tb.Name = tc.Function.Name
+		}
+
+		if !tb.Started && tb.ID != "" && tb.Name != "" {
+			startToolBlock(sb, state, tb)
+		}
+
+		if tc.Function.Arguments != "" {
+			if tb.Started {
+				argsJSON, _ := json.Marshal(tc.Function.Arguments)
+				sb.WriteString(fmt.Sprintf(
+					"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":%d,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":%s}}\n\n",
+					tb.AnthropicIndex, string(argsJSON),
+				))
+			} else {
+				tb.PendingArgs += tc.Function.Arguments
+			}
+		}
+	}
+}
+
+func startToolBlock(sb *strings.Builder, state *OpenAIToAnthropicState, tb *ToolBlockState) {
+	tb.Started = true
+	tb.Open = true
+	writeToolBlockStart(sb, tb.AnthropicIndex, tb.ID, tb.Name)
+	if tb.PendingArgs != "" {
+		argsJSON, _ := json.Marshal(tb.PendingArgs)
+		sb.WriteString(fmt.Sprintf(
+			"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":%d,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":%s}}\n\n",
+			tb.AnthropicIndex, string(argsJSON),
+		))
+		tb.PendingArgs = ""
+	}
+	_ = state
+}
+
+func lateStartPendingToolBlocks(sb *strings.Builder, state *OpenAIToAnthropicState) {
+	type lateStart struct {
+		index   int
+		id      string
+		name    string
+		pending string
+	}
+	var starts []lateStart
+	for toolIdx, tb := range state.ToolBlocks {
+		if tb.Started {
+			continue
+		}
+		if tb.PendingArgs == "" && tb.ID == "" && tb.Name == "" {
+			continue
+		}
+		id := tb.ID
+		if id == "" {
+			id = "toolu_" + uuid.New().String()[:8]
+		}
+		name := tb.Name
+		if name == "" {
+			name = "unknown_tool"
+		}
+		tb.Started = true
+		tb.Open = true
+		starts = append(starts, lateStart{
+			index:   tb.AnthropicIndex,
+			id:      id,
+			name:    name,
+			pending: tb.PendingArgs,
+		})
+		tb.ID = id
+		tb.Name = name
+		tb.PendingArgs = ""
+		_ = toolIdx
+	}
+	sort.Slice(starts, func(i, j int) bool {
+		return starts[i].index < starts[j].index
+	})
+	for _, s := range starts {
+		writeToolBlockStart(sb, s.index, s.id, s.name)
+		if s.pending != "" {
+			argsJSON, _ := json.Marshal(s.pending)
+			sb.WriteString(fmt.Sprintf(
+				"event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":%d,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":%s}}\n\n",
+				s.index, string(argsJSON),
+			))
+		}
+	}
+}
+
+// openAIUsageToAnthropic 将 OpenAI usage 转为 Anthropic 格式（扣减缓存 token）。
+func openAIUsageToAnthropic(u *Usage) *AnthropicUsage {
+	if u == nil {
+		return nil
+	}
+	cached := 0
+	cacheCreation := 0
+	if u.PromptTokensDetails != nil {
+		cacheCreation = u.PromptTokensDetails.CacheCreationInputTokens
+		cached = u.PromptTokensDetails.CacheReadInputTokens
+		if cached == 0 {
+			cached = u.PromptTokensDetails.CachedTokens
+		}
+	}
+	inputTokens := u.PromptTokens - cached - cacheCreation
+	if inputTokens < 0 {
+		inputTokens = 0
+	}
+	usage := &AnthropicUsage{
+		InputTokens:  inputTokens,
+		OutputTokens: u.CompletionTokens,
+	}
+	if cached > 0 {
+		usage.CacheReadInputTokens = cached
+	}
+	if cacheCreation > 0 {
+		usage.CacheCreationInputTokens = cacheCreation
+	}
+	return usage
+}
+
+func mergeAnthropicUsage(dst, src *AnthropicUsage) *AnthropicUsage {
+	if src == nil {
+		return dst
+	}
+	if dst == nil {
+		return src
+	}
+	if src.InputTokens > 0 {
+		dst.InputTokens = src.InputTokens
+	}
+	if src.OutputTokens > 0 {
+		dst.OutputTokens = src.OutputTokens
+	}
+	if src.CacheReadInputTokens > 0 {
+		dst.CacheReadInputTokens = src.CacheReadInputTokens
+	}
+	if src.CacheCreationInputTokens > 0 {
+		dst.CacheCreationInputTokens = src.CacheCreationInputTokens
+	}
+	return dst
+}
+
+// convertOpenAIUserContent 将 OpenAI user 消息 content 转为 Anthropic 格式。
+func convertOpenAIUserContent(content interface{}) interface{} {
+	if content == nil {
+		return ""
+	}
+	switch v := content.(type) {
+	case string:
+		return v
+	case []ContentPart:
+		return convertContentPartsToAnthropic(v)
+	case []interface{}:
+		var parts []ContentPart
+		for _, item := range v {
+			if partMap, ok := item.(map[string]interface{}); ok {
+				part := ContentPart{Type: fmt.Sprintf("%v", partMap["type"])}
+				if text, ok := partMap["text"].(string); ok {
+					part.Text = text
+				}
+				if imgURL, ok := partMap["image_url"].(map[string]interface{}); ok {
+					if url, ok := imgURL["url"].(string); ok {
+						part.ImageURL = &ImageURL{URL: url}
+					}
+				}
+				parts = append(parts, part)
+			}
+		}
+		if len(parts) == 0 {
+			return content
+		}
+		return convertContentPartsToAnthropic(parts)
+	default:
+		return content
+	}
+}
+
+func convertContentPartsToAnthropic(parts []ContentPart) []AnthropicContentBlock {
+	var blocks []AnthropicContentBlock
+	for _, part := range parts {
+		switch part.Type {
+		case ContentTypeText:
+			if part.Text != "" {
+				blocks = append(blocks, AnthropicContentBlock{Type: ContentTypeText, Text: part.Text})
+			}
+		case "image_url":
+			if part.ImageURL != nil {
+				if block := imageURLToAnthropicBlock(part.ImageURL.URL); block != nil {
+					blocks = append(blocks, *block)
+				}
+			}
+		}
+	}
+	if len(blocks) == 1 && blocks[0].Type == ContentTypeText {
+		return blocks
+	}
+	if len(blocks) == 0 {
+		return nil
+	}
+	return blocks
+}
+
+func imageURLToAnthropicBlock(url string) *AnthropicContentBlock {
+	if strings.HasPrefix(url, "data:") {
+		// data:<media_type>;base64,<data>
+		rest := strings.TrimPrefix(url, "data:")
+		mediaType, data, ok := strings.Cut(rest, ";base64,")
+		if !ok || mediaType == "" || data == "" {
+			return nil
+		}
+		return &AnthropicContentBlock{
+			Type: "image",
+			Source: &AnthropicImageSource{
+				Type:      "base64",
+				MediaType: mediaType,
+				Data:      data,
+			},
+		}
+	}
+	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+		return &AnthropicContentBlock{
+			Type: "image",
+			Source: &AnthropicImageSource{
+				Type: "url",
+				URL:  url,
+			},
+		}
+	}
+	return nil
+}
+
+// isOSeriesModel 判断是否为 OpenAI o 系列模型。
+func isOSeriesModel(model string) bool {
+	if len(model) < 2 || model[0] != 'o' {
+		return false
+	}
+	for _, c := range model[1:] {
+		if c < '0' || c > '9' {
+			if c == '-' {
+				break
+			}
+			return false
+		}
+	}
+	return model[1] >= '0' && model[1] <= '9'
 }
 
 // AnthropicToOpenAIState tracks tool call state during Anthropic to OpenAI stream conversion.
@@ -607,12 +983,18 @@ type AnthropicToOpenAIState struct {
 	CurrentBlockID   string
 	CurrentBlockName string
 	ToolCallIndex    int
+	ChunkID          string
+	Created          int64
 }
 
 // AnthropicEventToOpenAIChunk converts an Anthropic stream event to OpenAI SSE format.
 func AnthropicEventToOpenAIChunk(eventType string, event *AnthropicStreamEvent, model string, state *AnthropicToOpenAIState) string { //nolint:gocyclo // complex business logic.
-	chunkID := "chatcmpl-" + uuid.New().String()[:8]
-	now := time.Now().Unix()
+	if state.ChunkID == "" {
+		state.ChunkID = "chatcmpl-" + uuid.New().String()[:8]
+		state.Created = time.Now().Unix()
+	}
+	chunkID := state.ChunkID
+	now := state.Created
 
 	switch eventType {
 	case AnthropicEventMessageStart:
@@ -744,6 +1126,8 @@ func mapAnthropicToolChoiceToOpenAI(choice interface{}) interface{} {
 			return ToolChoiceAuto
 		case "any":
 			return ToolChoiceRequired
+		case "none":
+			return "none"
 		case RoleTool:
 			if name, ok := v["name"].(string); ok {
 				return map[string]interface{}{
