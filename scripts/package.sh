@@ -120,7 +120,7 @@ cp "$PROJECT_DIR/deploy/production/docker/Dockerfile.backend" "$PKG/backend/Dock
 cp "$PROJECT_DIR/deploy/production/docker-compose.prod.yml" "$PKG/docker-compose.yml"
 
 # 配置模板
-cp "$PROJECT_DIR/deploy/production/.env.production" "$PKG/.env.template"
+cp "$PROJECT_DIR/deploy/production/.env.production.example" "$PKG/.env.template"
 cp "$PROJECT_DIR/deploy/production/config/app.yaml.production" "$PKG/config/app.yaml.template"
 
 # Nginx 配置

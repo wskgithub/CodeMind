@@ -176,13 +176,13 @@ func TestAnthropicUsageToUsage(t *testing.T) {
 	}
 
 	usage := au.ToUsage()
-	if usage.PromptTokens != 100 {
+	if usage.PromptTokens != 115 {
 		t.Errorf("incorrect PromptTokens: %d", usage.PromptTokens)
 	}
 	if usage.CompletionTokens != 50 {
 		t.Errorf("incorrect CompletionTokens: %d", usage.CompletionTokens)
 	}
-	if usage.TotalTokens != 150 {
+	if usage.TotalTokens != 165 {
 		t.Errorf("incorrect TotalTokens: %d", usage.TotalTokens)
 	}
 

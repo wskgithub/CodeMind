@@ -773,6 +773,9 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 				if event.Message != nil {
 					result.ResponseID = event.Message.ID
 					result.Model = event.Message.Model
+					if event.Message.Usage != nil {
+						result.Usage = event.Message.Usage.ToUsage()
+					}
 				}
 			case llm.AnthropicEventContentBlockDelta:
 				if event.Delta != nil {
@@ -783,7 +786,12 @@ func (h *LLMProxyHandler) pipeAnthropicStreamToOpenAI(c *gin.Context, body io.Re
 					result.FinishReason = *event.Delta.StopReason
 				}
 				if event.Usage != nil {
-					result.Usage = event.Usage.ToUsage()
+					if result.Usage == nil {
+						result.Usage = event.Usage.ToUsage()
+					} else if event.Usage.OutputTokens > 0 {
+						result.Usage.CompletionTokens = event.Usage.OutputTokens
+						result.Usage.TotalTokens = result.Usage.PromptTokens + event.Usage.OutputTokens
+					}
 				}
 			}
 		}
@@ -807,6 +815,13 @@ func (h *LLMProxyHandler) pipeOpenAIStreamToAnthropic(c *gin.Context, body io.Re
 		_, chunk, err := reader.ReadChunk()
 		if err != nil {
 			if err == io.EOF {
+				if finalData := llm.OpenAIStreamFinalize(state); finalData != "" {
+					_, _ = fmt.Fprint(c.Writer, finalData)
+					c.Writer.Flush()
+					if state.PendingUsage != nil {
+						result.Usage = state.PendingUsage.ToUsage()
+					}
+				}
 				break
 			}
 			h.logger.Error("failed to read OpenAI SSE stream", zap.Error(err))

@@ -22,7 +22,10 @@ func TestOpenAIToAnthropicBasic(t *testing.T) {
 		Stream:      true,
 	}
 
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if result.Model != "gpt-4" {
 		t.Errorf("incorrect Model: %s", result.Model)
@@ -52,7 +55,10 @@ func TestOpenAIToAnthropicSystemMessage(t *testing.T) {
 		MaxTokens: intPtr(1024),
 	}
 
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// system message should be extracted to System field
 	if result.System == nil || result.System != "You are helpful." {
@@ -73,7 +79,10 @@ func TestOpenAIToAnthropicMaxTokensDefault(t *testing.T) {
 		Messages: []ChatMessage{{Role: "user", Content: "Hi"}},
 	}
 
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if result.MaxTokens != 4096 {
 		t.Errorf("default MaxTokens should be 4096, got: %d", result.MaxTokens)
 	}
@@ -90,7 +99,10 @@ func TestOpenAIToAnthropicMaxCompletionTokensPriority(t *testing.T) {
 		MaxCompletionTokens: &maxCompletionTokens,
 	}
 
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if result.MaxTokens != 2048 {
 		t.Errorf("should prioritize max_completion_tokens: %d", result.MaxTokens)
 	}
@@ -111,7 +123,10 @@ func TestOpenAIToAnthropicToolConversion(t *testing.T) {
 		}},
 	}
 
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if len(result.Tools) != 1 {
 		t.Fatalf("incorrect Tools count: %d", len(result.Tools))
@@ -142,7 +157,10 @@ func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 				ToolChoice: tt.choice,
 			}
 
-			result := OpenAIToAnthropic(req)
+			result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 			if result.ToolChoice == nil {
 				t.Fatal("ToolChoice should not be nil")
 			}
@@ -175,7 +193,10 @@ func TestOpenAIToAnthropicToolCallConversion(t *testing.T) {
 		},
 	}
 
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// assistant message should contain tool_use content blocks
 	assistantMsg := result.Messages[1]
@@ -202,14 +223,17 @@ func TestOpenAIToAnthropicStopSequence(t *testing.T) {
 		Messages: []ChatMessage{{Role: "user", Content: "Hi"}},
 		Stop:     "END",
 	}
-	result := OpenAIToAnthropic(req)
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if len(result.StopSequences) != 1 || result.StopSequences[0] != "END" {
 		t.Errorf("incorrect StopSequences: %v", result.StopSequences)
 	}
 }
 
-// TestOpenAIToAnthropicFirstMessageMustBeUser tests that first message must be user role.
-func TestOpenAIToAnthropicFirstMessageMustBeUser(t *testing.T) {
+// TestOpenAIToAnthropicFirstMessageAssistant 首条 assistant 消息合法，不插入假 user 消息。
+func TestOpenAIToAnthropicFirstMessageAssistant(t *testing.T) {
 	req := &ChatCompletionRequest{
 		Model: "gpt-4",
 		Messages: []ChatMessage{
@@ -217,9 +241,82 @@ func TestOpenAIToAnthropicFirstMessageMustBeUser(t *testing.T) {
 		},
 	}
 
-	result := OpenAIToAnthropic(req)
-	if result.Messages[0].Role != "user" {
-		t.Error("first Anthropic message must be user role")
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Messages) != 1 || result.Messages[0].Role != "assistant" {
+		t.Errorf("first message should remain assistant, got: %+v", result.Messages)
+	}
+}
+
+// TestOpenAIToAnthropicEmptyMessages 空 messages 应返回错误。
+func TestOpenAIToAnthropicEmptyMessages(t *testing.T) {
+	req := &ChatCompletionRequest{
+		Model:    "gpt-4",
+		Messages: []ChatMessage{},
+	}
+	_, err := OpenAIToAnthropic(req)
+	if err == nil {
+		t.Error("expected error for empty messages")
+	}
+}
+
+// TestOpenAIToAnthropicMergeToolMessages 连续 tool 消息合并为一条 user 消息。
+func TestOpenAIToAnthropicMergeToolMessages(t *testing.T) {
+	req := &ChatCompletionRequest{
+		Model: "gpt-4",
+		Messages: []ChatMessage{
+			{Role: "user", Content: "query"},
+			{Role: "tool", ToolCallID: "call_1", Content: "result1"},
+			{Role: "tool", ToolCallID: "call_2", Content: "result2"},
+		},
+	}
+
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Messages) != 2 {
+		t.Fatalf("expected 2 messages, got %d", len(result.Messages))
+	}
+	blocks, ok := result.Messages[1].Content.([]AnthropicContentBlock)
+	if !ok || len(blocks) != 2 {
+		t.Fatalf("expected merged tool_result blocks, got: %+v", result.Messages[1].Content)
+	}
+	if blocks[0].ToolUseID != "call_1" || blocks[1].ToolUseID != "call_2" {
+		t.Error("tool_use_id mismatch in merged blocks")
+	}
+}
+
+// TestOpenAIToAnthropicImageURL 含 image_url 的 user 消息转为 Anthropic image block。
+func TestOpenAIToAnthropicImageURL(t *testing.T) {
+	req := &ChatCompletionRequest{
+		Model: "gpt-4",
+		Messages: []ChatMessage{{
+			Role: RoleUser,
+			Content: []ContentPart{{
+				Type: "image_url",
+				ImageURL: &ImageURL{
+					URL: "data:image/png;base64,abc123",
+				},
+			}},
+		}},
+	}
+
+	result, err := OpenAIToAnthropic(req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	blocks, ok := result.Messages[0].Content.([]AnthropicContentBlock)
+	if !ok || len(blocks) != 1 {
+		t.Fatalf("expected image content block, got: %+v", result.Messages[0].Content)
+	}
+	if blocks[0].Type != "image" || blocks[0].Source == nil {
+		t.Fatalf("expected image block, got: %+v", blocks[0])
+	}
+	if blocks[0].Source.Type != "base64" || blocks[0].Source.MediaType != "image/png" {
+		t.Errorf("unexpected image source: %+v", blocks[0].Source)
 	}
 }
 
@@ -560,6 +657,13 @@ func TestToolChoiceMapping(t *testing.T) {
 		}
 	})
 
+	t.Run("Anthropic none → OpenAI none", func(t *testing.T) {
+		result := mapAnthropicToolChoiceToOpenAI(map[string]interface{}{"type": "none"})
+		if result != "none" {
+			t.Errorf("expected none, got: %v", result)
+		}
+	})
+
 	t.Run("Anthropic tool → OpenAI specific function", func(t *testing.T) {
 		result := mapAnthropicToolChoiceToOpenAI(map[string]interface{}{
 			"type": "tool",
@@ -717,113 +821,350 @@ func TestAnthropicEventToOpenAIChunkMessageDelta(t *testing.T) {
 	}
 }
 
+// TestOpenAIUsageToAnthropicCacheDeduction 验证缓存 token 扣减。
+func TestOpenAIUsageToAnthropicCacheDeduction(t *testing.T) {
+	usage := openAIUsageToAnthropic(&Usage{
+		PromptTokens:     100,
+		CompletionTokens: 20,
+		PromptTokensDetails: &PromptTokensDetails{
+			CachedTokens: 60,
+		},
+	})
+	if usage.InputTokens != 40 {
+		t.Errorf("expected input_tokens=40, got %d", usage.InputTokens)
+	}
+	if usage.CacheReadInputTokens != 60 {
+		t.Errorf("expected cache_read_input_tokens=60, got %d", usage.CacheReadInputTokens)
+	}
+}
+
+// TestAnthropicToOpenAIStreamOptions 流式请求应注入 stream_options.include_usage。
+func TestAnthropicToOpenAIStreamOptions(t *testing.T) {
+	req := &AnthropicMessagesRequest{
+		Model:     "claude-sonnet-4-20250514",
+		Messages:  []AnthropicMessage{{Role: "user", Content: "Hi"}},
+		MaxTokens: 1024,
+		Stream:    true,
+	}
+	result := AnthropicToOpenAI(req)
+	if result.StreamOptions == nil || result.StreamOptions.IncludeUsage == nil || !*result.StreamOptions.IncludeUsage {
+		t.Error("stream request should include stream_options.include_usage")
+	}
+}
+
 // ══════════════════════════════════
 // Stream format conversion: OpenAI to Anthropic
 // ══════════════════════════════════
 
-// TestOpenAIChunkToAnthropicEventsFirstChunk tests first chunk generates message_start.
-func TestOpenAIChunkToAnthropicEventsFirstChunk(t *testing.T) {
+// TestOpenAIChunkToAnthropicEventsLazyTextStart 首 chunk 无 content 时，后续 text 前必须先 content_block_start。
+func TestOpenAIChunkToAnthropicEventsLazyTextStart(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
-	chunk := &ChatCompletionChunk{
-		ID:    "chatcmpl-1",
-		Model: "gpt-4",
-		Choices: []ChatChoice{{
-			Index: 0,
-			Delta: &ChatMessage{Content: "Hi"},
-		}},
+
+	// 首 chunk 仅 role
+	roleChunk := &ChatCompletionChunk{
+		ID: "chatcmpl-1", Model: "gpt-4",
+		Choices: []ChatChoice{{Index: 0, Delta: &ChatMessage{Role: RoleAssistant}}},
+	}
+	result := OpenAIChunkToAnthropicEvents(roleChunk, true, state)
+	if !strings.Contains(result, "message_start") {
+		t.Error("should contain message_start")
+	}
+	if strings.Contains(result, "content_block_start") {
+		t.Error("role-only chunk should not start text block")
 	}
 
-	result := OpenAIChunkToAnthropicEvents(chunk, true, state)
-
-	if !strings.Contains(result, "event: message_start") {
-		t.Error("first chunk should contain message_start event")
+	// 后续 text chunk
+	textChunk := &ChatCompletionChunk{
+		ID: "chatcmpl-1", Model: "gpt-4",
+		Choices: []ChatChoice{{Index: 0, Delta: &ChatMessage{Content: "Hi"}}},
 	}
-	if !strings.Contains(result, "event: ping") {
-		t.Error("first chunk should contain ping event")
+	result = OpenAIChunkToAnthropicEvents(textChunk, false, state)
+	if !strings.Contains(result, "content_block_start") {
+		t.Error("text chunk should start text block")
 	}
 	if !strings.Contains(result, "text_delta") {
-		t.Error("should contain text_delta event")
+		t.Error("should contain text_delta")
 	}
 }
 
-// TestOpenAIChunkToAnthropicEventsFinish tests finish events.
-func TestOpenAIChunkToAnthropicEventsFinish(t *testing.T) {
+// TestOpenAIChunkToAnthropicEventsTextThenTool text 后接 tool_call，text 块应先 stop。
+func TestOpenAIChunkToAnthropicEventsTextThenTool(t *testing.T) {
+	state := &OpenAIToAnthropicState{}
+	idx := 0
+
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{Content: "thinking"}}},
+	}, true, state)
+
+	toolChunk := &ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{
+			ToolCalls: []ToolCall{{
+				Index: &idx, ID: "call_1", Type: "function",
+				Function: ToolCallFunction{Name: "get_weather"},
+			}},
+		}}},
+	}
+	result := OpenAIChunkToAnthropicEvents(toolChunk, false, state)
+	if !strings.Contains(result, "content_block_stop") {
+		t.Error("should stop text block before tool_use")
+	}
+	if !strings.Contains(result, "tool_use") {
+		t.Error("should start tool_use block")
+	}
+}
+
+// TestOpenAIChunkToAnthropicEventsParallelTools 并行 tool calls 按 index 独立管理。
+func TestOpenAIChunkToAnthropicEventsParallelTools(t *testing.T) {
+	state := &OpenAIToAnthropicState{}
+	idx0, idx1 := 0, 1
+
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{Role: RoleAssistant}}},
+	}, true, state)
+
+	// tool 0 name
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{ToolCalls: []ToolCall{{
+			Index: &idx0, ID: "call_0", Function: ToolCallFunction{Name: "tool_a"},
+		}}}}},
+	}, false, state)
+
+	// tool 1 name
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{ToolCalls: []ToolCall{{
+			Index: &idx1, ID: "call_1", Function: ToolCallFunction{Name: "tool_b"},
+		}}}}},
+	}, false, state)
+
+	// tool 0 args
+	r0 := OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{ToolCalls: []ToolCall{{
+			Index: &idx0, Function: ToolCallFunction{Arguments: `{"a":1}`},
+		}}}}},
+	}, false, state)
+	if !strings.Contains(r0, "input_json_delta") {
+		t.Error("tool 0 should receive args delta")
+	}
+
+	// tool 1 args
+	r1 := OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{ToolCalls: []ToolCall{{
+			Index: &idx1, Function: ToolCallFunction{Arguments: `{"b":2}`},
+		}}}}},
+	}, false, state)
+	if !strings.Contains(r1, "input_json_delta") {
+		t.Error("tool 1 should receive args delta")
+	}
+	if len(state.ToolBlocks) != 2 {
+		t.Errorf("expected 2 tool blocks, got %d", len(state.ToolBlocks))
+	}
+}
+
+// TestOpenAIChunkToAnthropicEventsPendingArgs args 先于 name 到达时应缓存后补发。
+func TestOpenAIChunkToAnthropicEventsPendingArgs(t *testing.T) {
+	state := &OpenAIToAnthropicState{}
+	idx := 0
+
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{Role: RoleAssistant}}},
+	}, true, state)
+
+	// args 先到
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{ToolCalls: []ToolCall{{
+			Index: &idx, Function: ToolCallFunction{Arguments: `{"x":1}`},
+		}}}}},
+	}, false, state)
+
+	// name/id 后到
+	result := OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{ToolCalls: []ToolCall{{
+			Index: &idx, ID: "call_1", Function: ToolCallFunction{Name: "my_tool"},
+		}}}}},
+	}, false, state)
+	if !strings.Contains(result, "content_block_start") {
+		t.Error("should start tool block when id+name arrive")
+	}
+	if !strings.Contains(result, "input_json_delta") {
+		t.Error("should flush pending args after start")
+	}
+}
+
+// TestOpenAIChunkToAnthropicEventsFinishDeferred finish 不立即发 message_delta，由 finalize 发出。
+func TestOpenAIChunkToAnthropicEventsFinishDeferred(t *testing.T) {
 	state := &OpenAIToAnthropicState{}
 	finishReason := "stop"
-	chunk := &ChatCompletionChunk{
+
+	result := OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{Content: "done"}, FinishReason: &finishReason}},
+	}, true, state)
+	if strings.Contains(result, "message_delta") {
+		t.Error("finish chunk should not emit message_delta immediately")
+	}
+
+	// usage chunk（choices 为空）
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4", Choices: []ChatChoice{},
+		Usage: &Usage{PromptTokens: 10, CompletionTokens: 5},
+	}, false, state)
+
+	final := OpenAIStreamFinalize(state)
+	if !strings.Contains(final, "message_delta") {
+		t.Error("finalize should emit message_delta")
+	}
+	if !strings.Contains(final, `"input_tokens":10`) {
+		t.Error("finalize should include usage")
+	}
+	if !strings.Contains(final, "message_stop") {
+		t.Error("finalize should emit message_stop")
+	}
+}
+
+// TestOpenAIStreamFinalizeEOFWithoutFinish 无 finish_reason 时 EOF 收尾仍发出完整序列。
+func TestOpenAIStreamFinalizeEOFWithoutFinish(t *testing.T) {
+	state := &OpenAIToAnthropicState{}
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{Delta: &ChatMessage{Content: "partial"}}},
+	}, true, state)
+
+	final := OpenAIStreamFinalize(state)
+	if !strings.Contains(final, `"stop_reason":"end_turn"`) {
+		t.Error("should default stop_reason to end_turn")
+	}
+	if !strings.Contains(final, "message_stop") {
+		t.Error("should emit message_stop")
+	}
+}
+
+// TestOpenAIStreamFinalizeNoDuplicate 重复 finalize 只发一次 message_delta。
+func TestOpenAIStreamFinalizeNoDuplicate(t *testing.T) {
+	state := &OpenAIToAnthropicState{}
+	finishReason := "stop"
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{FinishReason: &finishReason}},
+	}, true, state)
+
+	first := OpenAIStreamFinalize(state)
+	second := OpenAIStreamFinalize(state)
+	if first == "" {
+		t.Fatal("first finalize should produce output")
+	}
+	if second != "" {
+		t.Error("second finalize should be empty")
+	}
+}
+
+// TestOpenAIChunkToAnthropicEventsDuplicateFinish 重复 finish chunk 不重复发 message_delta。
+func TestOpenAIChunkToAnthropicEventsDuplicateFinish(t *testing.T) {
+	state := &OpenAIToAnthropicState{}
+	finishReason := "stop"
+
+	OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{FinishReason: &finishReason}},
+	}, true, state)
+
+	// 第二个 finish chunk 不应在 chunk 处理阶段发 message_delta
+	result := OpenAIChunkToAnthropicEvents(&ChatCompletionChunk{
+		ID: "c1", Model: "gpt-4",
+		Choices: []ChatChoice{{FinishReason: &finishReason}},
+	}, false, state)
+	if strings.Contains(result, "message_delta") {
+		t.Error("duplicate finish should not emit message_delta in chunk handler")
+	}
+
+	final := OpenAIStreamFinalize(state)
+	if strings.Count(final, "event: message_delta") != 1 {
+		t.Error("finalize should emit exactly one message_delta")
+	}
+}
+
+// TestOpenAIResponseToAnthropicCacheDeduction 非流式响应 usage 缓存 token 扣减。
+func TestOpenAIResponseToAnthropicCacheDeduction(t *testing.T) {
+	resp := &ChatCompletionResponse{
 		ID:    "chatcmpl-1",
 		Model: "gpt-4",
 		Choices: []ChatChoice{{
-			Index:        0,
-			Delta:        &ChatMessage{},
-			FinishReason: &finishReason,
+			Message: &ChatMessage{Role: RoleAssistant, Content: "ok"},
 		}},
-		Usage: &Usage{CompletionTokens: 20},
+		Usage: &Usage{
+			PromptTokens:     100,
+			CompletionTokens: 20,
+			PromptTokensDetails: &PromptTokensDetails{
+				CachedTokens: 60,
+			},
+		},
 	}
-
-	result := OpenAIChunkToAnthropicEvents(chunk, false, state)
-
-	if !strings.Contains(result, "content_block_stop") {
-		t.Error("should contain content_block_stop event")
+	result := OpenAIResponseToAnthropic(resp)
+	if result.Usage == nil || result.Usage.InputTokens != 40 {
+		t.Errorf("expected input_tokens=40, got %+v", result.Usage)
 	}
-	if !strings.Contains(result, "message_delta") {
-		t.Error("should contain message_delta event")
-	}
-	if !strings.Contains(result, `"stop_reason":"end_turn"`) {
-		t.Error("stop_reason should map to end_turn")
-	}
-	if !strings.Contains(result, "message_stop") {
-		t.Error("should contain message_stop event")
+	if result.Usage.CacheReadInputTokens != 60 {
+		t.Errorf("expected cache_read_input_tokens=60, got %d", result.Usage.CacheReadInputTokens)
 	}
 }
 
-// TestOpenAIChunkToAnthropicEventsToolCall tests tool call chunk conversion.
-func TestOpenAIChunkToAnthropicEventsToolCall(t *testing.T) {
-	state := &OpenAIToAnthropicState{}
-	idx := 0
-	chunk := &ChatCompletionChunk{
-		ID:    "chatcmpl-tc",
-		Model: "gpt-4",
-		Choices: []ChatChoice{{
-			Index: 0,
-			Delta: &ChatMessage{
-				ToolCalls: []ToolCall{{
-					Index:    &idx,
-					ID:       "call_1",
-					Type:     "function",
-					Function: ToolCallFunction{Name: "get_weather", Arguments: ""},
-				}},
-			},
-		}},
+// TestAnthropicEventToOpenAIChunkFixedID 流式 chunk id 应在整条流中固定复用。
+func TestAnthropicEventToOpenAIChunkFixedID(t *testing.T) {
+	state := &AnthropicToOpenAIState{}
+	model := "claude-sonnet-4-20250514"
+
+	start := AnthropicEventToOpenAIChunk(AnthropicEventMessageStart, &AnthropicStreamEvent{Type: AnthropicEventMessageStart}, model, state)
+	text := AnthropicEventToOpenAIChunk(AnthropicEventContentBlockDelta, &AnthropicStreamEvent{
+		Type:  AnthropicEventContentBlockDelta,
+		Delta: &AnthropicStreamDelta{Type: "text_delta", Text: "Hi"},
+	}, model, state)
+
+	extractID := func(s string) string {
+		const prefix = `"id":"`
+		idx := strings.Index(s, prefix)
+		if idx < 0 {
+			return ""
+		}
+		rest := s[idx+len(prefix):]
+		end := strings.Index(rest, `"`)
+		if end < 0 {
+			return ""
+		}
+		return rest[:end]
 	}
 
-	result := OpenAIChunkToAnthropicEvents(chunk, true, state)
-
-	if !strings.Contains(result, "tool_use") {
-		t.Error("should contain tool_use content_block_start")
+	id1 := extractID(start)
+	id2 := extractID(text)
+	if id1 == "" || id2 == "" {
+		t.Fatal("failed to extract chunk id")
 	}
-	if !strings.Contains(result, "get_weather") {
-		t.Error("should contain tool name")
+	if id1 != id2 {
+		t.Errorf("chunk id should be stable across events: %s vs %s", id1, id2)
 	}
+}
 
-	// Argument increments
-	chunk2 := &ChatCompletionChunk{
-		ID:    "chatcmpl-tc",
-		Model: "gpt-4",
-		Choices: []ChatChoice{{
-			Index: 0,
-			Delta: &ChatMessage{
-				ToolCalls: []ToolCall{{
-					Index:    &idx,
-					Function: ToolCallFunction{Arguments: `{"city":"Beijing"}`},
-				}},
-			},
-		}},
+// TestAnthropicToOpenAIOSeriesModel o 系列模型应将 max_tokens 映射为 max_completion_tokens。
+func TestAnthropicToOpenAIOSeriesModel(t *testing.T) {
+	req := &AnthropicMessagesRequest{
+		Model:     "o3-mini",
+		Messages:  []AnthropicMessage{{Role: "user", Content: "Hi"}},
+		MaxTokens: 2048,
 	}
-
-	result2 := OpenAIChunkToAnthropicEvents(chunk2, false, state)
-	if !strings.Contains(result2, "input_json_delta") {
-		t.Error("should contain input_json_delta event")
+	result := AnthropicToOpenAI(req)
+	if result.MaxCompletionTokens == nil || *result.MaxCompletionTokens != 2048 {
+		t.Errorf("expected max_completion_tokens=2048, got %+v", result.MaxCompletionTokens)
+	}
+	if result.MaxTokens != nil {
+		t.Error("o-series model should not set max_tokens")
 	}
 }
 
