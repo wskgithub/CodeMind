@@ -26,6 +26,7 @@ Thumbs.db
 # ========================
 .claude/
 .agents/
+.zcode/
 .playwright-mcp/
 
 # ========================
