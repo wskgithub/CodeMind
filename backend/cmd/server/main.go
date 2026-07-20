@@ -184,14 +184,18 @@ func main() {
 	router.Setup(engine, handlers, jwtManager, db, rdb, logger, cfg.Server.CORSOrigins, cfg.Upload.Dir)
 
 	// 11. Start HTTP server with graceful shutdown
-	const llmStreamWriteTimeout = 600
+	// LLM 请求特点：请求体很小，但生成响应可能长达数分钟（流式更长）。
+	// Go 的 ReadHeaderTimeout 严格限制读请求头时间（防慢速攻击），
+	// ReadTimeout/WriteTimeout 必须覆盖完整 LLM 生成周期，否则长任务会被强制断开返回 502。
+	const llmStreamTimeout = 600
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	srv := &http.Server{
-		Addr:         addr,
-		Handler:      engine,
-		ReadTimeout:  30 * time.Second,                    //nolint:mnd // intentional constant.
-		WriteTimeout: llmStreamWriteTimeout * time.Second, // LLM streaming requests require a longer timeout
-		IdleTimeout:  120 * time.Second,                   //nolint:mnd // intentional constant.
+		Addr:              addr,
+		Handler:           engine,
+		ReadHeaderTimeout: 10 * time.Second,                  //nolint:mnd // intentional constant. 防慢速请求头攻击
+		ReadTimeout:       llmStreamTimeout * time.Second,    // 覆盖完整请求体读取 + 处理周期
+		WriteTimeout:      llmStreamTimeout * time.Second,    // LLM streaming requests require a longer timeout
+		IdleTimeout:       120 * time.Second,                 //nolint:mnd // intentional constant.
 	}
 
 	go func() {
