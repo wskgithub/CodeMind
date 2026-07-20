@@ -1,0 +1,52 @@
+# ============================================================
+# CodeMind 根目录 Docker 构建忽略清单
+# 适用于以仓库根为 context 的 frontend 构建（见 docker-compose.yml）
+# ============================================================
+
+# ── Git / CI / 文档 ──────────────────────────
+.git
+.github
+.gitignore
+.gitattributes
+*.md
+docs/
+LICENSE
+
+# ── 后端（避免污染前端构建上下文）──────────────
+backend/
+
+# ── 依赖与构建产物 ───────────────────────────
+**/node_modules/
+**/dist/
+**/build/
+**/.cache/
+**/.parcel-cache/
+**/coverage/
+**/.next/
+**/.nuxt/
+
+# ── 环境与配置 ───────────────────────────────
+.env
+.env.*
+!.env.example
+deploy/config/app.yaml
+
+# ── 本地数据与日志 ───────────────────────────
+*.log
+logs/
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# ── IDE / 编辑器 ─────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# ── Docker 自身文件 ──────────────────────────
+docker-compose*.yml
+Dockerfile*
+.dockerignore

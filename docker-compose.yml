@@ -6,8 +6,9 @@ services:
   # ──────────────────────────────────
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      # 使用仓库根作为构建上下文，便于在 Dockerfile 中读取根目录 VERSION 文件
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: codemind-frontend
     ports:
       - "${FRONTEND_PORT:-80}:80"
