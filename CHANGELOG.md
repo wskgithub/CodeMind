@@ -4,6 +4,24 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.2] - 2026-07-20
+
+### 修复
+
+- **LLM 适配器兼容性**: 修复 Claude Code 2.1.x 在多轮工具调用中向 messages 中间插入 `role=system` 消息（如 ToolSearch 提示）导致 vLLM 等严格上游返回 400 "System message must be at the beginning" 的问题。`AnthropicToOpenAI` 现将所有字符串形式 system 消息合并到首位，其余消息相对顺序保持不变，对宽松上游无影响。
+- **HTTP 服务超时**: 修复长耗时 LLM 流式请求被过早关闭返回 502 的问题。新增 `ReadHeaderTimeout`（10s）防慢速请求头攻击，`ReadTimeout`/`WriteTimeout` 统一为 600s 以覆盖完整生成周期。
+
+### 新增
+
+- **Nginx 连通性检查端点**: 新增 `/api/openai/v1` 和 `/api/anthropic` 根路径精确匹配，返回轻量 JSON 状态，便于 LLM 客户端探测协议可用性而不穿透到后端。
+
+### 构建
+
+- **前端构建上下文统一**: 前端 Docker 构建上下文改为仓库根目录，Dockerfile 通过 `../VERSION` 读取根目录版本文件，统一版本号来源。
+- **根目录 .dockerignore**: 新增根目录忽略清单，排除后端、文档、依赖与构建产物，减小前端镜像构建上下文体积。
+
+---
+
 ## [0.7.0] - 2026-04-14
 
 ### 新增
