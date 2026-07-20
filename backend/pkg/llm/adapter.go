@@ -234,8 +234,42 @@ func AnthropicToOpenAI(req *AnthropicMessagesRequest) *ChatCompletionRequest {
 		messages = append(messages, openaiMsg...)
 	}
 
+	// 部分 OpenAI 兼容上游（如 vLLM）严格要求 system 消息只能出现在 messages 首位，
+	// 中间出现 role=system 会返回 400 "System message must be at the beginning."。
+	// Claude Code 2.1.x 会在多轮工具调用中向 messages 中间插入 role=system 消息
+	// （如 ToolSearch 提示），这里把所有 system 消息合并到首位，对宽松上游无损。
+	messages = collapseSystemMessagesToHead(messages)
+
 	openaiReq.Messages = messages
 	return openaiReq
+}
+
+// collapseSystemMessagesToHead 把 messages 中所有 role=system 的消息合并为一条放在首位，
+// 其余消息保持原相对顺序。content 仅取字符串形式（数组形式的多模态 system 消息保持原位）。
+// 参考 cc-switch 的同名实现（transform_codex_chat.rs）。
+func collapseSystemMessagesToHead(messages []ChatMessage) []ChatMessage {
+	var systemChunks []string
+	rest := make([]ChatMessage, 0, len(messages))
+
+	for _, msg := range messages {
+		if msg.Role == RoleSystem {
+			if text, ok := msg.Content.(string); ok {
+				trimmed := strings.TrimSpace(text)
+				if trimmed != "" {
+					systemChunks = append(systemChunks, text)
+				}
+				continue
+			}
+		}
+		rest = append(rest, msg)
+	}
+
+	out := make([]ChatMessage, 0, len(rest)+1)
+	if len(systemChunks) > 0 {
+		out = append(out, ChatMessage{Role: RoleSystem, Content: strings.Join(systemChunks, "\n\n")})
+	}
+	out = append(out, rest...)
+	return out
 }
 
 func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nolint:gocyclo // complex business logic.

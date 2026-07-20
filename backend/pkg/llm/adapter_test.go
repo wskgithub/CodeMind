@@ -360,6 +360,85 @@ func TestAnthropicToOpenAIBasic(t *testing.T) {
 	}
 }
 
+// TestAnthropicToOpenAICollapseSystemMessages 验证 messages 中间的 role=system
+// 消息会被合并到首位。这是 vLLM 等严格上游的要求（"System message must be at the beginning"）。
+// 复现 Claude Code 2.1.x 在多轮工具调用中向 messages 中间插入 system 消息的场景。
+func TestAnthropicToOpenAICollapseSystemMessages(t *testing.T) {
+	req := &AnthropicMessagesRequest{
+		Model: "qwen3.6-27b",
+		// 模拟 Claude Code 的真实结构：顶层 system + messages 中间混入 system
+		System: "You are a helpful assistant.",
+		Messages: []AnthropicMessage{
+			{Role: "user", Content: "first question"},
+			{Role: "system", Content: "ToolSearch hints available now"}, // 中间的 system（关键）
+			{Role: "assistant", Content: "answer"},
+			{Role: "user", Content: "second question"},
+		},
+		MaxTokens: 1024,
+	}
+
+	result := AnthropicToOpenAI(req)
+
+	// 所有 system 消息必须合并到第一位
+	if len(result.Messages) == 0 || result.Messages[0].Role != "system" {
+		t.Fatalf("first message must be system, got role=%q (len=%d)",
+			safeRole(result.Messages), len(result.Messages))
+	}
+
+	// 后续消息中不得再出现 system
+	for i, msg := range result.Messages[1:] {
+		if msg.Role == "system" {
+			t.Errorf("message[%d] should not be system after collapse; roles=%v", i+1, rolesOf(result.Messages))
+		}
+	}
+
+	// 合并后的 system 内容必须包含两段 system 文本
+	systemContent := result.Messages[0].ContentString()
+	if !strings.Contains(systemContent, "You are a helpful assistant.") {
+		t.Errorf("merged system missing top-level system text: %q", systemContent)
+	}
+	if !strings.Contains(systemContent, "ToolSearch hints available now") {
+		t.Errorf("merged system missing mid-stream system text: %q", systemContent)
+	}
+
+	// 非系统消息的相对顺序必须保持：user → assistant → user
+	nonSystemRoles := rolesOfNonSystem(result.Messages)
+	expected := []string{"user", "assistant", "user"}
+	if len(nonSystemRoles) != len(expected) {
+		t.Fatalf("non-system message count = %v, want %v", nonSystemRoles, expected)
+	}
+	for i, role := range expected {
+		if nonSystemRoles[i] != role {
+			t.Errorf("non-system[%d] role = %q, want %q; full=%v", i, nonSystemRoles[i], role, nonSystemRoles)
+		}
+	}
+}
+
+func safeRole(msgs []ChatMessage) string {
+	if len(msgs) == 0 {
+		return "<empty>"
+	}
+	return msgs[0].Role
+}
+
+func rolesOf(msgs []ChatMessage) []string {
+	out := make([]string, len(msgs))
+	for i, m := range msgs {
+		out[i] = m.Role
+	}
+	return out
+}
+
+func rolesOfNonSystem(msgs []ChatMessage) []string {
+	var out []string
+	for _, m := range msgs {
+		if m.Role != "system" {
+			out = append(out, m.Role)
+		}
+	}
+	return out
+}
+
 // TestAnthropicToOpenAIToolChoice tests tool_choice conversion.
 func TestAnthropicToOpenAIToolChoice(t *testing.T) {
 	tests := []struct {
