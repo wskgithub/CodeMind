@@ -383,6 +383,8 @@ const ModelsPage: React.FC = () => {
                       {[
                         { label: 'OpenAI', url: openaiBaseURL, color: '#00F5D4', bg: 'rgba(0, 245, 212, 0.12)', border: 'rgba(0, 245, 212, 0.3)' },
                         { label: 'Anthropic', url: anthropicBaseURL, color: '#9D4EDD', bg: 'rgba(157, 78, 221, 0.12)', border: 'rgba(157, 78, 221, 0.3)' },
+                        // Responses 协议与 OpenAI 共用 Base URL，此处展示完整端点地址
+                        { label: 'Responses', url: `${openaiBaseURL.replace(/\/+$/, '')}/responses`, color: '#FFBE0B', bg: 'rgba(255, 190, 11, 0.12)', border: 'rgba(255, 190, 11, 0.3)' },
                       ].map(item => (
                         <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Tag style={{ color: item.color, background: item.bg, border: `1px solid ${item.border}`, borderRadius: 4, minWidth: 82, textAlign: 'center' }}>{item.label}</Tag>

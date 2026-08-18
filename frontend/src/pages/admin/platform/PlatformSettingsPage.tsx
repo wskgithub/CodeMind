@@ -66,6 +66,7 @@ const PlatformSettingsPage: React.FC = () => {
 
   const openaiURL = serviceUrl ? `${serviceUrl}/api/openai/v1` : '';
   const anthropicURL = serviceUrl ? `${serviceUrl}/api/anthropic` : '';
+  const responsesURL = serviceUrl ? `${serviceUrl}/api/openai/v1/responses` : '';
 
   const labelColor = isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)';
   const inputStyle = {
@@ -150,6 +151,7 @@ const PlatformSettingsPage: React.FC = () => {
                 {[
                   { label: 'OpenAI Base URL', url: openaiURL, color: '#00F5D4' },
                   { label: 'Anthropic Base URL', url: anthropicURL, color: '#9D4EDD' },
+                  { label: 'Responses Endpoint', url: responsesURL, color: '#FFBE0B' },
                 ].map(item => (
                   <div key={item.label}>
                     <div style={{ color: item.color, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{item.label}</div>
