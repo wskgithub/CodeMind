@@ -213,10 +213,8 @@ func (h *LLMProxyHandler) recordThirdPartyMetrics(
 		promptTokens = usage.PromptTokens
 		completionTokens = usage.CompletionTokens
 		totalTokens = usage.TotalTokens
-		if usage.PromptTokensDetails != nil {
-			cacheCreationTokens = usage.PromptTokensDetails.CacheCreationInputTokens
-			cacheReadTokens = usage.PromptTokensDetails.CacheReadInputTokens
-		}
+		cacheCreationTokens = usage.CacheCreationTokens()
+		cacheReadTokens = usage.CacheReadTokens()
 	}
 	tpService.RecordThirdPartyUsage(
 		userID, route.ProviderID, apiKeyID,

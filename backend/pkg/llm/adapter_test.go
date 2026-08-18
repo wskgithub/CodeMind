@@ -1428,6 +1428,63 @@ func TestAnthropicToOpenAIEmptyUserBlocksDropped(t *testing.T) {
 	}
 }
 
+// TestUsageCacheTokensCrossStyleFallback 验证缓存 token 的跨风格兜底读取：
+// vLLM/OpenAI 上报 cached_tokens/created_cache_tokens，Anthropic 上报
+// cache_read_input_tokens/cache_creation_input_tokens，统计侧需两种都能读到，
+// 否则 vLLM 等上游的缓存命中率统计恒为 0。
+func TestUsageCacheTokensCrossStyleFallback(t *testing.T) {
+	tests := []struct {
+		name       string
+		usageJSON  string
+		wantRead   int
+		wantCreate int
+	}{
+		{
+			name:       "vLLM/OpenAI 风格",
+			usageJSON:  `{"prompt_tokens":3217,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":2400,"created_cache_tokens":800}}`,
+			wantRead:   2400,
+			wantCreate: 800,
+		},
+		{
+			name:       "Anthropic 风格",
+			usageJSON:  `{"prompt_tokens":100,"prompt_tokens_details":{"cache_read_input_tokens":60,"cache_creation_input_tokens":10}}`,
+			wantRead:   60,
+			wantCreate: 10,
+		},
+		{
+			name:       "两套字段并存时 Anthropic 优先",
+			usageJSON:  `{"prompt_tokens":100,"prompt_tokens_details":{"cache_read_input_tokens":60,"cached_tokens":30,"cache_creation_input_tokens":10,"created_cache_tokens":5}}`,
+			wantRead:   60,
+			wantCreate: 10,
+		},
+		{
+			name:      "无 prompt_tokens_details",
+			usageJSON: `{"prompt_tokens":100}`,
+		},
+	}
+
+	for _, tt := range tests {
+		var usage Usage
+		if err := json.Unmarshal([]byte(tt.usageJSON), &usage); err != nil {
+			t.Fatalf("%s: unmarshal failed: %v", tt.name, err)
+		}
+		if got := usage.CacheReadTokens(); got != tt.wantRead {
+			t.Errorf("%s: CacheReadTokens() = %d, want %d", tt.name, got, tt.wantRead)
+		}
+		if got := usage.CacheCreationTokens(); got != tt.wantCreate {
+			t.Errorf("%s: CacheCreationTokens() = %d, want %d", tt.name, got, tt.wantCreate)
+		}
+	}
+
+	var nilUsage *Usage
+	if nilUsage.CacheReadTokens() != 0 || nilUsage.CacheCreationTokens() != 0 {
+		t.Error("nil usage should return 0")
+	}
+	if u := (&Usage{}); u.CacheReadTokens() != 0 || u.CacheCreationTokens() != 0 {
+		t.Error("nil prompt_tokens_details should return 0")
+	}
+}
+
 // ══════════════════════════════════
 // Helper functions
 // ══════════════════════════════════

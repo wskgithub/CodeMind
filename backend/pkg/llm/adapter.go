@@ -867,15 +867,8 @@ func openAIUsageToAnthropic(u *Usage) *AnthropicUsage {
 	if u == nil {
 		return nil
 	}
-	cached := 0
-	cacheCreation := 0
-	if u.PromptTokensDetails != nil {
-		cacheCreation = u.PromptTokensDetails.CacheCreationInputTokens
-		cached = u.PromptTokensDetails.CacheReadInputTokens
-		if cached == 0 {
-			cached = u.PromptTokensDetails.CachedTokens
-		}
-	}
+	cached := u.CacheReadTokens()
+	cacheCreation := u.CacheCreationTokens()
 	inputTokens := u.PromptTokens - cached - cacheCreation
 	if inputTokens < 0 {
 		inputTokens = 0
