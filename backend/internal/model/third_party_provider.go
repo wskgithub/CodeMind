@@ -72,6 +72,7 @@ type UserThirdPartyProvider struct {
 	AnthropicBaseURL string         `gorm:"column:anthropic_base_url;size:500" json:"anthropic_base_url"`
 	APIKeyEncrypted  string         `gorm:"column:api_key_encrypted;type:text;not null" json:"-"`
 	Format           string         `gorm:"size:20;not null;default:openai" json:"format"`
+	AuthScheme       string         `gorm:"size:20;not null;default:auto" json:"auth_scheme"`
 	Models           StringSlice    `gorm:"type:jsonb;not null;default:'[]'" json:"models"`
 	ID               int64          `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserID           int64          `gorm:"not null;index" json:"user_id"`
@@ -127,6 +128,7 @@ type ThirdPartyRouteInfo struct {
 	AnthropicBaseURL string `json:"anthropic_base_url"`
 	APIKeyEncrypted  string `json:"api_key_encrypted"`
 	Format           string `json:"format"`
+	AuthScheme       string `json:"auth_scheme"`
 	ProviderID       int64  `json:"provider_id"`
 }
 

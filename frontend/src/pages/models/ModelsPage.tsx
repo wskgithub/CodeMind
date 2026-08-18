@@ -143,6 +143,7 @@ const ModelsPage: React.FC = () => {
       anthropic_base_url: record.anthropic_base_url || '',
       models: record.models,
       format: record.format || 'openai',
+      auth_scheme: record.auth_scheme || 'auto',
       api_key: '',
     });
     setModalOpen(true);
@@ -157,6 +158,7 @@ const ModelsPage: React.FC = () => {
           anthropic_base_url: values.anthropic_base_url || '',
           models: values.models,
           format: values.format,
+          auth_scheme: values.auth_scheme || 'auto',
         };
         if (values.api_key && (values.api_key as string).trim()) {
           updateData.api_key = values.api_key;
@@ -171,6 +173,7 @@ const ModelsPage: React.FC = () => {
           api_key: values.api_key as string,
           models: values.models as string[],
           format: values.format as string,
+          auth_scheme: (values.auth_scheme as string) || 'auto',
           template_id: selectedTemplateId,
         });
         message.success(t('models.messages.addSuccess'));
@@ -494,6 +497,21 @@ const ModelsPage: React.FC = () => {
                   { label: t('models.form.openaiProtocol'), value: 'openai' },
                   { label: t('models.form.anthropicProtocol'), value: 'anthropic' },
                   { label: t('models.form.allProtocols'), value: 'all' },
+                ]}
+                style={inputStyle}
+              />
+            </Form.Item>
+
+            <Form.Item name="auth_scheme" initialValue="auto"
+              label={<span style={{ color: labelColor }}>{t('models.form.authScheme')}</span>}
+              extra={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', fontSize: 12 }}>
+                {t('models.form.authSchemeHelp')}
+              </span>}>
+              <Select
+                options={[
+                  { label: t('models.form.authSchemeAuto'), value: 'auto' },
+                  { label: t('models.form.authSchemeBearer'), value: 'bearer' },
+                  { label: t('models.form.authSchemeAPIKey'), value: 'x-api-key' },
                 ]}
                 style={inputStyle}
               />

@@ -16,14 +16,16 @@ type Client struct {
 	streamClient *http.Client
 	baseURL      string
 	apiKey       string
+	authScheme   AuthScheme
 }
 
 // NewClient creates an LLM client (normalizes baseURL to avoid duplicate /v1).
 func NewClient(baseURL, apiKey string, timeoutSec, streamTimeoutSec int) *Client {
 	baseURL = normalizeBaseURL(baseURL)
 	return &Client{
-		baseURL: baseURL,
-		apiKey:  apiKey,
+		baseURL:    baseURL,
+		apiKey:     apiKey,
+		authScheme: AuthSchemeAuto,
 		httpClient: &http.Client{
 			Timeout: time.Duration(timeoutSec) * time.Second,
 		},
@@ -31,6 +33,12 @@ func NewClient(baseURL, apiKey string, timeoutSec, streamTimeoutSec int) *Client
 			Timeout: time.Duration(streamTimeoutSec) * time.Second,
 		},
 	}
+}
+
+// WithAuthScheme 设置鉴权头类型，默认 auto 按协议格式推断。
+func (c *Client) WithAuthScheme(s AuthScheme) *Client {
+	c.authScheme = NormalizeAuthScheme(string(s))
+	return c
 }
 
 // normalizeBaseURL strips trailing /vN and slashes from baseURL.
@@ -251,9 +259,7 @@ func (c *Client) doRequestRaw(method, path string, rawBody []byte, isStream bool
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-CodeMind-Proxy", "1")
-	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	}
+	ApplyAuthHeader(req.Header, c.authScheme, "openai", c.apiKey)
 
 	client := c.httpClient
 	if isStream {

@@ -209,6 +209,7 @@ export interface LLMBackend {
   base_url: string;
   has_api_key: boolean;
   format: string;
+  auth_scheme?: string;
   weight: number;
   max_concurrency: number;
   active_connections: number;
@@ -460,6 +461,7 @@ export interface UserThirdPartyProvider {
   anthropic_base_url: string;
   models: string[];
   format: string;
+  auth_scheme?: string;
   template_id?: number;
   status: number;
   created_at: string;
@@ -473,6 +475,7 @@ export interface CreateThirdPartyProviderRequest {
   api_key: string;
   models: string[];
   format: string;
+  auth_scheme?: string;
   template_id?: number;
 }
 
@@ -483,6 +486,7 @@ export interface UpdateThirdPartyProviderRequest {
   api_key?: string;
   models?: string[];
   format?: string;
+  auth_scheme?: string;
   status?: number;
 }
 

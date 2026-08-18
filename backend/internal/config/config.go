@@ -94,6 +94,7 @@ type ProviderConfig struct {
 	Format               string `mapstructure:"format"`
 	BaseURL              string `mapstructure:"base_url"`
 	APIKey               string `mapstructure:"api_key"`
+	AuthScheme           string `mapstructure:"auth_scheme"`
 	TimeoutSeconds       int    `mapstructure:"timeout_seconds"`
 	StreamTimeoutSeconds int    `mapstructure:"stream_timeout_seconds"`
 }

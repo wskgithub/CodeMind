@@ -73,6 +73,7 @@ const BackendsPage: React.FC = () => {
     form.resetFields();
     form.setFieldsValue({
       format: 'openai',
+      auth_scheme: 'auto',
       weight: 100,
       max_concurrency: 100,
       model_patterns: '*',
@@ -89,6 +90,7 @@ const BackendsPage: React.FC = () => {
       display_name: record.display_name,
       base_url: record.base_url,
       format: record.format,
+      auth_scheme: record.auth_scheme || 'auto',
       weight: record.weight,
       max_concurrency: record.max_concurrency,
       status: record.status,
@@ -154,15 +156,28 @@ const BackendsPage: React.FC = () => {
       dataIndex: 'format',
       key: 'format',
       width: 100,
-      render: (f: string) => (
-        <Tag style={{
-          color: f === 'openai' ? '#00D9FF' : '#9D4EDD',
-          background: f === 'openai' ? 'rgba(0, 217, 255, 0.15)' : 'rgba(157, 78, 221, 0.15)',
-          border: `1px solid ${f === 'openai' ? 'rgba(0, 217, 255, 0.3)' : 'rgba(157, 78, 221, 0.3)'}`,
-          borderRadius: 6,
-        }}>
-          {f}
-        </Tag>
+      render: (f: string, record: LLMBackend) => (
+        <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+          <Tag style={{
+            color: f === 'openai' ? '#00D9FF' : '#9D4EDD',
+            background: f === 'openai' ? 'rgba(0, 217, 255, 0.15)' : 'rgba(157, 78, 221, 0.15)',
+            border: `1px solid ${f === 'openai' ? 'rgba(0, 217, 255, 0.3)' : 'rgba(157, 78, 221, 0.3)'}`,
+            borderRadius: 6,
+          }}>
+            {f}
+          </Tag>
+          {record.auth_scheme && record.auth_scheme !== 'auto' && (
+            <Tooltip title={t('backends.form.authScheme')}>
+              <Tag style={{
+                color: '#FFBE0B', background: 'rgba(255, 190, 11, 0.15)',
+                border: '1px solid rgba(255, 190, 11, 0.3)', borderRadius: 6,
+                fontSize: 11,
+              }}>
+                {record.auth_scheme}
+              </Tag>
+            </Tooltip>
+          )}
+        </span>
       ),
     },
     {
@@ -388,32 +403,48 @@ const BackendsPage: React.FC = () => {
                 label={<FieldLabel label={t('backends.form.protocolFormat')} tip={t('backends.form.protocolFormatTip')} isDark={isDark} />}
                 rules={[{ required: true }]}
               >
-                <Select 
+                <Select
                   options={[
                     { value: 'openai', label: t('backends.form.openaiCompat') },
                     { value: 'anthropic', label: t('backends.form.anthropicNative') },
                   ]}
-                  style={{ 
+                  style={{
                     background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
                   }}
                 />
               </Form.Item>
-              <Form.Item 
-                name="status" 
-                label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>{t('backends.form.runStatus')}</span>}
+              <Form.Item
+                name="auth_scheme"
+                label={<FieldLabel label={t('backends.form.authScheme')} tip={t('backends.form.authSchemeTip')} isDark={isDark} />}
               >
-                <Select 
+                <Select
                   options={[
-                    { value: 1, label: t('common.enabled') },
-                    { value: 0, label: t('common.disabled') },
-                    { value: 2, label: t('backends.form.draining') },
+                    { value: 'auto', label: t('models.form.authSchemeAuto') },
+                    { value: 'bearer', label: t('models.form.authSchemeBearer') },
+                    { value: 'x-api-key', label: t('models.form.authSchemeAPIKey') },
                   ]}
-                  style={{ 
+                  style={{
                     background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
                   }}
                 />
               </Form.Item>
             </div>
+
+            <Form.Item
+              name="status"
+              label={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }}>{t('backends.form.runStatus')}</span>}
+            >
+              <Select
+                options={[
+                  { value: 1, label: t('common.enabled') },
+                  { value: 0, label: t('common.disabled') },
+                  { value: 2, label: t('backends.form.draining') },
+                ]}
+                style={{
+                  background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)',
+                }}
+              />
+            </Form.Item>
 
             <Divider style={{ margin: '4px 0 16px', borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' }} />
 

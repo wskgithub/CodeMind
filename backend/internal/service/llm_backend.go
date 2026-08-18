@@ -49,6 +49,7 @@ func (s *LLMBackendService) Create(req *dto.CreateLLMBackendRequest, operatorID 
 		BaseURL:              req.BaseURL,
 		APIKey:               req.APIKey,
 		Format:               req.Format,
+		AuthScheme:           string(llm.NormalizeAuthScheme(req.AuthScheme)),
 		Weight:               req.Weight,
 		MaxConcurrency:       req.MaxConcurrency,
 		HealthCheckURL:       req.HealthCheckURL,
@@ -104,6 +105,9 @@ func (s *LLMBackendService) Update(id int64, req *dto.UpdateLLMBackendRequest, o
 	}
 	if req.Format != nil {
 		backend.Format = *req.Format
+	}
+	if req.AuthScheme != nil {
+		backend.AuthScheme = string(llm.NormalizeAuthScheme(*req.AuthScheme))
 	}
 	if req.Weight != nil {
 		backend.Weight = *req.Weight
@@ -176,13 +180,16 @@ func (s *LLMBackendService) refreshLoadBalancer() {
 
 	nodes := make([]*llm.LBNode, 0, len(backends))
 	for _, b := range backends {
+		scheme := llm.NormalizeAuthScheme(b.AuthScheme)
 		var provider llm.Provider
 		switch b.Format {
 		case "anthropic":
-			client := llm.NewAnthropicClient(b.BaseURL, b.APIKey, b.TimeoutSeconds, b.StreamTimeoutSeconds)
+			client := llm.NewAnthropicClient(b.BaseURL, b.APIKey, b.TimeoutSeconds, b.StreamTimeoutSeconds).
+				WithAuthScheme(scheme)
 			provider = llm.NewAnthropicProvider(b.Name, client)
 		default:
-			client := llm.NewClient(b.BaseURL, b.APIKey, b.TimeoutSeconds, b.StreamTimeoutSeconds)
+			client := llm.NewClient(b.BaseURL, b.APIKey, b.TimeoutSeconds, b.StreamTimeoutSeconds).
+				WithAuthScheme(scheme)
 			provider = llm.NewOpenAIProvider(b.Name, client)
 		}
 

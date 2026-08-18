@@ -36,6 +36,7 @@ func (h *LLMBackendHandler) List(c *gin.Context) {
 			BaseURL:              b.BaseURL,
 			HasAPIKey:            b.APIKey != "",
 			Format:               b.Format,
+			AuthScheme:           b.AuthScheme,
 			Weight:               b.Weight,
 			MaxConcurrency:       b.MaxConcurrency,
 			Status:               b.Status,

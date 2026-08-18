@@ -158,9 +158,9 @@ func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 			}
 
 			result, err := OpenAIToAnthropic(req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 			if result.ToolChoice == nil {
 				t.Fatal("ToolChoice should not be nil")
 			}

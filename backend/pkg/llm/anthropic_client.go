@@ -20,13 +20,15 @@ type AnthropicClient struct {
 	streamClient *http.Client
 	baseURL      string
 	apiKey       string
+	authScheme   AuthScheme
 }
 
 // NewAnthropicClient creates an Anthropic client.
 func NewAnthropicClient(baseURL, apiKey string, timeoutSec, streamTimeoutSec int) *AnthropicClient {
 	return &AnthropicClient{
-		baseURL: baseURL,
-		apiKey:  apiKey,
+		baseURL:    baseURL,
+		apiKey:     apiKey,
+		authScheme: AuthSchemeAuto,
 		httpClient: &http.Client{
 			Timeout: time.Duration(timeoutSec) * time.Second,
 		},
@@ -34,6 +36,12 @@ func NewAnthropicClient(baseURL, apiKey string, timeoutSec, streamTimeoutSec int
 			Timeout: time.Duration(streamTimeoutSec) * time.Second,
 		},
 	}
+}
+
+// WithAuthScheme 设置鉴权头类型（如 vLLM 的 /v1/messages 需强制 Bearer）。
+func (c *AnthropicClient) WithAuthScheme(s AuthScheme) *AnthropicClient {
+	c.authScheme = NormalizeAuthScheme(string(s))
+	return c
 }
 
 // Messages performs non-streaming message call.
@@ -103,9 +111,7 @@ func (c *AnthropicClient) doRequestRaw(path string, rawBody []byte, isStream boo
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("anthropic-version", AnthropicAPIVersion)
-	if c.apiKey != "" {
-		req.Header.Set("x-api-key", c.apiKey)
-	}
+	ApplyAuthHeader(req.Header, c.authScheme, "anthropic", c.apiKey)
 
 	for k, v := range extraHeaders {
 		req.Header.Set(k, v)
