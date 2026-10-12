@@ -165,6 +165,7 @@ type CreateLLMBackendRequest struct {
 	BaseURL              string `json:"base_url" binding:"required,url,max=500"`
 	APIKey               string `json:"api_key"`
 	Format               string `json:"format" binding:"required,oneof=openai anthropic"`
+	AuthScheme           string `json:"auth_scheme" binding:"omitempty,oneof=auto bearer x-api-key"`
 	HealthCheckURL       string `json:"health_check_url" binding:"omitempty,max=500"`
 	ModelPatterns        string `json:"model_patterns" binding:"omitempty"`
 	Weight               int    `json:"weight" binding:"omitempty,min=1,max=10000"`
@@ -179,6 +180,7 @@ type UpdateLLMBackendRequest struct {
 	BaseURL              *string `json:"base_url" binding:"omitempty,url,max=500"`
 	APIKey               *string `json:"api_key"`
 	Format               *string `json:"format" binding:"omitempty,oneof=openai anthropic"`
+	AuthScheme           *string `json:"auth_scheme" binding:"omitempty,oneof=auto bearer x-api-key"`
 	Weight               *int    `json:"weight" binding:"omitempty,min=1,max=10000"`
 	MaxConcurrency       *int    `json:"max_concurrency" binding:"omitempty,min=1"`
 	Status               *int16  `json:"status" binding:"omitempty,oneof=0 1 2"`
@@ -353,6 +355,7 @@ type CreateThirdPartyProviderRequest struct {
 	AnthropicBaseURL string   `json:"anthropic_base_url" binding:"omitempty,max=500"`
 	APIKey           string   `json:"api_key" binding:"required"`
 	Format           string   `json:"format" binding:"required,oneof=openai anthropic all"`
+	AuthScheme       string   `json:"auth_scheme" binding:"omitempty,oneof=auto bearer x-api-key"`
 	Models           []string `json:"models" binding:"required,min=1"`
 }
 
@@ -363,6 +366,7 @@ type UpdateThirdPartyProviderRequest struct {
 	AnthropicBaseURL *string  `json:"anthropic_base_url" binding:"omitempty,max=500"`
 	APIKey           *string  `json:"api_key"`
 	Format           *string  `json:"format" binding:"omitempty,oneof=openai anthropic all"`
+	AuthScheme       *string  `json:"auth_scheme" binding:"omitempty,oneof=auto bearer x-api-key"`
 	Status           *int16   `json:"status" binding:"omitempty,oneof=0 1"`
 	Models           []string `json:"models"`
 }

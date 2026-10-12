@@ -173,11 +173,8 @@ func (s *LLMProxyService) RecordUsage(
 		return
 	}
 
-	var cacheCreationTokens, cacheReadTokens int
-	if usage.PromptTokensDetails != nil {
-		cacheCreationTokens = usage.PromptTokensDetails.CacheCreationInputTokens
-		cacheReadTokens = usage.PromptTokensDetails.CacheReadInputTokens
-	}
+	cacheCreationTokens := usage.CacheCreationTokens()
+	cacheReadTokens := usage.CacheReadTokens()
 
 	ctx := context.Background()
 	today := timezone.Today()

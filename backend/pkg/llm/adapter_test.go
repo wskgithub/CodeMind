@@ -158,9 +158,9 @@ func TestOpenAIToAnthropicToolChoice(t *testing.T) {
 			}
 
 			result, err := OpenAIToAnthropic(req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 			if result.ToolChoice == nil {
 				t.Fatal("ToolChoice should not be nil")
 			}
@@ -1244,6 +1244,244 @@ func TestAnthropicToOpenAIOSeriesModel(t *testing.T) {
 	}
 	if result.MaxTokens != nil {
 		t.Error("o-series model should not set max_tokens")
+	}
+}
+
+// ══════════════════════════════════
+// Claude Code multi-turn edge cases
+// ══════════════════════════════════
+
+// TestAnthropicToOpenAIToolResultMissingContent 验证 tool_result 缺失 content 字段时，
+// 转换后的 tool 消息仍保留 content 字段（空字符串），而非被 omitempty 省略。
+// 严格上游（如部分 vLLM/DashScope）要求 tool 消息必须携带 content，缺失会返回 400。
+func TestAnthropicToOpenAIToolResultMissingContent(t *testing.T) {
+	reqJSON := `{
+		"model": "glm-4.6",
+		"max_tokens": 1024,
+		"messages": [
+			{"role": "user", "content": "hi"},
+			{"role": "assistant", "content": [
+				{"type": "tool_use", "id": "toolu_1", "name": "Read", "input": {"file_path": "/tmp/a"}}
+			]},
+			{"role": "user", "content": [
+				{"type": "tool_result", "tool_use_id": "toolu_1"}
+			]},
+			{"role": "user", "content": "第二句"}
+		]
+	}`
+
+	var req AnthropicMessagesRequest
+	if err := json.Unmarshal([]byte(reqJSON), &req); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+
+	result := AnthropicToOpenAI(&req)
+
+	var toolMsgs []ChatMessage
+	for _, m := range result.Messages {
+		if m.Role == RoleTool {
+			toolMsgs = append(toolMsgs, m)
+		}
+	}
+	if len(toolMsgs) != 1 {
+		t.Fatalf("should have 1 tool message, got %d", len(toolMsgs))
+	}
+	if toolMsgs[0].Content != "" {
+		t.Errorf("tool content should be empty string, got %q", toolMsgs[0].Content)
+	}
+
+	// 序列化后 content 字段必须存在（值为 ""）
+	data, err := json.Marshal(toolMsgs[0])
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var asMap map[string]interface{}
+	if err := json.Unmarshal(data, &asMap); err != nil {
+		t.Fatalf("unmarshal tool message failed: %v", err)
+	}
+	if _, ok := asMap["content"]; !ok {
+		t.Errorf("content field must survive serialization, got: %s", string(data))
+	}
+	if asMap["content"] != "" {
+		t.Errorf("content should serialize to empty string, got: %v", asMap["content"])
+	}
+}
+
+// TestAnthropicToOpenAIThinkingOnlyAssistantDropped 验证纯 thinking 的 assistant 消息
+// 被直接丢弃，不产生空 content 消息（避免连续 assistant 角色触发上游 400）。
+func TestAnthropicToOpenAIThinkingOnlyAssistantDropped(t *testing.T) {
+	reqJSON := `{
+		"model": "glm-4.6",
+		"max_tokens": 1024,
+		"messages": [
+			{"role": "user", "content": "hi"},
+			{"role": "assistant", "content": [
+				{"type": "thinking", "thinking": "思考中", "signature": "sig"}
+			]},
+			{"role": "assistant", "content": [
+				{"type": "tool_use", "id": "toolu_1", "name": "Read", "input": {"file_path": "/tmp/a"}}
+			]},
+			{"role": "user", "content": [
+				{"type": "tool_result", "tool_use_id": "toolu_1", "content": "文件内容"}
+			]},
+			{"role": "user", "content": "第二句"}
+		]
+	}`
+
+	var req AnthropicMessagesRequest
+	if err := json.Unmarshal([]byte(reqJSON), &req); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+
+	result := AnthropicToOpenAI(&req)
+
+	var assistantCount int
+	for _, m := range result.Messages {
+		if m.Role == RoleAssistant {
+			assistantCount++
+		}
+	}
+	// 纯 thinking 消息应被丢弃，仅保留带 tool_use 的 assistant 消息
+	if assistantCount != 1 {
+		t.Fatalf("should have exactly 1 assistant message, got %d", assistantCount)
+	}
+}
+
+// TestAnthropicToOpenAIAssistantToolCallsOmitEmptyContent 验证仅含 tool_use 的
+// assistant 消息：content 字段省略、arguments 兜底 "{}"、不携带流式专用的 index 字段。
+func TestAnthropicToOpenAIAssistantToolCallsOmitEmptyContent(t *testing.T) {
+	reqJSON := `{
+		"model": "glm-4.6",
+		"max_tokens": 1024,
+		"messages": [
+			{"role": "user", "content": "hi"},
+			{"role": "assistant", "content": [
+				{"type": "tool_use", "id": "toolu_a", "name": "Bash", "input": {"command": "ls"}},
+				{"type": "tool_use", "id": "toolu_b", "name": "NoInputTool"}
+			]}
+		]
+	}`
+
+	var req AnthropicMessagesRequest
+	if err := json.Unmarshal([]byte(reqJSON), &req); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+
+	result := AnthropicToOpenAI(&req)
+
+	var assistantMsg *ChatMessage
+	for i := range result.Messages {
+		if result.Messages[i].Role == RoleAssistant {
+			assistantMsg = &result.Messages[i]
+			break
+		}
+	}
+	if assistantMsg == nil {
+		t.Fatal("should have assistant message")
+	}
+	if len(assistantMsg.ToolCalls) != 2 {
+		t.Fatalf("should have 2 tool_calls, got %d", len(assistantMsg.ToolCalls))
+	}
+	// input 缺失时 arguments 兜底 "{}"
+	if assistantMsg.ToolCalls[1].Function.Arguments != "{}" {
+		t.Errorf("missing input should default arguments to {}, got %q",
+			assistantMsg.ToolCalls[1].Function.Arguments)
+	}
+
+	data, err := json.Marshal(assistantMsg)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	payload := string(data)
+	// 有 tool_calls 且无文本时，不应输出 "content":""
+	if strings.Contains(payload, `"content":""`) {
+		t.Errorf("assistant with only tool_calls should omit content, got: %s", payload)
+	}
+	// 请求体中的 tool_calls 不应携带流式专用的 index 字段
+	if strings.Contains(payload, `"index"`) {
+		t.Errorf("tool_calls in request body should not carry index field, got: %s", payload)
+	}
+}
+
+// TestAnthropicToOpenAIEmptyUserBlocksDropped 验证 content 为空数组的 user 消息
+// 不再生成空占位消息。
+func TestAnthropicToOpenAIEmptyUserBlocksDropped(t *testing.T) {
+	req := &AnthropicMessagesRequest{
+		Model:     "glm-4.6",
+		MaxTokens: 1024,
+		Messages: []AnthropicMessage{
+			{Role: RoleUser, Content: "第一句"},
+			{Role: RoleAssistant, Content: "第一轮回复"},
+			{Role: RoleUser, Content: []interface{}{}},
+			{Role: RoleUser, Content: "第二句"},
+		},
+	}
+
+	result := AnthropicToOpenAI(req)
+
+	// user + assistant + user = 3 条，空数组消息被丢弃
+	if len(result.Messages) != 3 {
+		t.Fatalf("should have 3 messages, got %d: %+v", len(result.Messages), result.Messages)
+	}
+	if result.Messages[2].Content != "第二句" {
+		t.Errorf("last message should be 第二句, got %v", result.Messages[2].Content)
+	}
+}
+
+// TestUsageCacheTokensCrossStyleFallback 验证缓存 token 的跨风格兜底读取：
+// vLLM/OpenAI 上报 cached_tokens/created_cache_tokens，Anthropic 上报
+// cache_read_input_tokens/cache_creation_input_tokens，统计侧需两种都能读到，
+// 否则 vLLM 等上游的缓存命中率统计恒为 0。
+func TestUsageCacheTokensCrossStyleFallback(t *testing.T) {
+	tests := []struct {
+		name       string
+		usageJSON  string
+		wantRead   int
+		wantCreate int
+	}{
+		{
+			name:       "vLLM/OpenAI 风格",
+			usageJSON:  `{"prompt_tokens":3217,"completion_tokens":5,"prompt_tokens_details":{"cached_tokens":2400,"created_cache_tokens":800}}`,
+			wantRead:   2400,
+			wantCreate: 800,
+		},
+		{
+			name:       "Anthropic 风格",
+			usageJSON:  `{"prompt_tokens":100,"prompt_tokens_details":{"cache_read_input_tokens":60,"cache_creation_input_tokens":10}}`,
+			wantRead:   60,
+			wantCreate: 10,
+		},
+		{
+			name:       "两套字段并存时 Anthropic 优先",
+			usageJSON:  `{"prompt_tokens":100,"prompt_tokens_details":{"cache_read_input_tokens":60,"cached_tokens":30,"cache_creation_input_tokens":10,"created_cache_tokens":5}}`,
+			wantRead:   60,
+			wantCreate: 10,
+		},
+		{
+			name:      "无 prompt_tokens_details",
+			usageJSON: `{"prompt_tokens":100}`,
+		},
+	}
+
+	for _, tt := range tests {
+		var usage Usage
+		if err := json.Unmarshal([]byte(tt.usageJSON), &usage); err != nil {
+			t.Fatalf("%s: unmarshal failed: %v", tt.name, err)
+		}
+		if got := usage.CacheReadTokens(); got != tt.wantRead {
+			t.Errorf("%s: CacheReadTokens() = %d, want %d", tt.name, got, tt.wantRead)
+		}
+		if got := usage.CacheCreationTokens(); got != tt.wantCreate {
+			t.Errorf("%s: CacheCreationTokens() = %d, want %d", tt.name, got, tt.wantCreate)
+		}
+	}
+
+	var nilUsage *Usage
+	if nilUsage.CacheReadTokens() != 0 || nilUsage.CacheCreationTokens() != 0 {
+		t.Error("nil usage should return 0")
+	}
+	if u := (&Usage{}); u.CacheReadTokens() != 0 || u.CacheCreationTokens() != 0 {
+		t.Error("nil prompt_tokens_details should return 0")
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"codemind/internal/pkg/crypto"
 	"codemind/internal/pkg/errcode"
 	"codemind/internal/repository"
+	"codemind/pkg/llm"
 
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -153,7 +154,7 @@ func (s *ThirdPartyProviderService) DeleteTemplate(id int64) error {
 
 // CreateProvider creates a user's third-party provider.
 func (s *ThirdPartyProviderService) CreateProvider(
-	userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey, format string,
+	userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey, format, authScheme string,
 	models []string, templateID *int64,
 ) (*model.UserThirdPartyProvider, error) {
 	if err := validateBaseURLsByFormat(format, openAIBaseURL, anthropicBaseURL); err != nil {
@@ -183,6 +184,7 @@ func (s *ThirdPartyProviderService) CreateProvider(
 		APIKeyEncrypted:  encrypted,
 		Models:           model.StringSlice(models),
 		Format:           format,
+		AuthScheme:       string(llm.NormalizeAuthScheme(authScheme)),
 		TemplateID:       templateID,
 	}
 
@@ -204,7 +206,7 @@ func (s *ThirdPartyProviderService) ListProviders(userID int64) ([]model.UserThi
 // UpdateProvider updates a third-party provider.
 func (s *ThirdPartyProviderService) UpdateProvider( //nolint:gocyclo // complex business logic.
 	id, userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey *string,
-	models []string, format *string, status *int16,
+	models []string, format, authScheme *string, status *int16,
 ) error {
 	provider, err := s.repo.GetProviderByID(id)
 	if err != nil {
@@ -244,6 +246,9 @@ func (s *ThirdPartyProviderService) UpdateProvider( //nolint:gocyclo // complex 
 	}
 	if format != nil {
 		provider.Format = *format
+	}
+	if authScheme != nil {
+		provider.AuthScheme = string(llm.NormalizeAuthScheme(*authScheme))
 	}
 	if status != nil {
 		provider.Status = *status
@@ -339,6 +344,7 @@ func (s *ThirdPartyProviderService) ResolveThirdPartyModel(
 			AnthropicBaseURL: p.AnthropicBaseURL,
 			APIKeyEncrypted:  p.APIKeyEncrypted,
 			Format:           p.Format,
+			AuthScheme:       p.AuthScheme,
 		}
 		infoJSON, _ := json.Marshal(info)
 		infoStr := string(infoJSON)

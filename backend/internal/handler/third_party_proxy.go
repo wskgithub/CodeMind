@@ -57,11 +57,9 @@ func (h *LLMProxyHandler) handleThirdPartyProxy(
 
 	copyRequestHeaders(c.Request, proxyReq)
 
-	if requestFormat == "anthropic" {
-		proxyReq.Header.Set("x-api-key", apiKey)
-	} else {
-		proxyReq.Header.Set("Authorization", "Bearer "+apiKey)
-	}
+	// 鉴权头型与协议格式解耦：auto 按格式推断，显式配置可强制 Bearer/x-api-key
+	// （如 vLLM 的 /v1/messages 只认 Authorization）
+	llm.ApplyAuthHeader(proxyReq.Header, llm.NormalizeAuthScheme(route.AuthScheme), requestFormat, apiKey)
 
 	h.logger.Debug("proxying request to third-party service",
 		zap.String("model", meta.Model),
@@ -213,10 +211,8 @@ func (h *LLMProxyHandler) recordThirdPartyMetrics(
 		promptTokens = usage.PromptTokens
 		completionTokens = usage.CompletionTokens
 		totalTokens = usage.TotalTokens
-		if usage.PromptTokensDetails != nil {
-			cacheCreationTokens = usage.PromptTokensDetails.CacheCreationInputTokens
-			cacheReadTokens = usage.PromptTokensDetails.CacheReadInputTokens
-		}
+		cacheCreationTokens = usage.CacheCreationTokens()
+		cacheReadTokens = usage.CacheReadTokens()
 	}
 	tpService.RecordThirdPartyUsage(
 		userID, route.ProviderID, apiKeyID,

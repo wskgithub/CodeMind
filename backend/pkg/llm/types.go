@@ -238,11 +238,37 @@ type CompletionTokensDetails struct {
 }
 
 // PromptTokensDetails contains detailed prompt token breakdown.
+// 同一语义存在两套上报风格：Anthropic 用 cache_creation_input_tokens /
+// cache_read_input_tokens，OpenAI/vLLM 用 cached_tokens / created_cache_tokens，
+// 读取时必须通过 Usage.CacheReadTokens / CacheCreationTokens 做跨风格兜底。
 type PromptTokensDetails struct {
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
 	CacheReadInputTokens     int `json:"cache_read_input_tokens,omitempty"`
 	CachedTokens             int `json:"cached_tokens,omitempty"`
+	CreatedCacheTokens       int `json:"created_cache_tokens,omitempty"`
 	AudioTokens              int `json:"audio_tokens,omitempty"`
+}
+
+// CacheReadTokens 返回缓存读取命中的 token 数（跨风格兜底）。
+func (u *Usage) CacheReadTokens() int {
+	if u == nil || u.PromptTokensDetails == nil {
+		return 0
+	}
+	if u.PromptTokensDetails.CacheReadInputTokens > 0 {
+		return u.PromptTokensDetails.CacheReadInputTokens
+	}
+	return u.PromptTokensDetails.CachedTokens
+}
+
+// CacheCreationTokens 返回本次新写入缓存的 token 数（跨风格兜底）。
+func (u *Usage) CacheCreationTokens() int {
+	if u == nil || u.PromptTokensDetails == nil {
+		return 0
+	}
+	if u.PromptTokensDetails.CacheCreationInputTokens > 0 {
+		return u.PromptTokensDetails.CacheCreationInputTokens
+	}
+	return u.PromptTokensDetails.CreatedCacheTokens
 }
 
 // ModelListResponse represents a model list response.

@@ -4,6 +4,20 @@
 
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.3] - 2026-08-18
+
+### 修复
+
+- **多轮工具调用兼容性**: 修复 Claude Code 多轮对话历史（tool_use/tool_result/thinking 块）转换为 OpenAI 格式时产生非法消息，导致 vLLM、DashScope、Kimi 等严格兼容上游第二轮请求返回 400 的问题。空 content 的 tool 消息现保留显式空字符串字段、仅含 thinking 的 assistant 消息直接丢弃、仅有 tool_calls 的消息省略 content 字段、tool_call 参数兜底为 `{}` 且不再携带流式专属的 index 字段。
+- **缓存命中率统计**: 修复代理 OpenAI 风格上游（如 vLLM）时缓存命中 Token 一直为 0 的问题。用量统计现同时识别 OpenAI 风格的 `prompt_tokens_details.cached_tokens/created_cache_tokens` 与 Anthropic 风格的 `cache_read_input_tokens/cache_creation_input_tokens`，两种风格自动回退兼容。
+
+### 新增
+
+- **鉴权头方案配置**: 新增 `auth_scheme` 配置（auto/bearer/x-api-key），将鉴权头型与协议格式解耦。auto 按格式推断（anthropic → `x-api-key`，其余 → `Authorization: Bearer`），显式配置可强制指定，用于 vLLM `/v1/messages` 这类只认 Bearer 的 Anthropic 协议上游。模型服务与 LLM 节点管理表单均已支持。
+- **Responses 端点展示**: 模型服务页与平台设置页的协议地址卡片新增 Responses 端点地址，便于 OpenAI Responses 协议客户端（如 Codex CLI）接入。
+
+---
+
 ## [1.0.2] - 2026-07-20
 
 ### 修复

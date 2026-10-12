@@ -219,6 +219,7 @@ type LLMBackendResponse struct {
 	BaseURL              string `json:"base_url"`
 	UpdatedAt            string `json:"updated_at"`
 	Format               string `json:"format"`
+	AuthScheme           string `json:"auth_scheme"`
 	CreatedAt            string `json:"created_at"`
 	ModelPatterns        string `json:"model_patterns"`
 	TimeoutSeconds       int    `json:"timeout_seconds"`

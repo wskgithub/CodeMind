@@ -291,7 +291,6 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nol
 	if msg.Role == RoleAssistant {
 		var textParts []string
 		var toolCalls []ToolCall
-		tcIdx := 0
 		for _, block := range blocks {
 			blockMap, ok := block.(map[string]interface{})
 			if !ok {
@@ -312,17 +311,23 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nol
 				if id, ok := blockMap["id"].(string); ok {
 					tc.ID = id
 				}
-				if input, ok := blockMap["input"]; ok {
+				// arguments 兜底 "{}"：空字符串会导致上游解析 tool_call 参数失败返回 400
+				args := "{}"
+				if input, ok := blockMap["input"]; ok && input != nil {
 					if argBytes, err := json.Marshal(input); err == nil {
-						tc.Function.Arguments = string(argBytes)
+						args = string(argBytes)
 					}
 				}
-				idx := tcIdx
-				tc.Index = &idx
+				tc.Function.Arguments = args
+				// 请求体中的 tool_calls 不携带 index（流式 delta 专用字段，严格上游会拒绝）
 				toolCalls = append(toolCalls, tc)
-				tcIdx++
 			case ContentTypeThinking:
 			}
+		}
+		// 纯 thinking 等无有效内容的 assistant 消息直接丢弃，
+		// 避免产生空 content 消息或连续 assistant 角色触发上游 400
+		if len(textParts) == 0 && len(toolCalls) == 0 {
+			return nil
 		}
 		result := ChatMessage{
 			Role:    RoleAssistant,
@@ -330,6 +335,10 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nol
 		}
 		if len(toolCalls) > 0 {
 			result.ToolCalls = toolCalls
+			// 仅有 tool_calls 时省略 content 字段（"content":"" 会被部分严格上游拒绝）
+			if len(textParts) == 0 {
+				result.Content = nil
+			}
 		}
 		return []ChatMessage{result}
 	}
@@ -350,9 +359,9 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nol
 			if id, ok := blockMap["tool_use_id"].(string); ok {
 				toolMsg.ToolCallID = id
 			}
-			if content, ok := blockMap["content"]; ok {
-				toolMsg.Content = extractAnthropicMessageContent(content)
-			}
+			// content 缺失时兜底空字符串：严格上游要求 tool 消息必须携带 content 字段，
+			// nil 会被 omitempty 省略导致 400
+			toolMsg.Content = extractAnthropicMessageContent(blockMap["content"])
 			toolResults = append(toolResults, toolMsg)
 		case ContentTypeText:
 			if text, ok := blockMap[ContentTypeText].(string); ok {
@@ -394,16 +403,16 @@ func convertAnthropicMessageToOpenAI(msg AnthropicMessage) []ChatMessage { //nol
 			Content: strings.Join(regularParts, ""),
 		})
 	}
-	if len(result) == 0 {
-		result = append(result, ChatMessage{
-			Role:    msg.Role,
-			Content: extractAnthropicMessageContent(msg.Content),
-		})
-	}
+	// 无有效内容块（无 text/image/tool_result）时不再生成空占位消息，
+	// 空 content 消息会被部分严格上游拒绝
 	return result
 }
 
 func extractAnthropicMessageContent(content interface{}) string {
+	// nil 直接返回空字符串，避免 json.Marshal(nil) 产出字面量 "null" 字符串污染对话
+	if content == nil {
+		return ""
+	}
 	switch v := content.(type) {
 	case string:
 		return v
@@ -858,15 +867,8 @@ func openAIUsageToAnthropic(u *Usage) *AnthropicUsage {
 	if u == nil {
 		return nil
 	}
-	cached := 0
-	cacheCreation := 0
-	if u.PromptTokensDetails != nil {
-		cacheCreation = u.PromptTokensDetails.CacheCreationInputTokens
-		cached = u.PromptTokensDetails.CacheReadInputTokens
-		if cached == 0 {
-			cached = u.PromptTokensDetails.CachedTokens
-		}
-	}
+	cached := u.CacheReadTokens()
+	cacheCreation := u.CacheCreationTokens()
 	inputTokens := u.PromptTokens - cached - cacheCreation
 	if inputTokens < 0 {
 		inputTokens = 0

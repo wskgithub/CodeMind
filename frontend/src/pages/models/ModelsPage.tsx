@@ -143,6 +143,7 @@ const ModelsPage: React.FC = () => {
       anthropic_base_url: record.anthropic_base_url || '',
       models: record.models,
       format: record.format || 'openai',
+      auth_scheme: record.auth_scheme || 'auto',
       api_key: '',
     });
     setModalOpen(true);
@@ -157,6 +158,7 @@ const ModelsPage: React.FC = () => {
           anthropic_base_url: values.anthropic_base_url || '',
           models: values.models,
           format: values.format,
+          auth_scheme: values.auth_scheme || 'auto',
         };
         if (values.api_key && (values.api_key as string).trim()) {
           updateData.api_key = values.api_key;
@@ -171,6 +173,7 @@ const ModelsPage: React.FC = () => {
           api_key: values.api_key as string,
           models: values.models as string[],
           format: values.format as string,
+          auth_scheme: (values.auth_scheme as string) || 'auto',
           template_id: selectedTemplateId,
         });
         message.success(t('models.messages.addSuccess'));
@@ -383,6 +386,8 @@ const ModelsPage: React.FC = () => {
                       {[
                         { label: 'OpenAI', url: openaiBaseURL, color: '#00F5D4', bg: 'rgba(0, 245, 212, 0.12)', border: 'rgba(0, 245, 212, 0.3)' },
                         { label: 'Anthropic', url: anthropicBaseURL, color: '#9D4EDD', bg: 'rgba(157, 78, 221, 0.12)', border: 'rgba(157, 78, 221, 0.3)' },
+                        // Responses 协议与 OpenAI 共用 Base URL，此处展示完整端点地址
+                        { label: 'Responses', url: `${openaiBaseURL.replace(/\/+$/, '')}/responses`, color: '#FFBE0B', bg: 'rgba(255, 190, 11, 0.12)', border: 'rgba(255, 190, 11, 0.3)' },
                       ].map(item => (
                         <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Tag style={{ color: item.color, background: item.bg, border: `1px solid ${item.border}`, borderRadius: 4, minWidth: 82, textAlign: 'center' }}>{item.label}</Tag>
@@ -492,6 +497,21 @@ const ModelsPage: React.FC = () => {
                   { label: t('models.form.openaiProtocol'), value: 'openai' },
                   { label: t('models.form.anthropicProtocol'), value: 'anthropic' },
                   { label: t('models.form.allProtocols'), value: 'all' },
+                ]}
+                style={inputStyle}
+              />
+            </Form.Item>
+
+            <Form.Item name="auth_scheme" initialValue="auto"
+              label={<span style={{ color: labelColor }}>{t('models.form.authScheme')}</span>}
+              extra={<span style={{ color: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.35)', fontSize: 12 }}>
+                {t('models.form.authSchemeHelp')}
+              </span>}>
+              <Select
+                options={[
+                  { label: t('models.form.authSchemeAuto'), value: 'auto' },
+                  { label: t('models.form.authSchemeBearer'), value: 'bearer' },
+                  { label: t('models.form.authSchemeAPIKey'), value: 'x-api-key' },
                 ]}
                 style={inputStyle}
               />

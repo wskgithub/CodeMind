@@ -112,7 +112,7 @@ func (h *ThirdPartyProviderHandler) CreateProvider(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	provider, err := h.service.CreateProvider(
 		userID, req.Name, req.OpenAIBaseURL, req.AnthropicBaseURL,
-		req.APIKey, req.Format, req.Models, req.TemplateID,
+		req.APIKey, req.Format, req.AuthScheme, req.Models, req.TemplateID,
 	)
 	if err != nil {
 		handleServiceError(c, err)
@@ -138,7 +138,7 @@ func (h *ThirdPartyProviderHandler) UpdateProvider(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if err := h.service.UpdateProvider(
 		id, userID, req.Name, req.OpenAIBaseURL, req.AnthropicBaseURL,
-		req.APIKey, req.Models, req.Format, req.Status,
+		req.APIKey, req.Models, req.Format, req.AuthScheme, req.Status,
 	); err != nil {
 		handleServiceError(c, err)
 		return

@@ -78,8 +78,8 @@ type ThirdPartyProviderService interface {
 	DeleteTemplate(id int64) error
 
 	ListProviders(userID int64) ([]model.UserThirdPartyProvider, error)
-	CreateProvider(userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey, format string, models []string, templateID *int64) (*model.UserThirdPartyProvider, error)
-	UpdateProvider(id, userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey *string, models []string, format *string, status *int16) error
+	CreateProvider(userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey, format, authScheme string, models []string, templateID *int64) (*model.UserThirdPartyProvider, error)
+	UpdateProvider(id, userID int64, name, openAIBaseURL, anthropicBaseURL, apiKey *string, models []string, format, authScheme *string, status *int16) error
 	UpdateProviderStatus(id, userID int64, status int16) error
 	DeleteProvider(id, userID int64) error
 

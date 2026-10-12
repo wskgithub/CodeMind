@@ -10,6 +10,7 @@ type LLMBackend struct {
 	BaseURL              string    `gorm:"size:500;not null" json:"base_url"`
 	APIKey               string    `gorm:"size:500;not null;default:''" json:"-"`
 	Format               string    `gorm:"size:20;not null;default:openai" json:"format"`
+	AuthScheme           string    `gorm:"size:20;not null;default:auto" json:"auth_scheme"`
 	ModelPatterns        string    `gorm:"type:text;not null;default:*" json:"model_patterns"`
 	DisplayName          string    `gorm:"size:200;not null;default:''" json:"display_name"`
 	Name                 string    `gorm:"size:100;not null;uniqueIndex" json:"name"`

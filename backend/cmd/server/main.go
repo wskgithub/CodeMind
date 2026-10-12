@@ -84,7 +84,9 @@ func main() {
 		&model.UserThirdPartyProvider{},
 		&model.ThirdPartyTokenUsage{},
 	); err != nil {
-		logger.Warn("AutoMigrate failed", zap.Error(err))
+		// 表结构同步失败意味着"新代码 + 旧表结构"的静默错配（如缺列导致写库 500），
+		// 必须终止启动让问题在部署阶段暴露，而不是带病运行
+		logger.Fatal("AutoMigrate failed", zap.Error(err))
 	}
 	// Fix legacy data: populate period_hours for records with period_hours=0
 	fixPeriodHours(db, logger)
@@ -192,10 +194,10 @@ func main() {
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           engine,
-		ReadHeaderTimeout: 10 * time.Second,                  //nolint:mnd // intentional constant. 防慢速请求头攻击
-		ReadTimeout:       llmStreamTimeout * time.Second,    // 覆盖完整请求体读取 + 处理周期
-		WriteTimeout:      llmStreamTimeout * time.Second,    // LLM streaming requests require a longer timeout
-		IdleTimeout:       120 * time.Second,                 //nolint:mnd // intentional constant.
+		ReadHeaderTimeout: 10 * time.Second,               //nolint:mnd // intentional constant. 防慢速请求头攻击
+		ReadTimeout:       llmStreamTimeout * time.Second, // 覆盖完整请求体读取 + 处理周期
+		WriteTimeout:      llmStreamTimeout * time.Second, // LLM streaming requests require a longer timeout
+		IdleTimeout:       120 * time.Second,              //nolint:mnd // intentional constant.
 	}
 
 	go func() {
@@ -275,12 +277,14 @@ func initProviderManager(cfg *config.Config, logger *zap.Logger) *llm.ProviderMa
 
 		switch pc.Format {
 		case "anthropic":
-			client := llm.NewAnthropicClient(pc.BaseURL, pc.APIKey, pc.TimeoutSeconds, pc.StreamTimeoutSeconds)
+			client := llm.NewAnthropicClient(pc.BaseURL, pc.APIKey, pc.TimeoutSeconds, pc.StreamTimeoutSeconds).
+				WithAuthScheme(llm.NormalizeAuthScheme(pc.AuthScheme))
 			provider := llm.NewAnthropicProvider(pc.Name, client)
 			manager.Register(provider)
 			logger.Info("registered Anthropic provider", zap.String("name", pc.Name), zap.String("base_url", pc.BaseURL))
 		default:
-			client := llm.NewClient(pc.BaseURL, pc.APIKey, pc.TimeoutSeconds, pc.StreamTimeoutSeconds)
+			client := llm.NewClient(pc.BaseURL, pc.APIKey, pc.TimeoutSeconds, pc.StreamTimeoutSeconds).
+				WithAuthScheme(llm.NormalizeAuthScheme(pc.AuthScheme))
 			provider := llm.NewOpenAIProvider(pc.Name, client)
 			manager.Register(provider)
 			logger.Info("registered OpenAI provider", zap.String("name", pc.Name), zap.String("base_url", pc.BaseURL))
