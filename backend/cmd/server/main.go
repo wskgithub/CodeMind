@@ -84,7 +84,9 @@ func main() {
 		&model.UserThirdPartyProvider{},
 		&model.ThirdPartyTokenUsage{},
 	); err != nil {
-		logger.Warn("AutoMigrate failed", zap.Error(err))
+		// 表结构同步失败意味着"新代码 + 旧表结构"的静默错配（如缺列导致写库 500），
+		// 必须终止启动让问题在部署阶段暴露，而不是带病运行
+		logger.Fatal("AutoMigrate failed", zap.Error(err))
 	}
 	// Fix legacy data: populate period_hours for records with period_hours=0
 	fixPeriodHours(db, logger)
